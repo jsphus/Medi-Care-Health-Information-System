@@ -1,5 +1,4 @@
 <?php
-// Determine user role
 $role = 'guest';
 if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
     $role = 'superadmin';
@@ -11,69 +10,64 @@ if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
     $role = 'patient';
 }
 
-// Define menu items for each role based on privileges
 $menus = [
-    // SUPER ADMIN - Full control over all modules and records
     'superadmin' => [
-        ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/superadmin/dashboard'],
-        ['icon' => '👥', 'label' => 'Users', 'url' => '/superadmin/users'],
-        ['icon' => '🏥', 'label' => 'Patients', 'url' => '/superadmin/patients'],
-        ['icon' => '👨‍⚕️', 'label' => 'Doctors', 'url' => '/superadmin/doctors'],
-        ['icon' => '👔', 'label' => 'Staff', 'url' => '/superadmin/staff'],
-        ['icon' => '🎓', 'label' => 'Specializations', 'url' => '/superadmin/specializations'],
-        ['icon' => '🗓️', 'label' => 'Schedules', 'url' => '/superadmin/schedules'],
-        ['icon' => '📋', 'label' => 'Statuses', 'url' => '/superadmin/statuses'],
-        ['icon' => '🔬', 'label' => 'Services', 'url' => '/superadmin/services'],
-        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/superadmin/appointments'],
-        ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/superadmin/medical-records'],
-        ['icon' => '💳', 'label' => 'Payment Methods', 'url' => '/superadmin/payment-methods'],
-        ['icon' => '💰', 'label' => 'Payment Statuses', 'url' => '/superadmin/payment-statuses'],
-        ['icon' => '💵', 'label' => 'Payments', 'url' => '/superadmin/payments'],
+        ['icon' => 'dashboard', 'label' => 'Dashboard', 'url' => '/superadmin/dashboard'],
+        ['icon' => 'people', 'label' => 'Users', 'url' => '/superadmin/users'],
+        ['icon' => 'local_hospital', 'label' => 'Patients', 'url' => '/superadmin/patients'],
+        ['icon' => 'medical_services', 'label' => 'Doctors', 'url' => '/superadmin/doctors'],
+        ['icon' => 'badge', 'label' => 'Staff', 'url' => '/superadmin/staff'],
+        ['icon' => 'school', 'label' => 'Specializations', 'url' => '/superadmin/specializations'],
+        ['icon' => 'event', 'label' => 'Schedules', 'url' => '/superadmin/schedules'],
+        ['icon' => 'flag', 'label' => 'Statuses', 'url' => '/superadmin/statuses'],
+        ['icon' => 'science', 'label' => 'Services', 'url' => '/superadmin/services'],
+        ['icon' => 'calendar_today', 'label' => 'Appointments', 'url' => '/superadmin/appointments'],
+        ['icon' => 'folder', 'label' => 'Medical Records', 'url' => '/superadmin/medical-records'],
+        ['icon' => 'credit_card', 'label' => 'Payment Methods', 'url' => '/superadmin/payment-methods'],
+        ['icon' => 'account_balance', 'label' => 'Payment Statuses', 'url' => '/superadmin/payment-statuses'],
+        ['icon' => 'payments', 'label' => 'Payments', 'url' => '/superadmin/payments'],
     ],
     
-    // STAFF - Manages operational data and payments, view-only for medical records, no deletion rights
     'staff' => [
-        ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/staff/dashboard'],
-        ['icon' => '👔', 'label' => 'Staff', 'url' => '/staff/staff'],
-        ['icon' => '🎓', 'label' => 'Specializations', 'url' => '/staff/specializations'],
-        ['icon' => '📋', 'label' => 'Statuses', 'url' => '/staff/statuses'],
-        ['icon' => '🔬', 'label' => 'Services', 'url' => '/staff/services'],
-        ['icon' => '💳', 'label' => 'Payment Methods', 'url' => '/staff/payment-methods'],
-        ['icon' => '💰', 'label' => 'Payment Statuses', 'url' => '/staff/payment-statuses'],
-        ['icon' => '💵', 'label' => 'Payments', 'url' => '/staff/payments'],
-        ['icon' => '📄', 'label' => 'Medical Records (View)', 'url' => '/staff/medical-records'],
+        ['icon' => 'dashboard', 'label' => 'Dashboard', 'url' => '/staff/dashboard'],
+        ['icon' => 'badge', 'label' => 'Staff', 'url' => '/staff/staff'],
+        ['icon' => 'school', 'label' => 'Specializations', 'url' => '/staff/specializations'],
+        ['icon' => 'flag', 'label' => 'Statuses', 'url' => '/staff/statuses'],
+        ['icon' => 'science', 'label' => 'Services', 'url' => '/staff/services'],
+        ['icon' => 'credit_card', 'label' => 'Payment Methods', 'url' => '/staff/payment-methods'],
+        ['icon' => 'account_balance', 'label' => 'Payment Statuses', 'url' => '/staff/payment-statuses'],
+        ['icon' => 'payments', 'label' => 'Payments', 'url' => '/staff/payments'],
+        ['icon' => 'folder', 'label' => 'Medical Records (View)', 'url' => '/staff/medical-records'],
     ],
     
-    // DOCTOR - Manages own appointments, schedules, and medical records; can manage all doctors and schedules
     'doctor' => [
-        ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/doctor/dashboard'],
+        ['icon' => 'dashboard', 'label' => 'Dashboard', 'url' => '/doctor/dashboard'],
         [
-            'icon' => '📅', 
+            'icon' => 'calendar_today', 
             'label' => 'Appointments', 
             'submenu' => [
-                ['icon' => '📊', 'label' => 'Today\'s Appointments', 'url' => '/doctor/appointments/today'],
-                ['icon' => '📜', 'label' => 'Previous Appointments', 'url' => '/doctor/appointments/previous'],
-                ['icon' => '🗓️', 'label' => 'Future Appointments', 'url' => '/doctor/appointments/future'],
+                ['icon' => 'today', 'label' => 'Today\'s Appointments', 'url' => '/doctor/appointments/today'],
+                ['icon' => 'history', 'label' => 'Previous Appointments', 'url' => '/doctor/appointments/previous'],
+                ['icon' => 'event_available', 'label' => 'Future Appointments', 'url' => '/doctor/appointments/future'],
             ]
         ],
         [
-            'icon' => '⏰', 
+            'icon' => 'schedule', 
             'label' => 'Schedules', 
             'submenu' => [
-                ['icon' => '👤', 'label' => 'My Schedules', 'url' => '/doctor/schedules'],
-                ['icon' => '🗓️', 'label' => 'All Schedules', 'url' => '/doctor/schedules/manage'],
+                ['icon' => 'person', 'label' => 'My Schedules', 'url' => '/doctor/schedules'],
+                ['icon' => 'event', 'label' => 'All Schedules', 'url' => '/doctor/schedules/manage'],
             ]
         ],
-        ['icon' => '👨‍⚕️', 'label' => 'Doctors', 'url' => '/doctor/doctors'],
-        ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/doctor/medical-records'],
-        ['icon' => '👤', 'label' => 'My Profile', 'url' => '/doctor/profile'],
+        ['icon' => 'medical_services', 'label' => 'Doctors', 'url' => '/doctor/doctors'],
+        ['icon' => 'folder', 'label' => 'Medical Records', 'url' => '/doctor/medical-records'],
+        ['icon' => 'account_circle', 'label' => 'My Profile', 'url' => '/doctor/profile'],
     ],
     
-    // PATIENT - Manages own profile and appointments only; requires registration before booking
     'patient' => [
-        ['icon' => '📊', 'label' => 'My Appointments', 'url' => '/patient/appointments'],
-        ['icon' => '➕', 'label' => 'Book Appointment', 'url' => '/patient/appointments/create'],
-        ['icon' => '👤', 'label' => 'My Profile', 'url' => '/patient/profile'],
+        ['icon' => 'calendar_today', 'label' => 'My Appointments', 'url' => '/patient/appointments'],
+        ['icon' => 'add_circle', 'label' => 'Book Appointment', 'url' => '/patient/appointments/create'],
+        ['icon' => 'account_circle', 'label' => 'My Profile', 'url' => '/patient/profile'],
     ],
 ];
 
@@ -88,35 +82,40 @@ $currentPath = $_SERVER['REQUEST_URI'];
         top: 0;
         width: 260px;
         height: 100vh;
-        background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-        color: white;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
         overflow-y: auto;
         z-index: 1000;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        box-shadow: 2px 0 8px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
     }
     
     .sidebar-header {
-        padding: 25px 20px;
-        background: rgba(0,0,0,0.2);
+        padding: 24px 20px;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: white;
     }
     
     .sidebar-header h2 {
-        margin: 0 0 5px 0;
-        font-size: 20px;
-        font-weight: 600;
+        margin: 0 0 8px 0;
+        font-size: 22px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     
     .sidebar-header p {
         margin: 0;
         font-size: 13px;
-        opacity: 0.8;
+        opacity: 0.9;
+        font-weight: 500;
     }
     
     .sidebar-menu {
-        padding: 20px 0;
+        padding: 16px 0;
         flex: 1;
     }
     
@@ -124,29 +123,30 @@ $currentPath = $_SERVER['REQUEST_URI'];
         display: flex;
         align-items: center;
         padding: 12px 20px;
-        color: rgba(255,255,255,0.8);
+        color: #6b7280;
         text-decoration: none;
-        transition: all 0.3s;
+        transition: all 0.2s;
         border-left: 3px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
     }
     
     .sidebar-menu a:hover {
-        background: rgba(255,255,255,0.1);
-        color: white;
-        border-left-color: #3498db;
+        background: #f3f4f6;
+        color: #3b82f6;
+        border-left-color: #3b82f6;
     }
     
     .sidebar-menu a.active {
-        background: rgba(52, 152, 219, 0.2);
-        color: white;
-        border-left-color: #3498db;
+        background: #eff6ff;
+        color: #3b82f6;
+        border-left-color: #3b82f6;
     }
     
-    .sidebar-menu a .icon {
+    .sidebar-menu a .material-icons {
         font-size: 20px;
         margin-right: 12px;
         width: 24px;
-        text-align: center;
     }
     
     .sidebar-menu-item {
@@ -158,25 +158,33 @@ $currentPath = $_SERVER['REQUEST_URI'];
         align-items: center;
         justify-content: space-between;
         padding: 12px 20px;
-        color: rgba(255,255,255,0.8);
+        color: #6b7280;
         text-decoration: none;
-        transition: all 0.3s;
+        transition: all 0.2s;
         border-left: 3px solid transparent;
         cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
     }
     
     .sidebar-menu-toggle:hover {
-        background: rgba(255,255,255,0.1);
-        color: white;
-        border-left-color: #3498db;
+        background: #f3f4f6;
+        color: #3b82f6;
+        border-left-color: #3b82f6;
     }
     
-    .sidebar-menu-toggle .toggle-icon {
-        font-size: 12px;
+    .sidebar-menu-toggle .material-icons.toggle-icon {
+        font-size: 18px;
         transition: transform 0.3s;
     }
     
-    .sidebar-menu-toggle.active .toggle-icon {
+    .sidebar-menu-toggle.active {
+        background: #eff6ff;
+        color: #3b82f6;
+        border-left-color: #3b82f6;
+    }
+    
+    .sidebar-menu-toggle.active .material-icons.toggle-icon {
         transform: rotate(90deg);
     }
     
@@ -184,7 +192,7 @@ $currentPath = $_SERVER['REQUEST_URI'];
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
-        background: rgba(0,0,0,0.2);
+        background: #f9fafb;
     }
     
     .sidebar-submenu.open {
@@ -193,14 +201,14 @@ $currentPath = $_SERVER['REQUEST_URI'];
     
     .sidebar-submenu a {
         padding: 10px 20px 10px 56px;
-        font-size: 14px;
+        font-size: 13px;
     }
     
     .sidebar-footer {
         width: 100%;
         padding: 20px;
-        background: rgba(0,0,0,0.2);
-        border-top: 1px solid rgba(255,255,255,0.1);
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
         margin-top: auto;
     }
     
@@ -210,69 +218,90 @@ $currentPath = $_SERVER['REQUEST_URI'];
         justify-content: center;
         width: 100%;
         padding: 12px;
-        background: #e74c3c;
+        background: #ef4444;
         color: white;
         text-decoration: none;
-        border-radius: 5px;
-        transition: background 0.3s;
-        font-weight: 500;
+        border-radius: 8px;
+        transition: background 0.2s;
+        font-weight: 600;
+        font-size: 14px;
+        gap: 8px;
     }
     
     .logout-btn:hover {
-        background: #c0392b;
+        background: #dc2626;
     }
     
     .main-content {
         margin-left: 260px;
         min-height: 100vh;
-        background: #f5f6fa;
+        background: #f9fafb;
     }
     
     .top-bar {
         background: white;
         padding: 20px 30px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-bottom: 1px solid #e5e7eb;
     }
     
     .user-info {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
     
     .user-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-weight: bold;
+        font-size: 16px;
+    }
+    
+    @media (max-width: 768px) {
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+        
+        .sidebar.mobile-open {
+            transform: translateX(0);
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
     }
 </style>
 
 <div class="sidebar">
     <div class="sidebar-header">
-        <h2>🏥 Medi-Care</h2>
+        <h2>
+            <span class="material-icons">local_hospital</span>
+            MediCare
+        </h2>
         <p><?= ucfirst($role) ?> Portal</p>
     </div>
     
     <div class="sidebar-menu">
         <?php foreach ($currentMenu as $item): ?>
             <?php if (isset($item['submenu'])): ?>
-                <!-- Menu item with submenu -->
                 <div class="sidebar-menu-item">
                     <div class="sidebar-menu-toggle" onclick="toggleSubmenu(this)">
                         <div style="display: flex; align-items: center;">
-                            <span class="icon"><?= $item['icon'] ?></span>
+                            <span class="material-icons"><?= $item['icon'] ?></span>
                             <span><?= $item['label'] ?></span>
                         </div>
-                        <span class="toggle-icon">▶</span>
+                        <span class="material-icons toggle-icon">chevron_right</span>
                     </div>
                     <div class="sidebar-submenu">
                         <?php foreach ($item['submenu'] as $subitem): ?>
@@ -280,19 +309,18 @@ $currentPath = $_SERVER['REQUEST_URI'];
                             $isActive = strpos($currentPath, $subitem['url']) !== false ? 'active' : '';
                             ?>
                             <a href="<?= $subitem['url'] ?>" class="<?= $isActive ?>">
-                                <span class="icon"><?= $subitem['icon'] ?></span>
+                                <span class="material-icons"><?= $subitem['icon'] ?></span>
                                 <span><?= $subitem['label'] ?></span>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php else: ?>
-                <!-- Regular menu item -->
                 <?php 
                 $isActive = strpos($currentPath, $item['url']) !== false ? 'active' : '';
                 ?>
                 <a href="<?= $item['url'] ?>" class="<?= $isActive ?>">
-                    <span class="icon"><?= $item['icon'] ?></span>
+                    <span class="material-icons"><?= $item['icon'] ?></span>
                     <span><?= $item['label'] ?></span>
                 </a>
             <?php endif; ?>
@@ -304,7 +332,6 @@ $currentPath = $_SERVER['REQUEST_URI'];
         const submenu = element.nextElementSibling;
         const isOpen = submenu.classList.contains('open');
         
-        // Close all submenus
         document.querySelectorAll('.sidebar-submenu').forEach(sm => {
             sm.classList.remove('open');
         });
@@ -312,14 +339,12 @@ $currentPath = $_SERVER['REQUEST_URI'];
             toggle.classList.remove('active');
         });
         
-        // Open clicked submenu if it was closed
         if (!isOpen) {
             submenu.classList.add('open');
             element.classList.add('active');
         }
     }
     
-    // Auto-open submenu if current page is in it
     document.addEventListener('DOMContentLoaded', function() {
         const activeLink = document.querySelector('.sidebar-submenu a.active');
         if (activeLink) {
@@ -333,8 +358,10 @@ $currentPath = $_SERVER['REQUEST_URI'];
     
     <div class="sidebar-footer">
         <a href="/logout" class="logout-btn">
-            <span style="margin-right: 8px;">🚪</span>
+            <span class="material-icons">logout</span>
             Logout
         </a>
     </div>
 </div>
+
+<script src="/public/js/dashboard.js"></script>

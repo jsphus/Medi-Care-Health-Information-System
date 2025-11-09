@@ -1,53 +1,68 @@
 <?php require_once __DIR__ . '/../partials/header.php'; ?>
 
-<!-- Statistics Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: white; border: 1px solid #e5e7eb; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Total Staff</p>
-                <h2 style="margin: 10px 0 0 0; font-size: 36px;"><?= $stats['total_staff'] ?></h2>
+                <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Total Staff</p>
+                <h2 style="margin: 0; font-size: 32px; color: #1f2937; font-weight: 700;"><?= $stats['total_staff'] ?></h2>
             </div>
-            <div style="font-size: 40px; opacity: 0.3;">👔</div>
+            <div style="background: #eff6ff; padding: 12px; border-radius: 8px;">
+                <span class="material-icons" style="color: #3b82f6; font-size: 28px;">badge</span>
+            </div>
         </div>
     </div>
     
-    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: white; border: 1px solid #e5e7eb; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Services</p>
-                <h2 style="margin: 10px 0 0 0; font-size: 36px;"><?= $stats['total_services'] ?></h2>
+                <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Services</p>
+                <h2 style="margin: 0; font-size: 32px; color: #1f2937; font-weight: 700;"><?= $stats['total_services'] ?></h2>
             </div>
-            <div style="font-size: 40px; opacity: 0.3;">🔬</div>
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 8px;">
+                <span class="material-icons" style="color: #10b981; font-size: 28px;">science</span>
+            </div>
         </div>
     </div>
     
-    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: white; border: 1px solid #e5e7eb; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Specializations</p>
-                <h2 style="margin: 10px 0 0 0; font-size: 36px;"><?= $stats['total_specializations'] ?></h2>
+                <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Specializations</p>
+                <h2 style="margin: 0; font-size: 32px; color: #1f2937; font-weight: 700;"><?= $stats['total_specializations'] ?></h2>
             </div>
-            <div style="font-size: 40px; opacity: 0.3;">🎓</div>
+            <div style="background: #fef3c7; padding: 12px; border-radius: 8px;">
+                <span class="material-icons" style="color: #f59e0b; font-size: 28px;">school</span>
+            </div>
         </div>
     </div>
     
-    <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(67, 233, 123, 0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="background: white; border: 1px solid #e5e7eb; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <p style="margin: 0; opacity: 0.9; font-size: 14px;">Payment Methods</p>
-                <h2 style="margin: 10px 0 0 0; font-size: 36px;"><?= $stats['total_payment_methods'] ?></h2>
+                <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; font-weight: 500;">Payment Methods</p>
+                <h2 style="margin: 0; font-size: 32px; color: #1f2937; font-weight: 700;"><?= $stats['total_payment_methods'] ?></h2>
             </div>
-            <div style="font-size: 40px; opacity: 0.3;">💳</div>
+            <div style="background: #f3e8ff; padding: 12px; border-radius: 8px;">
+                <span class="material-icons" style="color: #a855f7; font-size: 28px;">credit_card</span>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Recent Services -->
-<div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    <h2 style="margin: 0 0 20px 0; color: #2c3e50;">Recent Services</h2>
+<div class="table-container">
+    <div class="table-header">
+        <h2 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span class="material-icons" style="color: #3b82f6;">list_alt</span>
+            Recent Services
+        </h2>
+    </div>
+    <div class="table-responsive">
         <?php if (empty($recent_services)): ?>
-            <p>No services found.</p>
+            <div style="padding: 40px; text-align: center; color: #6b7280;">
+                <span class="material-icons" style="font-size: 48px; color: #d1d5db; margin-bottom: 12px;">inbox</span>
+                <p style="margin: 0;">No services found.</p>
+            </div>
         <?php else: ?>
             <table class="table">
                 <thead>
@@ -70,6 +85,7 @@
                 </tbody>
             </table>
         <?php endif; ?>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

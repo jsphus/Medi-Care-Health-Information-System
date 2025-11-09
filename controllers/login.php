@@ -58,6 +58,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-include __DIR__ . '/../views/partials/header.php';
 include __DIR__ . '/../views/login.view.php';
-include __DIR__ . '/../views/partials/footer.php';

@@ -1,51 +1,24 @@
-       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+* {
+    font-family: 'Inter', sans-serif;
+}
 
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
+.hero-section {
+    background: url('../images/background.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
 
-        .hero-gradient {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
-        }
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
 
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .feature-icon {
-            transition: all 0.3s ease;
-        }
-
-        .card-hover:hover .feature-icon {
-            transform: scale(1.1);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fadeInUp {
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 800;
-            line-height: 1.2;
-        }
+@media (max-width: 768px) {
+    .stat-number {
+        font-size: 2rem;
+    }
+}

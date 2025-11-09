@@ -8,13 +8,14 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medi-Care System</title>
+    <title>MediCare System</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="/public/css/style.css">
+    <link rel="stylesheet" href="/public/css/dashboard.css">
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
 
 <?php 
-// Only show sidebar if user is logged in
 if (isset($_SESSION['user_id'])): 
     include __DIR__ . '/sidebar.php';
 ?>
@@ -22,7 +23,8 @@ if (isset($_SESSION['user_id'])):
 <div class="main-content">
     <div class="top-bar">
         <div>
-            <h1 style="margin: 0; font-size: 24px; color: #2c3e50;">
+            <h1 style="margin: 0; font-size: 24px; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                <span class="material-icons" style="color: #3b82f6;">dashboard</span>
                 <?php
                 $pageTitles = [
                     'superadmin' => 'Super Admin Dashboard',
@@ -57,5 +59,4 @@ if (isset($_SESSION['user_id'])):
     
     <div style="padding: 30px;">
 <?php else: ?>
-    <!-- No sidebar for public pages -->
 <?php endif; ?>

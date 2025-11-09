@@ -86,7 +86,7 @@
             </div>
             
             <button type="submit" class="btn btn-success" style="font-size: 16px; padding: 12px 30px;">
-                📅 Book Appointment
+                Book Appointment
             </button>
         </form>
     </div>

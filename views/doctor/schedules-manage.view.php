@@ -96,9 +96,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer; margin-top: 28px;">
-                        <input type="checkbox" name="is_available" value="1" checked style="margin-right: 10px; width: auto;">
-                        <span>Available for appointments</span>
+                    <label>
+                        <input type="checkbox" name="is_available" value="1">
+                        Available for appointments
                     </label>
                 </div>
             </div>
