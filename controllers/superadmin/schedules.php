@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
-require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 
 $auth = new Auth();
@@ -16,6 +16,39 @@ $profile_picture_url = initializeProfilePicture($auth, $db);
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+    
+    if ($action === 'update') {
+        $id = (int)$_POST['id'];
+        $schedule_date = sanitize($_POST['schedule_date'] ?? '');
+        $start_time = sanitize($_POST['start_time'] ?? '');
+        $end_time = sanitize($_POST['end_time'] ?? '');
+        $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
+        $is_available = isset($_POST['is_available']) ? 1 : 0;
+        
+        if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
+            $error = 'Date, start time, and end time are required';
+        } else {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE schedules 
+                    SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time,
+                        max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
+                    WHERE schedule_id = :id
+                ");
+                $stmt->execute([
+                    'schedule_date' => $schedule_date,
+                    'start_time' => $start_time,
+                    'end_time' => $end_time,
+                    'max_appointments' => $max_appointments,
+                    'is_available' => $is_available,
+                    'id' => $id
+                ]);
+                $success = 'Schedule updated successfully';
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
+        }
+    }
     
     if ($action === 'delete') {
         $id = (int)$_POST['id'];

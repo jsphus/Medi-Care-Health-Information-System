@@ -205,11 +205,24 @@
                                 </span>
                             </td>
                             <td>
-                                <div class="table-actions">
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <button class="btn btn-sm edit-schedule-btn" 
+                                            data-schedule="<?= base64_encode(json_encode($sched)) ?>" 
+                                            title="Edit"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm view-schedule-btn" 
+                                            data-schedule="<?= base64_encode(json_encode($sched)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this schedule?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $sched['schedule_id'] ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                        <button type="submit" class="btn btn-sm" title="Delete"
+                                                style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -244,6 +257,75 @@
         </div>
         <?php endif; ?>
     <?php endif; ?>
+</div>
+
+<!-- Edit Schedule Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Schedule</h2>
+            <button type="button" class="modal-close" onclick="closeEditModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" id="edit_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="schedule_date" id="edit_schedule_date" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="start_time" id="edit_start_time" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="end_time" id="edit_end_time" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Max Appointments:</label>
+                    <input type="number" name="max_appointments" id="edit_max_appointments" min="1" class="form-control">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="is_available" id="edit_is_available" value="1" style="width: auto;">
+                    <span>Available for appointments</span>
+                </label>
+            </div>
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i>
+                    <span>Update Schedule</span>
+                </button>
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Schedule Modal -->
+<div id="viewModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Schedule Details</h2>
+            <button type="button" class="modal-close" onclick="closeViewModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="viewContent"></div>
+        <div class="action-buttons" style="margin-top: 1.5rem;">
+            <button type="button" onclick="closeViewModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                <span>Close</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -381,6 +463,102 @@ function resetToPaginatedView() {
     window.location.href = url.toString();
 }
 
+// Edit and View Schedule Functions
+function editSchedule(sched) {
+    document.getElementById('edit_id').value = sched.schedule_id;
+    document.getElementById('edit_schedule_date').value = sched.schedule_date;
+    document.getElementById('edit_start_time').value = sched.start_time;
+    document.getElementById('edit_end_time').value = sched.end_time;
+    document.getElementById('edit_max_appointments').value = sched.max_appointments;
+    document.getElementById('edit_is_available').checked = sched.is_available == 1 || sched.is_available === true;
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function viewSchedule(sched) {
+    const doctorName = sched.doc_first_name && sched.doc_last_name 
+        ? `Dr. ${sched.doc_first_name} ${sched.doc_last_name}` 
+        : 'N/A';
+    const specName = sched.spec_name || 'N/A';
+    const scheduleDate = sched.schedule_date ? new Date(sched.schedule_date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    }) : 'N/A';
+    const startTime = sched.start_time || 'N/A';
+    const endTime = sched.end_time || 'N/A';
+    const maxAppointments = sched.max_appointments || 0;
+    const isAvailable = sched.is_available == 1 || sched.is_available === true;
+    const created = sched.created_at ? new Date(sched.created_at).toLocaleString('en-US') : 'N/A';
+    const updated = sched.updated_at ? new Date(sched.updated_at).toLocaleString('en-US') : 'N/A';
+    
+    const content = `
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--primary-blue);">Schedule Information</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Doctor:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${doctorName}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Specialization:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${specName}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Schedule Date:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${scheduleDate}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Time:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${startTime} - ${endTime}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Max Appointments:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${maxAppointments}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Available:</strong>
+                        <p style="margin: 0.5rem 0 0 0;">
+                            <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: ${isAvailable ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;'}">
+                                ${isAvailable ? 'Yes' : 'No'}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--primary-blue);">Timestamps</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Created At:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${created}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Updated At:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${updated}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('viewContent').innerHTML = content;
+    document.getElementById('viewModal').classList.add('active');
+}
+
+function closeViewModal() {
+    document.getElementById('viewModal').classList.remove('active');
+}
+
 // Initialize filter event listeners
 document.addEventListener('DOMContentLoaded', function() {
     const filterInputs = ['filterDoctor', 'filterSpecialization', 'filterDate', 'filterStartTime', 'filterEndTime', 'filterMinAppointments', 'filterAvailable'];
@@ -389,6 +567,53 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input) {
             input.addEventListener('input', filterTable);
             input.addEventListener('change', filterTable);
+        }
+    });
+    
+    // Add event listeners for edit buttons
+    document.querySelectorAll('.edit-schedule-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-schedule');
+                const decodedJson = atob(encodedData);
+                const scheduleData = JSON.parse(decodedJson);
+                editSchedule(scheduleData);
+            } catch (e) {
+                console.error('Error parsing schedule data:', e);
+                alert('Error loading schedule data. Please check the console for details.');
+            }
+        });
+    });
+    
+    // Add event listeners for view buttons
+    document.querySelectorAll('.view-schedule-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-schedule');
+                const decodedJson = atob(encodedData);
+                const scheduleData = JSON.parse(decodedJson);
+                viewSchedule(scheduleData);
+            } catch (e) {
+                console.error('Error parsing schedule data:', e);
+                alert('Error loading schedule data. Please check the console for details.');
+            }
+        });
+    });
+    
+    // Close modals on outside click and Escape key
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+            });
         }
     });
     

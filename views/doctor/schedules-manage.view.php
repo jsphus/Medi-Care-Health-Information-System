@@ -171,6 +171,10 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button onclick='viewSchedule(<?= json_encode($schedule) ?>)' class="btn btn-sm" title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Delete this schedule?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $schedule['schedule_id'] ?>">
@@ -250,6 +254,25 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- View Schedule Modal -->
+<div id="viewModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Schedule Details</h2>
+            <button type="button" class="modal-close" onclick="closeViewModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="viewContent"></div>
+        <div class="action-buttons" style="margin-top: 1.5rem;">
+            <button type="button" onclick="closeViewModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                <span>Close</span>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -343,6 +366,93 @@ function editSchedule(schedule) {
 
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
+}
+
+function viewSchedule(schedule) {
+    const doctorName = schedule.doctor_name || 'N/A';
+    const specName = schedule.spec_name || 'N/A';
+    const scheduleDate = schedule.schedule_date ? new Date(schedule.schedule_date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    }) : 'N/A';
+    const startTime = schedule.start_time ? new Date('2000-01-01T' + schedule.start_time).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    }) : 'N/A';
+    const endTime = schedule.end_time ? new Date('2000-01-01T' + schedule.end_time).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    }) : 'N/A';
+    const maxAppointments = schedule.max_appointments || 0;
+    const isAvailable = schedule.is_available == 1 || schedule.is_available === true;
+    const created = schedule.created_at ? new Date(schedule.created_at).toLocaleString('en-US') : 'N/A';
+    const updated = schedule.updated_at ? new Date(schedule.updated_at).toLocaleString('en-US') : 'N/A';
+    
+    const content = `
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--primary-blue);">Schedule Information</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Doctor:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${doctorName}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Specialization:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${specName}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Schedule Date:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${scheduleDate}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Time:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${startTime} - ${endTime}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Max Appointments:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${maxAppointments}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Available:</strong>
+                        <p style="margin: 0.5rem 0 0 0;">
+                            <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: ${isAvailable ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;'}">
+                                ${isAvailable ? 'Yes' : 'No'}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--primary-blue);">Timestamps</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Created At:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${created}</p>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Updated At:</strong>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${updated}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('viewContent').innerHTML = content;
+    document.getElementById('viewModal').classList.add('active');
+}
+
+function closeViewModal() {
+    document.getElementById('viewModal').classList.remove('active');
 }
 
 // Close modals on outside click and Escape key

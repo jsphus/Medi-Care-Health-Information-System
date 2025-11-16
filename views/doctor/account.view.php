@@ -274,6 +274,36 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Profile Picture Upload Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem;">Profile Picture</h3>
+                <form method="POST" enctype="multipart/form-data" id="profilePictureForm">
+                    <input type="hidden" name="action" value="update_profile_picture">
+                    <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label class="form-label-modern">Upload New Picture</label>
+                            <input type="file" name="profile_picture" id="profilePictureInput" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="form-control-modern" style="padding: 0.5rem;">
+                            <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Max 5MB. Formats: JPG, PNG, GIF, WEBP</small>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="submit" class="btn-save" style="padding: 0.75rem 1.5rem;">
+                                <i class="fas fa-upload"></i>
+                                <span>Upload</span>
+                            </button>
+                            <?php if (!empty($profile_picture_url)): ?>
+                                <button type="button" onclick="deleteProfilePicture()" class="btn-save" style="padding: 0.75rem 1.5rem; background: #ef4444;">
+                                    <i class="fas fa-trash"></i>
+                                    <span>Remove</span>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div id="imagePreview" style="margin-top: 1rem; display: none;">
+                        <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    </div>
+                </form>
+            </div>
 
             <form method="POST">
                 <input type="hidden" name="action" value="update_profile">
@@ -312,6 +342,26 @@
                     </select>
                 </div>
                 <?php endif; ?>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">License Number</label>
+                    <input type="text" name="license_number" value="<?= htmlspecialchars($doctor['doc_license_number'] ?? '') ?>" class="form-control-modern">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Experience (Years)</label>
+                    <input type="number" name="experience_years" min="0" value="<?= htmlspecialchars($doctor['doc_experience_years'] ?? '') ?>" class="form-control-modern">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Consultation Fee</label>
+                    <input type="number" name="consultation_fee" step="0.01" min="0" value="<?= htmlspecialchars($doctor['doc_consultation_fee'] ?? '') ?>" class="form-control-modern">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Qualification</label>
+                    <textarea name="qualification" rows="3" class="form-control-modern"><?= htmlspecialchars($doctor['doc_qualification'] ?? '') ?></textarea>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">Bio</label>
+                    <textarea name="bio" rows="5" class="form-control-modern"><?= htmlspecialchars($doctor['doc_bio'] ?? '') ?></textarea>
+                </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">Role</label>
                     <input type="text" value="Doctor" disabled class="form-control-modern">
@@ -397,7 +447,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         if (phoneInput.value) phoneInput.value = formatPhoneNumber(phoneInput.value);
     }
+    
+    // Profile picture preview
+    const profilePictureInput = document.getElementById('profilePictureInput');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImg');
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
+
+function deleteProfilePicture() {
+    if (confirm('Are you sure you want to remove your profile picture?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = '<input type="hidden" name="action" value="delete_profile_picture">';
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

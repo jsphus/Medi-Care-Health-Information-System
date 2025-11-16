@@ -12,7 +12,8 @@ function generateAppointmentId($db) {
     
     try {
         // Get the last appointment ID for this month
-        $stmt = $db->query("SELECT appointment_id FROM appointments WHERE appointment_id LIKE '$prefix%' ORDER BY appointment_id DESC LIMIT 1");
+        $stmt = $db->prepare("SELECT appointment_id FROM appointments WHERE appointment_id LIKE :prefix ORDER BY appointment_id DESC LIMIT 1");
+        $stmt->execute(['prefix' => $prefix . '%']);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($result) {

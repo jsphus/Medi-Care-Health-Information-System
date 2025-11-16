@@ -1,13 +1,15 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
-require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
 
 $auth = new Auth();
 $auth->requireDoctor();
 
 $db = Database::getInstance();
 $doctor_id = $auth->getDoctorId();
+$user_id = $auth->getUserId();
 $error = '';
 $success = '';
 
@@ -24,6 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $phone = formatPhoneNumber($phone);
         }
         $specialization_id = isset($_POST['specialization_id']) ? (int)$_POST['specialization_id'] : null;
+        $license_number = sanitize($_POST['license_number'] ?? '');
+        $experience_years = !empty($_POST['experience_years']) ? (int)$_POST['experience_years'] : null;
+        $consultation_fee = !empty($_POST['consultation_fee']) ? floatval($_POST['consultation_fee']) : null;
+        $qualification = sanitize($_POST['qualification'] ?? '');
+        $bio = sanitize($_POST['bio'] ?? '');
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
@@ -38,6 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         doc_email = :email,
                         doc_phone = :phone,
                         doc_specialization_id = :specialization_id,
+                        doc_license_number = :license_number,
+                        doc_experience_years = :experience_years,
+                        doc_consultation_fee = :consultation_fee,
+                        doc_qualification = :qualification,
+                        doc_bio = :bio,
                         updated_at = NOW()
                     WHERE doc_id = :doctor_id
                 ");
@@ -47,6 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email' => $email,
                     'phone' => $phone,
                     'specialization_id' => $specialization_id,
+                    'license_number' => $license_number,
+                    'experience_years' => $experience_years,
+                    'consultation_fee' => $consultation_fee,
+                    'qualification' => $qualification,
+                    'bio' => $bio,
                     'doctor_id' => $doctor_id
                 ]);
                 $success = 'Account information updated successfully';
@@ -93,6 +110,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (PDOException $e) {
                 $error = 'Failed to change password: ' . $e->getMessage();
             }
+        }
+    }
+    
+    if ($action === 'update_profile_picture') {
+        if (isset($_FILES['profile_picture'])) {
+            $uploadError = $_FILES['profile_picture']['error'] ?? UPLOAD_ERR_NO_FILE;
+            
+            if ($uploadError === UPLOAD_ERR_OK) {
+                try {
+                    $cloudinary = new CloudinaryUpload();
+                    $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $user_id);
+                    
+                    // Check if result is an array (success) or string (error message)
+                    if (is_array($result) && isset($result['url'])) {
+                        // Get old profile picture URL before updating
+                        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                        $stmt->execute(['user_id' => $user_id]);
+                        $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                        
+                        // Update user profile picture URL
+                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
+                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
+                        
+                        // Delete old image from Cloudinary if exists
+                        if ($oldUrl) {
+                            $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            if ($oldPublicId) {
+                                $cloudinary->deleteImage($oldPublicId);
+                            }
+                        }
+                        
+                        $success = 'Profile picture updated successfully';
+                        $profile_picture_url = $result['url'];
+                    } else {
+                        // Result is an error message string
+                        $error = is_string($result) ? $result : 'Failed to upload image. Please ensure the file is a valid image (jpg, png, gif, webp) and under 5MB.';
+                    }
+                } catch (Exception $e) {
+                    $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                }
+            } else {
+                $errorMessages = [
+                    UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
+                    UPLOAD_ERR_FORM_SIZE => 'File exceeds MAX_FILE_SIZE directive',
+                    UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                    UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                    UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
+                ];
+                $error = $errorMessages[$uploadError] ?? 'File upload error occurred (Error code: ' . $uploadError . ')';
+            }
+        } else {
+            $error = 'No file was selected';
+        }
+    }
+    
+    if ($action === 'delete_profile_picture') {
+        try {
+            // Get current profile picture URL
+            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+            $stmt->execute(['user_id' => $user_id]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $currentUrl = $user['profile_picture_url'] ?? null;
+            
+            if ($currentUrl) {
+                $cloudinary = new CloudinaryUpload();
+                $publicId = $cloudinary->extractPublicId($currentUrl);
+                
+                // Delete from Cloudinary
+                if ($publicId) {
+                    $cloudinary->deleteImage($publicId);
+                }
+                
+                // Remove from database
+                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
+                
+                $success = 'Profile picture removed successfully';
+                $profile_picture_url = null;
+            }
+        } catch (Exception $e) {
+            $error = 'Failed to remove profile picture: ' . $e->getMessage();
         }
     }
 }
