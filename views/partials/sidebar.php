@@ -170,7 +170,7 @@ $menus = [
     ],
     'doctor' => [
         ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/doctor/dashboard'],
-        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/doctor/appointments/today'],
+        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/doctor/appointments'],
         ['icon' => '⏰', 'label' => 'Schedules', 'url' => '/doctor/schedules'],
         ['icon' => '👨‍⚕️', 'label' => 'Doctors', 'url' => '/doctor/doctors'],
         ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/doctor/medical-records'],

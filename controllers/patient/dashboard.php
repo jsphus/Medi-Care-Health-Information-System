@@ -16,12 +16,8 @@ try {
     $stmt->execute(['patient_id' => $patient_id]);
     $patient = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // Get profile picture URL
-    $user_id = $auth->getUserId();
-    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-    $stmt->execute(['user_id' => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $profile_picture_url = $user['profile_picture_url'] ?? null;
+    // Initialize profile picture for consistent display across the system
+    $profile_picture_url = initializeProfilePicture($auth, $db);
 } catch (PDOException $e) {
     $error = 'Failed to fetch patient info: ' . $e->getMessage();
     $patient = null;

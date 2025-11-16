@@ -168,11 +168,12 @@
     
     <!-- Search and Filter Bar -->
     <div class="search-filter-bar-modern">
-        <form method="GET" style="flex: 1; display: flex; align-items: center; gap: 0.75rem;">
+        <form method="GET" id="searchForm" style="flex: 1; display: flex; align-items: center; gap: 0.75rem;" onsubmit="handleSearchSubmit(event);">
             <div class="search-input-wrapper">
                 <i class="fas fa-search"></i>
                 <input type="text" 
                        name="search" 
+                       id="searchInput"
                        class="search-input-modern"
                        placeholder="Search doctors by name or specialization..." 
                        value="<?= htmlspecialchars($search_query) ?>"
@@ -185,9 +186,9 @@
             <?php endif; ?>
         </form>
         <div class="category-tabs">
-            <button type="button" class="category-tab <?= empty($filter_specialization) ? 'active' : '' ?>" data-specialization="all">All</button>
+            <button type="button" class="category-tab <?= empty($filter_specialization) ? 'active' : '' ?>" data-specialization="all" onclick="filterBySpecialization('all')">All</button>
             <?php foreach ($specializations as $spec): ?>
-                <button type="button" class="category-tab <?= ($filter_specialization == $spec['spec_id']) ? 'active' : '' ?>" data-specialization="<?= $spec['spec_id'] ?>">
+                <button type="button" class="category-tab <?= ($filter_specialization == $spec['spec_id']) ? 'active' : '' ?>" data-specialization="<?= $spec['spec_id'] ?>" onclick="filterBySpecialization('<?= $spec['spec_id'] ?>')">
                     <?= htmlspecialchars($spec['spec_name']) ?>
                 </button>
             <?php endforeach; ?>
@@ -223,36 +224,50 @@
 </div>
 
 <script>
-// Category tab functionality for specializations
-document.addEventListener('DOMContentLoaded', function() {
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    categoryTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            categoryTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            const specialization = this.dataset.specialization;
-            filterBySpecialization(specialization);
-        });
-    });
-});
-
-function filterBySpecialization(specialization) {
-    const params = new URLSearchParams(window.location.search);
+// Handle search form submission - reload page with search query
+function handleSearchSubmit(event) {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    const search = document.getElementById('searchInput')?.value.trim();
     
-    if (specialization === 'all') {
-        params.delete('specialization');
-    } else {
+    if (search) {
+        params.set('search', search);
+    }
+    
+    // Preserve specialization filter if it exists
+    const currentParams = new URLSearchParams(window.location.search);
+    const specialization = currentParams.get('specialization');
+    if (specialization) {
+        params.set('specialization', specialization);
+    }
+    
+    window.location.href = '/patient/book' + (params.toString() ? '?' + params.toString() : '');
+}
+
+// Category tab functionality for specializations - reload page on filter click
+function filterBySpecialization(specialization) {
+    const params = new URLSearchParams();
+    
+    if (specialization !== 'all') {
         params.set('specialization', specialization);
     }
     
     // Preserve search query if it exists
-    const search = document.querySelector('input[name="search"]')?.value;
+    const search = document.getElementById('searchInput')?.value.trim();
     if (search) {
         params.set('search', search);
-    } else {
-        params.delete('search');
     }
     
+    // Update active tab
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    categoryTabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.specialization === specialization) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Reload page with new filter
     window.location.href = '/patient/book' + (params.toString() ? '?' + params.toString() : '');
 }
 </script>

@@ -43,6 +43,41 @@
     </div>
 </div>
 
+<!-- Active Doctors Cards Section -->
+<?php if (!empty($active_doctors)): ?>
+<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Active Doctors</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+        <?php foreach ($active_doctors as $doctor): ?>
+            <?php
+            $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
+            $doctorName = 'Dr. ' . htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+            $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+            ?>
+            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid var(--border-light); transition: all 0.2s;" 
+                 onmouseover="this.style.borderColor='var(--primary-blue)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.15)';" 
+                 onmouseout="this.style.borderColor='var(--border-light)'; this.style.boxShadow='none';">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.75rem; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                    <?php if (!empty($doctor['profile_picture_url'])): ?>
+                        <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
+                    <?php else: ?>
+                        <?= $initials ?>
+                    <?php endif; ?>
+                </div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= $doctorName ?>
+                </div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                    <?= $specialization ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->

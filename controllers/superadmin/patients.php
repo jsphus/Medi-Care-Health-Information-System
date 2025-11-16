@@ -390,23 +390,6 @@ try {
     $filter_insurance_providers = [];
 }
 
-// Fetch doctors with profile pictures for doctors cards
-$doctors = [];
-try {
-    $stmt = $db->query("
-        SELECT d.*, s.spec_name, u.profile_picture_url
-        FROM doctors d
-        LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
-        LEFT JOIN users u ON d.doc_id = u.doc_id
-        WHERE d.doc_status = 'active'
-        ORDER BY d.doc_first_name, d.doc_last_name
-        LIMIT 12
-    ");
-    $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    // Keep empty array if error
-    $doctors = [];
-}
 
 // Include the view
 // Calculate statistics for summary cards

@@ -37,6 +37,7 @@ return [
     
     // Doctor Routes
     'doctor/dashboard' => 'controllers/doctor/dashboard.php',
+    'doctor/appointments' => 'controllers/doctor/appointments.php',
     'doctor/appointments/today' => 'controllers/doctor/appointments-today.php',
     'doctor/appointments/previous' => 'controllers/doctor/appointments-previous.php',
     'doctor/appointments/future' => 'controllers/doctor/appointments-future.php',
