@@ -8,21 +8,22 @@ class Database {
         if ($dotenv === false) {
             die("Database configuration file (.env) not found or invalid.");
         }
-        
+
         $host = $dotenv['SUPABASE_DB_HOST'] ?? '';
         $port = $dotenv['SUPABASE_DB_PORT'] ?? '5432';
         $dbname = $dotenv['SUPABASE_DB_NAME'] ?? '';
         $user = $dotenv['SUPABASE_DB_USER'] ?? '';
         $password = $dotenv['SUPABASE_DB_PASS'] ?? '';
-        
-        if (empty($host) || empty($dbname) || empty($user)) {
+
+        if (!$host || !$dbname || !$user) {
             die("Database configuration incomplete. Please check your .env file.");
         }
-        
-        $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};user={$user};password={$password}";
-        
+
+        // Correct DSN format
+        $dsn = "pgsql:host=$host;port=$port;dbname=$dbname";
+
         try {
-            $this->conn = new PDO($dsn);
+            $this->conn = new PDO($dsn, $user, $password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
