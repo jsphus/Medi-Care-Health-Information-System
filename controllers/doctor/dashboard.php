@@ -18,8 +18,16 @@ try {
     ");
     $stmt->execute(['doc_id' => $doc_id]);
     $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Get profile picture URL
+    $user_id = $auth->getUserId();
+    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profile_picture_url = $user['profile_picture_url'] ?? null;
 } catch (PDOException $e) {
     $doctor = null;
+    $profile_picture_url = null;
 }
 
 // Get statistics

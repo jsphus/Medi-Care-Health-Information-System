@@ -47,11 +47,71 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Staff</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Staff</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
         <button type="button" class="btn btn-primary" onclick="openAddStaffModal()" style="display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add Staff</span>
         </button>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Staff
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user" style="margin-right: 0.25rem;"></i>Staff Name
+                </label>
+                <input type="text" id="filterName" class="filter-input" placeholder="Search name..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-envelope" style="margin-right: 0.25rem;"></i>Email
+                </label>
+                <input type="text" id="filterEmail" class="filter-input" placeholder="Search email..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-phone" style="margin-right: 0.25rem;"></i>Phone
+                </label>
+                <input type="text" id="filterPhone" class="filter-input" placeholder="Search phone..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-briefcase" style="margin-right: 0.25rem;"></i>Position
+                </label>
+                <input type="text" id="filterPosition" class="filter-input" placeholder="Search position..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Status
+                </label>
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered
+                </label>
+                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+        </div>
     </div>
 
     <?php if (empty($staff)): ?>
@@ -64,30 +124,74 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'created_at';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= $current_sort === 'staff_first_name' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('staff_first_name')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Staff Name
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'staff_email' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('staff_email')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Email
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'staff_phone' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('staff_phone')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Phone
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Position
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'staff_hire_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('staff_hire_date')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Hire Date
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Status
                         </th>
+                        <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('created_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Registered
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <?php foreach ($staff as $member): ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
+                        <tr class="table-row" 
+                            data-name="<?= htmlspecialchars(strtolower(($member['staff_first_name'] ?? '') . ' ' . ($member['staff_last_name'] ?? ''))) ?>"
+                            data-email="<?= htmlspecialchars(strtolower($member['staff_email'] ?? '')) ?>"
+                            data-phone="<?= htmlspecialchars(strtolower($member['staff_phone'] ?? '')) ?>"
+                            data-position="<?= htmlspecialchars(strtolower($member['staff_position'] ?? '')) ?>"
+                            data-status="<?= htmlspecialchars(strtolower($member['staff_status'] ?? '')) ?>"
+                            data-date="<?= !empty($member['created_at']) ? date('Y-m-d', strtotime($member['created_at'])) : '' ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
@@ -111,6 +215,7 @@
                                     <?= htmlspecialchars(ucfirst($status)) ?>
                                 </span>
                             </td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['created_at'] ? date('d M Y', strtotime($member['created_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-staff-btn" 
@@ -118,6 +223,12 @@
                                             title="Edit"
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm view-staff-btn" 
+                                            data-staff="<?= base64_encode(json_encode($member)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this staff member?');">
                                         <input type="hidden" name="action" value="delete">
@@ -127,12 +238,6 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <button class="btn btn-sm view-staff-btn" 
-                                            data-staff="<?= base64_encode(json_encode($member)) ?>" 
-                                            title="More"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -144,7 +249,7 @@
 
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
                 Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
             </div>
@@ -510,7 +615,160 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // Initialize filter event listeners
+    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterPosition', 'filterStatus', 'filterDate'];
+    filterInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        }
+    });
+    
+    // Check if filters are active on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('all_results') === '1') {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        }
+    }
 });
+
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    url.searchParams.delete('page'); // Reset to page 1 when sorting
+    
+    window.location.href = url.toString();
+}
+
+// Filtering Functions
+function filterTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('.table-row');
+    const filterName = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
+    const filterEmail = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
+    const filterPhone = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
+    const filterPosition = document.getElementById('filterPosition')?.value.toLowerCase().trim() || '';
+    const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
+    const filterDate = document.getElementById('filterDate')?.value || '';
+    
+    let visibleCount = 0;
+    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterStatus || filterDate;
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        const position = row.getAttribute('data-position') || '';
+        const status = row.getAttribute('data-status') || '';
+        const date = row.getAttribute('data-date') || '';
+        
+        const matchesName = !filterName || name.includes(filterName);
+        const matchesEmail = !filterEmail || email.includes(filterEmail);
+        const matchesPhone = !filterPhone || phone.includes(filterPhone);
+        const matchesPosition = !filterPosition || position.includes(filterPosition);
+        const matchesStatus = !filterStatus || status === filterStatus;
+        const matchesDate = !filterDate || date === filterDate;
+        
+        if (matchesName && matchesEmail && matchesPhone && matchesPosition && matchesStatus && matchesDate) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide pagination and filter message
+    const paginationContainer = document.getElementById('paginationContainer');
+    let filterActiveMessage = document.getElementById('filterActiveMessage');
+    
+    if (hasActiveFilters) {
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        
+        if (!filterActiveMessage) {
+            filterActiveMessage = document.createElement('div');
+            filterActiveMessage.id = 'filterActiveMessage';
+            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
+            tbody.parentElement.parentElement.parentElement.appendChild(filterActiveMessage);
+        }
+        
+        if (visibleCount === 0) {
+            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No staff members match the applied filters.';
+        } else {
+            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} staff member(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
+        }
+        filterActiveMessage.style.display = 'block';
+    } else {
+        if (paginationContainer) paginationContainer.style.display = '';
+        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
+    }
+}
+
+function resetTableFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterEmail').value = '';
+    document.getElementById('filterPhone').value = '';
+    document.getElementById('filterPosition').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDate').value = '';
+    
+    filterTable();
+    resetToPaginatedView();
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none' || !filterBar.style.display) {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.style.background = 'var(--primary-blue)';
+        toggleBtn.style.color = 'white';
+        loadAllResults();
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.style.background = 'var(--bg-light)';
+        toggleBtn.style.color = 'var(--text-secondary)';
+        resetTableFilters();
+        resetToPaginatedView();
+    }
+}
+
+function loadAllResults() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('all_results', '1');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('all_results');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

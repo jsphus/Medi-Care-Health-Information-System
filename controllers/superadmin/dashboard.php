@@ -7,6 +7,25 @@ $auth->requireSuperAdmin();
 
 $db = Database::getInstance();
 
+// Get user name for greeting
+$user_name = 'Admin';
+$profile_picture_url = null;
+try {
+    $user_id = $auth->getUserId();
+    if ($user_id) {
+        $stmt = $db->prepare("SELECT user_email, profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user) {
+            $user_name = explode('@', $user['user_email'])[0];
+            $user_name = ucfirst($user_name);
+            $profile_picture_url = $user['profile_picture_url'] ?? null;
+        }
+    }
+} catch (PDOException $e) {
+    // Use default name
+}
+
 // Use current month for all statistics
 $start_date = date('Y-m-01');
 $end_date = date('Y-m-t');

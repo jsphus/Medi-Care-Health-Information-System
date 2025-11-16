@@ -159,43 +159,6 @@
     background: #dc2626;
 }
 
-/* Dark mode support */
-[data-theme="dark"] .confirm-modal-container {
-    background: #1f2937;
-    color: #f9fafb;
-}
-
-[data-theme="dark"] .confirm-modal-title {
-    color: #f9fafb;
-}
-
-[data-theme="dark"] .confirm-modal-message {
-    color: #d1d5db;
-}
-
-[data-theme="dark"] .confirm-modal-header,
-[data-theme="dark"] .confirm-modal-footer {
-    border-color: #374151;
-}
-
-[data-theme="dark"] .confirm-modal-close {
-    color: #9ca3af;
-}
-
-[data-theme="dark"] .confirm-modal-close:hover {
-    background: #374151;
-    color: #f9fafb;
-}
-
-[data-theme="dark"] .confirm-modal-btn-cancel {
-    background: #374151;
-    color: #f9fafb;
-}
-
-[data-theme="dark"] .confirm-modal-btn-cancel:hover {
-    background: #4b5563;
-}
-
 /* Responsive */
 @media (max-width: 640px) {
     .confirm-modal-container {

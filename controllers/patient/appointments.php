@@ -119,12 +119,14 @@ try {
                d.doc_first_name, d.doc_last_name, d.doc_specialization_id,
                s.service_name, s.service_price,
                st.status_name, st.status_color,
-               sp.spec_name
+               sp.spec_name,
+               ud.profile_picture_url as doctor_profile_picture
         FROM appointments a
         LEFT JOIN doctors d ON a.doc_id = d.doc_id
         LEFT JOIN services s ON a.service_id = s.service_id
         LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY a.appointment_date DESC, a.appointment_time DESC
     ");

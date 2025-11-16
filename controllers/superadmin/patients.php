@@ -218,10 +218,11 @@ if (isset($_GET['search'])) {
 $filter_gender = isset($_GET['gender']) ? sanitize($_GET['gender']) : '';
 $filter_insurance = isset($_GET['insurance']) ? sanitize($_GET['insurance']) : '';
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all patients with filters
 try {
@@ -251,8 +252,25 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['pat_first_name', 'pat_last_name', 'pat_email', 'pat_phone', 'pat_gender', 'pat_date_of_birth', 'created_at'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'created_at';
+    }
+    
+    // Special handling for name sorting (sort by first name, then last name)
+    if ($sort_column === 'pat_first_name') {
+        $order_by = "pat_first_name $sort_order, pat_last_name $sort_order";
+    } else {
+        $order_by = "$sort_column $sort_order";
+    }
+    
     // Fetch paginated results
-    $stmt = $db->prepare("SELECT * FROM patients $where_clause ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+    $stmt = $db->prepare("SELECT * FROM patients $where_clause ORDER BY $order_by LIMIT :limit OFFSET :offset");
     foreach ($params as $key => $value) {
         $stmt->bindValue(':' . $key, $value);
     }

@@ -57,18 +57,6 @@
     --transition: all 0.2s ease;
 }
 
-/* Dark Mode Variables */
-[data-theme="dark"] {
-    --bg-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #020617 100%);
-    --bg-white: #1e293b;
-    --bg-light: #0f172a;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-light: #94a3b8;
-    --border-light: #334155;
-    --border-medium: #475569;
-}
-
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     line-height: 1.6;
@@ -469,46 +457,10 @@ body {
     font-size: 0.875rem;
 }
 
-.profile-dropdown-item.dark-mode-toggle {
-    justify-content: space-between;
-}
-
 .profile-dropdown-divider {
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
     margin: 0.5rem 0;
-}
-
-.toggle-switch {
-    width: 40px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    position: relative;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.toggle-switch::after {
-    content: '';
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    background: white;
-    border-radius: 50%;
-    top: 2px;
-    left: 2px;
-    transition: transform 0.2s ease;
-}
-
-[data-theme="dark"] .toggle-switch,
-.toggle-switch.active {
-    background: #667eea;
-}
-
-[data-theme="dark"] .toggle-switch::after,
-.toggle-switch.active::after {
-    transform: translateX(2px);
 }
 
 /* Main Content Area */
@@ -985,7 +937,7 @@ body {
 
 .btn-secondary:hover {
     background: var(--bg-light);
-    border-color: var(--border-dark);
+    border-color: var(--border-medium);
 }
 
 .btn-success {
@@ -2092,6 +2044,130 @@ body {
     font-size: 0.875rem;
 }
 
+/* Services Filter Bar */
+.services-filter-bar {
+    background: var(--bg-white);
+    border-radius: 0;
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-light);
+}
+
+#toggleFilterBtn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--text-white);
+}
+
+#toggleFilterBtn.active:hover {
+    background: var(--primary-blue-dark);
+    border-color: var(--primary-blue-dark);
+}
+
+.filter-controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.filter-control {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-control label {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.filter-control label i {
+    margin-right: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.filter-input {
+    width: 100%;
+    padding: 0.625rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    background: var(--bg-white);
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-input:hover {
+    border-color: var(--border-medium);
+}
+
+.filter-input::placeholder {
+    color: var(--text-light);
+}
+
+/* Responsive adjustments for filter bar */
+@media (max-width: 768px) {
+    .filter-controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .services-filter-bar {
+        padding: 1rem;
+    }
+}
+
+/* Sortable Table Headers */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 2rem !important;
+    transition: background-color 0.2s;
+}
+
+th.sortable:hover {
+    background-color: #f3f4f6 !important;
+}
+
+th.sortable .sort-indicator {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    color: var(--text-light);
+    font-size: 0.625rem;
+}
+
+th.sortable.sort-asc .sort-indicator .fa-arrow-up,
+th.sortable.sort-desc .sort-indicator .fa-arrow-down {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+th.sortable .sort-indicator i {
+    opacity: 0.3;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+th.sortable.sort-asc .sort-indicator .fa-arrow-up,
+th.sortable.sort-desc .sort-indicator .fa-arrow-down {
+    opacity: 1;
+}
+
 /* Pagination */
 .pagination {
     display: flex;
@@ -2314,37 +2390,4 @@ body {
     height: 1px;
     background: var(--border-light);
     margin: 0.25rem 0;
-}
-
-.dark-mode-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-}
-
-.toggle-switch {
-    position: relative;
-    width: 44px;
-    height: 24px;
-    background: var(--border-medium);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.toggle-switch.active {
-    background: var(--primary-blue);
-}
-
-.toggle-switch::after {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    background: white;
-    border-radius: 50%;
-    top: 3px;
-    left: 3px;
-    transition: var(--transition);
 }

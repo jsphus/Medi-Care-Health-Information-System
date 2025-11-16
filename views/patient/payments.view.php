@@ -245,6 +245,13 @@
         </div>
     <?php endif; ?>
     
+    <?php if ($success): ?>
+        <div class="alert alert-success" style="margin-bottom: 1.5rem; background: #d1fae5; color: #065f46; padding: 1rem; border-radius: 0.5rem;">
+            <i class="fas fa-check-circle"></i>
+            <span><?= htmlspecialchars($success) ?></span>
+        </div>
+    <?php endif; ?>
+    
     <!-- Summary Cards -->
     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
         <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -277,12 +284,74 @@
         </div>
     </div>
     
-    <?php if (empty($payments)): ?>
-        <div class="empty-state">
-            <div class="empty-state-icon"><i class="fas fa-credit-card"></i></div>
-            <div class="empty-state-text">No payment records found</div>
+    <!-- Unpaid Appointments Section -->
+    <?php if (!empty($unpaid_appointments)): ?>
+        <div style="margin-bottom: 2rem;">
+            <h2 style="font-size: 1.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;">Unpaid Appointments</h2>
+            <div class="payments-list">
+                <?php foreach ($unpaid_appointments as $appointment): ?>
+                    <?php
+                    $amount = 0;
+                    if (!empty($appointment['service_price'])) {
+                        $amount = floatval($appointment['service_price']);
+                    } elseif (!empty($appointment['doc_consultation_fee'])) {
+                        $amount = floatval($appointment['doc_consultation_fee']);
+                    }
+                    ?>
+                    <div class="payment-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="payment-header">
+                            <div>
+                                <div class="payment-amount">₱<?= number_format($amount, 2) ?></div>
+                                <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
+                                    Appointment: <?= htmlspecialchars($appointment['appointment_id']) ?>
+                                </div>
+                            </div>
+                            <span class="payment-status status-pending">Payment Required</span>
+                        </div>
+                        
+                        <div class="payment-details">
+                            <div class="detail-item">
+                                <i class="fas fa-calendar"></i>
+                                <span><strong>Date:</strong> <?= date('M j, Y', strtotime($appointment['appointment_date'])) ?></span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span><strong>Time:</strong> <?= date('g:i A', strtotime($appointment['appointment_time'])) ?></span>
+                            </div>
+                            <?php if ($appointment['service_name']): ?>
+                            <div class="detail-item">
+                                <i class="fas fa-stethoscope"></i>
+                                <span><strong>Service:</strong> <?= htmlspecialchars($appointment['service_name']) ?></span>
+                            </div>
+                            <?php endif; ?>
+                            <?php if ($appointment['doc_first_name']): ?>
+                            <div class="detail-item">
+                                <i class="fas fa-user-md"></i>
+                                <span><strong>Doctor:</strong> Dr. <?= htmlspecialchars($appointment['doc_first_name'] . ' ' . $appointment['doc_last_name']) ?></span>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div class="payment-actions">
+                            <button class="btn-action btn-primary" onclick="openPaymentModal('<?= htmlspecialchars($appointment['appointment_id']) ?>', <?= $amount ?>)">
+                                <i class="fas fa-credit-card"></i> Pay Now
+                            </button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
-    <?php else: ?>
+    <?php endif; ?>
+    
+    <!-- Payment Records Section -->
+    <div style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;">Payment Records</h2>
+        <?php if (empty($payments)): ?>
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="fas fa-credit-card"></i></div>
+                <div class="empty-state-text">No payment records found</div>
+            </div>
+        <?php else: ?>
         <div class="payments-list">
             <?php foreach ($payments as $payment): ?>
                 <?php
@@ -360,26 +429,109 @@ function printReceipt(paymentId) {
     window.location.href = '/patient/payments?receipt=' + paymentId + '&print=1';
 }
 
-function makePayment(paymentId) {
-    // TODO: Implement payment processing
-    showConfirm(
-        'Proceed to payment?',
-        'Confirm Payment',
-        'Proceed',
-        'Cancel',
-        'info'
-    ).then(confirmed => {
-        if (confirmed) {
-            alert('Payment processing will be implemented here for payment ID: ' + paymentId);
-        }
-    });
+function openPaymentModal(appointmentId, amount) {
+    document.getElementById('payment_appointment_id').value = appointmentId;
+    document.getElementById('payment_amount_display').textContent = '₱' + amount.toFixed(2);
+    document.getElementById('payment_appointment_id_display').textContent = appointmentId;
+    document.getElementById('paymentModal').style.display = 'flex';
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('paymentForm').reset();
 }
 
 function viewDetails(paymentId) {
     // TODO: Implement view details modal
     alert('View details for payment ID: ' + paymentId);
 }
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) {
+        closePaymentModal();
+    }
+}
 </script>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Make Payment</h2>
+            <button type="button" class="modal-close" onclick="closePaymentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="paymentForm" method="POST" action="">
+            <input type="hidden" name="action" value="create_payment">
+            <input type="hidden" name="appointment_id" id="payment_appointment_id">
+            
+            <div style="padding: 2rem;">
+                <div style="background: #f9fafb; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Appointment ID:</span>
+                        <strong id="payment_appointment_id_display"></strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Amount to Pay:</span>
+                        <strong style="font-size: 1.5rem; color: #1f2937;" id="payment_amount_display"></strong>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                        Payment Method: <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select name="payment_method_id" required class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                        <option value="">-- Select Payment Method --</option>
+                        <?php foreach ($payment_methods as $method): ?>
+                            <option value="<?= $method['method_id'] ?>"><?= htmlspecialchars($method['method_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                        Payment Reference (Optional)
+                    </label>
+                    <input type="text" name="payment_reference" class="form-control" 
+                           placeholder="e.g., Transaction ID, Receipt Number" 
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem;">
+                    <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                        Provide a reference number if paying via mobile payment or bank transfer
+                    </small>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
+                        Notes (Optional)
+                    </label>
+                    <textarea name="payment_notes" rows="3" class="form-control" 
+                              placeholder="Any additional information about your payment"
+                              style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; resize: vertical;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-action btn-primary" style="flex: 1; justify-content: center;">
+                        <i class="fas fa-credit-card"></i> Submit Payment
+                    </button>
+                    <button type="button" onclick="closePaymentModal()" class="btn-action btn-secondary" style="flex: 1; justify-content: center;">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+                
+                <div style="margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0; font-size: 0.875rem; color: #92400e;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Note:</strong> Your payment will be reviewed by the clinic. You will be notified once it's confirmed.
+                    </p>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
 

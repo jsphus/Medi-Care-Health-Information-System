@@ -91,6 +91,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
+    if ($action === 'update_status') {
+        $id = sanitize($_POST['id']);
+        $status_id = (int)$_POST['status_id'];
+        
+        try {
+            $stmt = $db->prepare("
+                UPDATE appointments 
+                SET status_id = :status_id, updated_at = NOW()
+                WHERE appointment_id = :id
+            ");
+            $stmt->execute([
+                'status_id' => $status_id,
+                'id' => $id
+            ]);
+            $success = 'Appointment status updated successfully';
+        } catch (PDOException $e) {
+            $error = 'Database error: ' . $e->getMessage();
+        }
+    }
+    
     if ($action === 'delete') {
         $id = sanitize($_POST['id']);
         try {
@@ -113,10 +133,11 @@ $filter_status = isset($_GET['status']) ? (int)$_GET['status'] : null;
 $filter_doctor = isset($_GET['doctor']) ? (int)$_GET['doctor'] : null;
 $filter_patient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch appointments with filters
 try {
@@ -157,20 +178,41 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'appointment_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'appointment_date';
+    }
+    
+    // Special handling for date sorting (also sort by time)
+    if ($sort_column === 'appointment_date') {
+        $order_by = "a.appointment_date $sort_order, a.appointment_time $sort_order";
+    } else {
+        $order_by = "a.$sort_column $sort_order";
+    }
+    
     // Fetch paginated results
     $stmt = $db->prepare("
         SELECT a.*, 
                p.pat_first_name, p.pat_last_name,
                d.doc_first_name, d.doc_last_name,
                s.service_name,
-               st.status_name, st.status_color
+               st.status_name, st.status_color,
+               up.profile_picture_url as patient_profile_picture,
+               ud.profile_picture_url as doctor_profile_picture
         FROM appointments a
         LEFT JOIN patients p ON a.pat_id = p.pat_id
         LEFT JOIN doctors d ON a.doc_id = d.doc_id
         LEFT JOIN services s ON a.service_id = s.service_id
         LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
+        LEFT JOIN users up ON up.pat_id = p.pat_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
-        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+        ORDER BY $order_by
         LIMIT :limit OFFSET :offset
     ");
     foreach ($params as $key => $value) {
@@ -192,7 +234,7 @@ try {
     $patients = $db->query("SELECT pat_id, pat_first_name, pat_last_name FROM patients ORDER BY pat_first_name")->fetchAll(PDO::FETCH_ASSOC);
     $doctors = $db->query("SELECT doc_id, doc_first_name, doc_last_name FROM doctors ORDER BY doc_first_name")->fetchAll(PDO::FETCH_ASSOC);
     $services = $db->query("SELECT service_id, service_name FROM services ORDER BY service_name")->fetchAll(PDO::FETCH_ASSOC);
-    $statuses = $db->query("SELECT status_id, status_name FROM appointment_statuses ORDER BY status_id")->fetchAll(PDO::FETCH_ASSOC);
+    $statuses = $db->query("SELECT status_id, status_name, status_color FROM appointment_statuses ORDER BY status_id")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $patients = [];
     $doctors = [];

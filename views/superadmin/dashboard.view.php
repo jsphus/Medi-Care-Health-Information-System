@@ -359,7 +359,18 @@
     <!-- Header -->
     <div class="dashboard-header">
         <div class="dashboard-header-left">
-            <h1 class="dashboard-welcome">Welcome back to Medi-Care!</h1>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.5rem; overflow: hidden; flex-shrink: 0;">
+                    <?php if (!empty($profile_picture_url)): ?>
+                        <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                    <?php else: ?>
+                        <?= strtoupper(substr($user_name ?? 'A', 0, 1)) ?>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <h1 class="dashboard-welcome">Welcome back, <?= htmlspecialchars($user_name) ?>! 👋</h1>
+                </div>
+            </div>
             <div class="dashboard-date"><?= date('l, F d, Y') ?></div>
         </div>
         <div class="dashboard-header-right">
@@ -373,7 +384,7 @@
     <!-- KPI Cards -->
     <div class="kpi-grid">
         <div class="kpi-card">
-            <div class="kpi-label">Total Patient (Monthly)</div>
+            <div class="kpi-label">Total Patient</div>
             <div class="kpi-value"><?= number_format($current_patients) ?></div>
             <div class="kpi-trend <?= $patients_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $patients_change >= 0 ? 'up' : 'down' ?>"></i>
@@ -383,7 +394,7 @@
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">New Appointments (Monthly)</div>
+            <div class="kpi-label">New Appointments</div>
             <div class="kpi-value"><?= number_format($current_appointments) ?></div>
             <div class="kpi-trend <?= $appointments_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $appointments_change >= 0 ? 'up' : 'down' ?>"></i>
@@ -393,7 +404,7 @@
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Medical Records (Monthly)</div>
+            <div class="kpi-label">Medical Records</div>
             <div class="kpi-value"><?= number_format($current_records) ?></div>
             <div class="kpi-trend <?= $records_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $records_change >= 0 ? 'up' : 'down' ?>"></i>
@@ -424,7 +435,7 @@
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Total Amount (Monthly)</div>
+            <div class="kpi-label">Total Amount</div>
             <div class="kpi-value">₱<?= number_format($total_amount_this_month, 0) ?></div>
             <div class="kpi-trend-text" style="margin-top: 0.5rem; color: #6b7280;">
                 This month
@@ -432,7 +443,7 @@
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Paid (Monthly)</div>
+            <div class="kpi-label">Paid</div>
             <div class="kpi-value"><?= number_format($paid_this_month) ?></div>
             <div class="kpi-trend positive">
                 <i class="fas fa-check-circle"></i>
@@ -441,7 +452,7 @@
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Pending (Monthly)</div>
+            <div class="kpi-label">Pending</div>
             <div class="kpi-value"><?= number_format($pending_this_month) ?></div>
             <div class="kpi-trend negative">
                 <i class="fas fa-clock"></i>
@@ -571,7 +582,7 @@
                             <?= strtoupper(substr($staff['doc_first_name'] ?? 'D', 0, 1)) ?>
                         </div>
                         <div class="staff-info">
-                            <div class="staff-name">Dr. <?= htmlspecialchars($staff['doc_first_name'] . ' ' . $staff['doc_last_name']) ?></div>
+                            <div class="staff-name">Dr. <?= htmlspecialchars(($staff['doc_first_name'] ?? '') . ' ' . ($staff['doc_last_name'] ?? '')) ?></div>
                             <div class="staff-role"><?= htmlspecialchars($staff['spec_name'] ?? 'General Practice') ?></div>
                         </div>
                         <i class="fas fa-chevron-right staff-arrow"></i>

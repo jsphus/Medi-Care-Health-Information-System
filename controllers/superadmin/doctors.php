@@ -206,10 +206,11 @@ $spec_filter = isset($_GET['spec_id']) ? (int)$_GET['spec_id'] : null;
 $status_filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
 $spec_name_filter = '';
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all doctors with filters
 try {
@@ -240,13 +241,30 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['doc_first_name', 'doc_last_name', 'doc_email', 'doc_phone', 'doc_specialization_id', 'doc_license_number', 'doc_consultation_fee', 'doc_status', 'created_at'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'created_at';
+    }
+    
+    // Special handling for name sorting
+    if ($sort_column === 'doc_first_name') {
+        $order_by = "doc_first_name $sort_order, doc_last_name $sort_order";
+    } else {
+        $order_by = "d.$sort_column $sort_order";
+    }
+    
     // Fetch paginated results
     $stmt = $db->prepare("
         SELECT d.*, s.spec_name 
         FROM doctors d
         LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
         $where_clause
-        ORDER BY d.created_at DESC
+        ORDER BY $order_by
         LIMIT :limit OFFSET :offset
     ");
     foreach ($params as $key => $value) {

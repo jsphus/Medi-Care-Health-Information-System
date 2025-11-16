@@ -32,11 +32,13 @@ try {
         SELECT mr.*, 
                d.doc_first_name, d.doc_last_name, d.doc_specialization_id,
                a.appointment_date, a.appointment_id, a.appointment_time,
-               sp.spec_name
+               sp.spec_name,
+               ud.profile_picture_url as doctor_profile_picture
         FROM medical_records mr
         LEFT JOIN doctors d ON mr.doc_id = d.doc_id
         LEFT JOIN appointments a ON mr.appointment_id = a.appointment_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY mr.record_date DESC
     ");

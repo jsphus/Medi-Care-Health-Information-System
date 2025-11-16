@@ -30,21 +30,21 @@
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #3498db;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Staff Users</span>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">Staff</span>
         </div>
         <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['staff'] ?? 0 ?></div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Doctor Users</span>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">Doctors</span>
         </div>
         <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['doctor'] ?? 0 ?></div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #9b59b6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Patient Users</span>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">Patients</span>
         </div>
         <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['patient'] ?? 0 ?></div>
     </div>
@@ -54,11 +54,67 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Users</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Users</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
         <button type="button" class="btn btn-primary" onclick="openAddUserModal()" style="display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add User</span>
         </button>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Users
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user" style="margin-right: 0.25rem;"></i>Full Name
+                </label>
+                <input type="text" id="filterName" class="filter-input" placeholder="Search name..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-envelope" style="margin-right: 0.25rem;"></i>Email
+                </label>
+                <input type="text" id="filterEmail" class="filter-input" placeholder="Search email..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-phone" style="margin-right: 0.25rem;"></i>Phone Number
+                </label>
+                <input type="text" id="filterPhone" class="filter-input" placeholder="Search phone..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user-tag" style="margin-right: 0.25rem;"></i>Role
+                </label>
+                <select id="filterRole" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Roles</option>
+                    <option value="super admin">Super Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="patient">Patient</option>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                </label>
+                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+        </div>
     </div>
 
     <?php if (empty($users)): ?>
@@ -71,25 +127,53 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'created_at';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= $current_sort === 'full_name' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('full_name')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Full Name
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'user_email' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('user_email')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Email
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Phone Number
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('created_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Date Created
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'role' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('role')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Role
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <?php foreach ($users as $user): ?>
                         <?php
                             // Determine role
@@ -119,13 +203,23 @@
                             // Get first letter for avatar
                             $firstLetter = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
                         ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
+                        <tr class="table-row" 
+                            data-name="<?= htmlspecialchars(strtolower($user['full_name'] ?? '')) ?>"
+                            data-email="<?= htmlspecialchars(strtolower($user['user_email'] ?? '')) ?>"
+                            data-phone="<?= htmlspecialchars(strtolower($phone_display)) ?>"
+                            data-role="<?= htmlspecialchars(strtolower($role)) ?>"
+                            data-date="<?= !empty($user['created_at']) ? date('Y-m-d', strtotime($user['created_at'])) : '' ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= $firstLetter ?>
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
+                                        <?php if (!empty($user['profile_picture_url'])): ?>
+                                            <img src="<?= htmlspecialchars($user['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <?= $firstLetter ?>
+                                        <?php endif; ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars($user['full_name'] ?? 'N/A') ?></strong>
                                 </div>
@@ -148,9 +242,9 @@
                                     </button>
                                     <button class="btn btn-sm view-user-btn" 
                                             data-user="<?= base64_encode(json_encode($user)) ?>" 
-                                            title="More"
+                                            title="View"
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this user?');">
                                         <input type="hidden" name="action" value="delete">
@@ -170,7 +264,7 @@
 
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
                 Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
             </div>
@@ -932,6 +1026,181 @@ function applyUserFilters() {
     
     window.location.href = '/superadmin/users' + (params.toString() ? '?' + params.toString() : '');
 }
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    url.searchParams.delete('page'); // Reset to page 1 when sorting
+    
+    window.location.href = url.toString();
+}
+
+// Table Filtering Functions
+function filterTable() {
+    const nameFilter = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
+    const emailFilter = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
+    const phoneFilter = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
+    const roleFilter = document.getElementById('filterRole')?.value.toLowerCase().trim() || '';
+    const dateFilter = document.getElementById('filterDate')?.value || '';
+    
+    const rows = document.querySelectorAll('tbody .table-row');
+    const paginationContainer = document.getElementById('paginationContainer');
+    let visibleCount = 0;
+    
+    // Check if any filters are active
+    const hasActiveFilters = nameFilter || emailFilter || phoneFilter || roleFilter || dateFilter;
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        const role = row.getAttribute('data-role') || '';
+        const date = row.getAttribute('data-date') || '';
+        
+        const matchesName = !nameFilter || name.includes(nameFilter);
+        const matchesEmail = !emailFilter || email.includes(emailFilter);
+        const matchesPhone = !phoneFilter || phone.includes(phoneFilter);
+        const matchesRole = !roleFilter || role === roleFilter;
+        const matchesDate = !dateFilter || date === dateFilter;
+        
+        if (matchesName && matchesEmail && matchesPhone && matchesRole && matchesDate) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide pagination based on filter activity
+    if (hasActiveFilters) {
+        if (paginationContainer) {
+            paginationContainer.style.display = 'none';
+        }
+        
+        // Show filter active message
+        let filterActiveMessage = document.getElementById('filterActiveMessage');
+        if (!filterActiveMessage) {
+            filterActiveMessage = document.createElement('div');
+            filterActiveMessage.id = 'filterActiveMessage';
+            filterActiveMessage.style.cssText = 'padding: 1.5rem; border-top: 1px solid var(--border-light); background: var(--primary-blue-bg); display: flex; align-items: center; gap: 0.75rem; color: var(--primary-blue-dark); font-size: 0.875rem;';
+            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle"></i><span>Filters are active. Showing ' + visibleCount + ' result(s) from all pages.</span>';
+            const tableContainer = document.getElementById('tableBody').parentElement.parentElement;
+            tableContainer.parentElement.insertBefore(filterActiveMessage, paginationContainer || tableContainer.nextSibling);
+        } else {
+            filterActiveMessage.querySelector('span').textContent = 'Filters are active. Showing ' + visibleCount + ' result(s) from all pages.';
+        }
+    } else {
+        if (paginationContainer) {
+            paginationContainer.style.display = 'flex';
+        }
+        const filterActiveMessage = document.getElementById('filterActiveMessage');
+        if (filterActiveMessage) {
+            filterActiveMessage.remove();
+        }
+    }
+    
+    // Show "no results" message if needed
+    const tbody = document.getElementById('tableBody');
+    if (visibleCount === 0 && hasActiveFilters) {
+        let noResultsMsg = tbody.querySelector('.no-results-message');
+        if (!noResultsMsg) {
+            noResultsMsg = document.createElement('tr');
+            noResultsMsg.className = 'no-results-message';
+            const colCount = document.querySelectorAll('thead th').length;
+            noResultsMsg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No users match the current filters.</p></td>`;
+            tbody.appendChild(noResultsMsg);
+        }
+    } else {
+        const noResultsMsg = tbody.querySelector('.no-results-message');
+        if (noResultsMsg) {
+            noResultsMsg.remove();
+        }
+    }
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar && toggleBtn) {
+        if (filterBar.style.display === 'none') {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            // Load all results when filter is opened
+            loadAllResults();
+        } else {
+            filterBar.style.display = 'none';
+            toggleBtn.classList.remove('active');
+            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            resetToPaginatedView();
+        }
+    }
+}
+
+function resetTableFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterEmail').value = '';
+    document.getElementById('filterPhone').value = '';
+    document.getElementById('filterRole').value = '';
+    document.getElementById('filterDate').value = '';
+    filterTable();
+}
+
+function loadAllResults() {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('all_results') !== '1') {
+        url.searchParams.set('all_results', '1');
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    }
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('all_results') === '1') {
+        url.searchParams.delete('all_results');
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+    } else {
+        filterTable();
+    }
+}
+
+// Initialize filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterRole', 'filterDate'];
+    filterInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        }
+    });
+    
+    // Check if we're in all_results mode
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('all_results') === '1') {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar && toggleBtn) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+        }
+    }
+    
+    filterTable();
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

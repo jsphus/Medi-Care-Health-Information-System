@@ -1,7 +1,17 @@
 <?php require_once __DIR__ . '/../partials/header.php'; ?>
 
-<div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
+<div class="page-header" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.5rem; overflow: hidden; flex-shrink: 0;">
+        <?php if (!empty($profile_picture_url)): ?>
+            <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+        <?php else: ?>
+            <?= strtoupper(substr($staff_name ?? 'S', 0, 1)) ?>
+        <?php endif; ?>
+    </div>
+    <div>
+        <h1 class="page-title">Welcome back, <?= htmlspecialchars($staff_name) ?>! 👋</h1>
+        <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">Here's what's happening in your dashboard today.</p>
+    </div>
 </div>
 
 <!-- Statistics Cards -->

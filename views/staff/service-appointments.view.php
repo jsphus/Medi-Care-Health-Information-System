@@ -93,9 +93,34 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Appointment ID</th>
-                        <th>Date</th>
-                        <th>Time</th>
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'appointment_date';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= $current_sort === 'appointment_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('appointment_id')">
+                            Appointment ID
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'appointment_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('appointment_date')">
+                            Date
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'appointment_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('appointment_time')">
+                            Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th>Patient</th>
                         <th>Contact</th>
                         <th>Doctor</th>
@@ -193,6 +218,24 @@ function filterByCategory(category) {
     } else {
         window.location.href = window.location.pathname + '?status=' + category;
     }
+}
+
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    
+    window.location.href = url.toString();
 }
 </script>
 

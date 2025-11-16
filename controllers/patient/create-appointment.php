@@ -52,40 +52,58 @@ if ($reschedule_id) {
 
 // Handle appointment creation/update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $reschedule_appointment_id = isset($_POST['reschedule_id']) ? sanitize($_POST['reschedule_id']) : null;
+    $action = $_POST['action'] ?? '';
     
-    // If rescheduling, get doctor_id and service_id from existing appointment (not from POST)
-    if ($reschedule_appointment_id) {
-        try {
-            $stmt = $db->prepare("SELECT doc_id, service_id FROM appointments WHERE appointment_id = :appointment_id AND pat_id = :patient_id");
-            $stmt->execute(['appointment_id' => $reschedule_appointment_id, 'patient_id' => $patient_id]);
-            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$existing) {
-                $error = 'You do not have permission to reschedule this appointment';
-            } else {
-                $doctor_id = $existing['doc_id'];
-                $service_id = $existing['service_id'];
-            }
-        } catch (PDOException $e) {
-            $error = 'Failed to load appointment: ' . $e->getMessage();
-        }
-    } else {
-        // For new appointments, get from POST
-        $doctor_id = (int)$_POST['doctor_id'];
-        $service_id = !empty($_POST['service_id']) ? (int)$_POST['service_id'] : null;
+    // If action is 'review', store data in session and redirect to review page
+    if ($action === 'review') {
+        // Store appointment data in session for review
+        $_SESSION['appointment_review'] = [
+            'doctor_id' => (int)$_POST['doctor_id'],
+            'service_id' => !empty($_POST['service_id']) ? (int)$_POST['service_id'] : null,
+            'appointment_date' => $_POST['appointment_date'] ?? '',
+            'appointment_time' => $_POST['appointment_time'] ?? '',
+            'notes' => sanitize($_POST['notes'] ?? '')
+        ];
+        header('Location: /patient/appointment-review');
+        exit;
     }
     
-    $appointment_date = $_POST['appointment_date'];
-    $appointment_time = $_POST['appointment_time'];
-    $notes = sanitize($_POST['notes'] ?? '');
-    
-    if (empty($doctor_id) || empty($appointment_date) || empty($appointment_time)) {
-        $error = 'Doctor, date, and time are required';
-    } elseif (!empty($error)) {
-        // Error already set above
-    } else {
-        try {
+    // If action is 'confirm', proceed with appointment creation
+    if ($action === 'confirm') {
+        $reschedule_appointment_id = isset($_POST['reschedule_id']) ? sanitize($_POST['reschedule_id']) : null;
+        
+        // If rescheduling, get doctor_id and service_id from existing appointment (not from POST)
+        if ($reschedule_appointment_id) {
+            try {
+                $stmt = $db->prepare("SELECT doc_id, service_id FROM appointments WHERE appointment_id = :appointment_id AND pat_id = :patient_id");
+                $stmt->execute(['appointment_id' => $reschedule_appointment_id, 'patient_id' => $patient_id]);
+                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$existing) {
+                    $error = 'You do not have permission to reschedule this appointment';
+                } else {
+                    $doctor_id = $existing['doc_id'];
+                    $service_id = $existing['service_id'];
+                }
+            } catch (PDOException $e) {
+                $error = 'Failed to load appointment: ' . $e->getMessage();
+            }
+        } else {
+            // For new appointments, get from POST
+            $doctor_id = (int)$_POST['doctor_id'];
+            $service_id = !empty($_POST['service_id']) ? (int)$_POST['service_id'] : null;
+        }
+        
+        $appointment_date = $_POST['appointment_date'];
+        $appointment_time = $_POST['appointment_time'];
+        $notes = sanitize($_POST['notes'] ?? '');
+        
+        if (empty($doctor_id) || empty($appointment_date) || empty($appointment_time)) {
+            $error = 'Doctor, date, and time are required';
+        }
+        
+        if (empty($error)) {
+            try {
             // Get service duration or default to 30
             $duration = 30;
             if ($service_id) {
@@ -153,10 +171,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'notes' => $notes
                 ]);
                 
-                $success = "Appointment created successfully! Your appointment ID is: <strong>$appointment_id</strong>. Please keep this for your reference.";
+                // Clear review session
+                unset($_SESSION['appointment_review']);
+                
+                // Redirect to payment page with appointment ID
+                header('Location: /patient/payment?appointment_id=' . urlencode($appointment_id));
+                exit;
             }
-        } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
         }
     }
 }

@@ -87,6 +87,12 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button class="btn btn-sm view-status-btn" 
+                                            data-status="<?= base64_encode(json_encode($status)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure? This will affect <?= isset($status['payment_count']) ? $status['payment_count'] : 0 ?> payment(s).');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $status['payment_status_id'] ?>">
@@ -95,11 +101,6 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <button class="btn btn-sm" 
-                                            title="More"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>

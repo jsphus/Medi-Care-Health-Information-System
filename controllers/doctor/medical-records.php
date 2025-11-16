@@ -110,15 +110,29 @@ try {
 
     $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'record_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['record_date', 'record_id', 'follow_up_date'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'record_date';
+    }
+    
+    $order_by = "mr.$sort_column $sort_order";
+
     $stmt = $db->prepare("
         SELECT mr.*, 
                p.pat_first_name, p.pat_last_name,
-               a.appointment_date
+               a.appointment_date,
+               up.profile_picture_url as patient_profile_picture
         FROM medical_records mr
         LEFT JOIN patients p ON mr.pat_id = p.pat_id
         LEFT JOIN appointments a ON mr.appointment_id = a.appointment_id
+        LEFT JOIN users up ON up.pat_id = p.pat_id
         $where_clause
-        ORDER BY mr.record_date DESC
+        ORDER BY $order_by
     ");
     $stmt->execute($params);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);

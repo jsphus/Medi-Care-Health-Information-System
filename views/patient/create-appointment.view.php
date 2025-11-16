@@ -225,10 +225,12 @@
                 <p><strong>Note:</strong> Your appointment request will be reviewed. You will receive an appointment ID immediately after submission. Please keep this ID for your reference.</p>
             </div>
             
+            <input type="hidden" name="action" value="review">
+            
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success" style="font-size: 1rem; padding: 0.75rem 2rem;">
-                    <i class="fas fa-calendar-check"></i>
-                    <span><?= $reschedule_id && $existing_appointment ? 'Reschedule Appointment' : 'Book Appointment' ?></span>
+                    <i class="fas fa-arrow-right"></i>
+                    <span><?= $reschedule_id && $existing_appointment ? 'Review Reschedule' : 'Review Appointment' ?></span>
                 </button>
                 <?php if ($reschedule_id && $existing_appointment): ?>
                 <a href="/patient/appointments" class="btn btn-secondary" style="font-size: 1rem; padding: 0.75rem 2rem; margin-left: 0.5rem;">

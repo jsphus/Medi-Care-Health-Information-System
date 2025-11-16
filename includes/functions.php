@@ -45,3 +45,51 @@ function formatPhoneNumber($phone) {
     return $digits;
 }
 
+/**
+ * Get user profile picture URL or return default avatar
+ * @param int $user_id User ID
+ * @param object $db Database connection
+ * @param string $name Name for default avatar
+ * @param array $options Image transformation options
+ * @return string Profile picture URL or default avatar HTML
+ */
+function getUserProfilePicture($user_id, $db, $name = '', $options = []) {
+    try {
+        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user && !empty($user['profile_picture_url'])) {
+            // If options provided, transform the image
+            if (!empty($options) && class_exists('CloudinaryUpload')) {
+                $cloudinary = new CloudinaryUpload();
+                $publicId = $cloudinary->extractPublicId($user['profile_picture_url']);
+                if ($publicId) {
+                    return $cloudinary->transformImage($publicId, $options);
+                }
+            }
+            return $user['profile_picture_url'];
+        }
+    } catch (PDOException $e) {
+        // Fall through to default avatar
+    }
+    
+    // Return null to indicate no profile picture (view will handle default)
+    return null;
+}
+
+/**
+ * Generate default avatar HTML with first letter
+ * @param string $name Name to extract first letter from
+ * @param int $size Size in pixels (default 80)
+ * @return string HTML for default avatar
+ */
+function getDefaultAvatar($name, $size = 80) {
+    $firstLetter = strtoupper(substr(trim($name), 0, 1));
+    if (empty($firstLetter)) {
+        $firstLetter = '?';
+    }
+    
+    return $firstLetter;
+}
+

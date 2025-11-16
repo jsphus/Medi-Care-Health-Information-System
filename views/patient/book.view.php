@@ -11,18 +11,24 @@
         margin-bottom: 2rem;
     }
     
+    .page-header-top {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
     .page-title {
         font-size: 2rem;
         font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        margin: 0;
     }
     
     .page-subtitle {
-        color: #6b7280;
-        font-size: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        margin: 0;
     }
-    
     
     .doctors-grid {
         display: grid;
@@ -33,10 +39,10 @@
     
     .doctor-card {
         background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 0.75rem;
+        border: 1px solid #f3f4f6;
+        border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         transition: all 0.2s;
         cursor: pointer;
         text-decoration: none;
@@ -49,7 +55,7 @@
     
     .doctor-card:hover,
     .doctor-card:focus {
-        border-color: var(--primary-blue);
+        border-color: #3b82f6;
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
         transform: translateY(-2px);
     }
@@ -71,21 +77,21 @@
     
     .doctor-name {
         font-size: 1.125rem;
-        font-weight: 700;
-        color: #1f2937;
+        font-weight: 600;
+        color: var(--text-primary);
         margin-bottom: 0.5rem;
     }
     
     .doctor-specialization {
         font-size: 0.875rem;
-        color: #6b7280;
+        color: var(--text-secondary);
         margin-bottom: 1rem;
     }
     
     .doctor-fee {
         font-size: 1rem;
         font-weight: 600;
-        color: var(--primary-blue);
+        color: #3b82f6;
         margin-top: auto;
     }
     
@@ -93,8 +99,9 @@
         text-align: center;
         padding: 4rem 1rem;
         background: white;
-        border-radius: 0.75rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid #f3f4f6;
     }
     
     .empty-state-icon {
@@ -105,7 +112,22 @@
     
     .empty-state-text {
         font-size: 1.125rem;
-        color: #6b7280;
+        color: var(--text-secondary);
+    }
+    
+    .alert-modern {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .alert-modern.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
     }
     
     @media (max-width: 768px) {
@@ -131,12 +153,14 @@
 
 <div class="book-page">
     <div class="page-header">
-        <h1 class="page-title">Book Appointment</h1>
-        <p class="page-subtitle">Browse our doctors and select one to book an appointment</p>
+        <div class="page-header-top">
+            <h1 class="page-title">Book Appointment</h1>
+            <p class="page-subtitle">Browse our doctors and select one to book an appointment</p>
+        </div>
     </div>
     
     <?php if ($error): ?>
-        <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+        <div class="alert-modern error">
             <i class="fas fa-exclamation-triangle"></i>
             <span><?= htmlspecialchars($error) ?></span>
         </div>

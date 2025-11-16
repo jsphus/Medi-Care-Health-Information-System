@@ -30,11 +30,11 @@ if (isset($_SESSION['user_id'])):
     
     // Try to get full name from session
     if (isset($_SESSION['pat_first_name']) && isset($_SESSION['pat_last_name'])) {
-        $userName = $_SESSION['pat_first_name'] . ' ' . $_SESSION['pat_last_name'];
-        $userInitial = strtoupper(substr($_SESSION['pat_first_name'], 0, 1));
+        $userName = ($_SESSION['pat_first_name'] ?? '') . ' ' . ($_SESSION['pat_last_name'] ?? '');
+        $userInitial = strtoupper(substr($_SESSION['pat_first_name'] ?? 'P', 0, 1));
     } elseif (isset($_SESSION['doc_first_name']) && isset($_SESSION['doc_last_name'])) {
-        $userName = $_SESSION['doc_first_name'] . ' ' . $_SESSION['doc_last_name'];
-        $userInitial = strtoupper(substr($_SESSION['doc_first_name'], 0, 1));
+        $userName = ($_SESSION['doc_first_name'] ?? '') . ' ' . ($_SESSION['doc_last_name'] ?? '');
+        $userInitial = strtoupper(substr($_SESSION['doc_first_name'] ?? 'D', 0, 1));
     }
     
     include __DIR__ . '/sidebar.php';

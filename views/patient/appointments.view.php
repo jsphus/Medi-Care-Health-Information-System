@@ -67,7 +67,13 @@
             <div class="reception-card">
                 <div class="reception-header">
                     <div class="reception-doctor">
-                        <div class="doctor-avatar"><?= $docInitial ?></div>
+                        <div class="doctor-avatar" style="overflow: hidden;">
+                            <?php if (!empty($apt['doctor_profile_picture'])): ?>
+                                <img src="<?= htmlspecialchars($apt['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <?= $docInitial ?>
+                            <?php endif; ?>
+                        </div>
                         <div class="doctor-info">
                             <h3><?= $docName ?></h3>
                             <p><?= $specName ?></p>
@@ -183,7 +189,13 @@
             <div class="reception-card">
                 <div class="reception-header">
                     <div class="reception-doctor">
-                        <div class="doctor-avatar"><?= $docInitial ?></div>
+                        <div class="doctor-avatar" style="overflow: hidden;">
+                            <?php if (!empty($apt['doctor_profile_picture'])): ?>
+                                <img src="<?= htmlspecialchars($apt['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <?= $docInitial ?>
+                            <?php endif; ?>
+                        </div>
                         <div class="doctor-info">
                             <h3><?= $docName ?></h3>
                             <p><?= $specName ?></p>

@@ -28,29 +28,6 @@
     </div>
 <?php endif; ?>
 
-<!-- Search and Filter Bar -->
-<div class="search-filter-bar-modern">
-    <button type="button" class="filter-toggle-btn" onclick="toggleFilterSidebar()">
-        <i class="fas fa-filter"></i>
-        <span>Filter</span>
-        <i class="fas fa-chevron-down"></i>
-    </button>
-    <form method="GET" style="flex: 1; display: flex; align-items: center; gap: 0.75rem;">
-        <div class="search-input-wrapper">
-            <i class="fas fa-search"></i>
-            <input type="text" name="search" class="search-input-modern" 
-                   value="<?= htmlspecialchars($search_query ?? '') ?>" 
-                   placeholder="Search Schedule...">
-        </div>
-    </form>
-    <div class="category-tabs">
-        <button type="button" class="category-tab active" data-category="all">All</button>
-        <button type="button" class="category-tab" data-category="today">Today</button>
-        <button type="button" class="category-tab" data-category="upcoming">Upcoming</button>
-        <button type="button" class="category-tab" data-category="available">Available</button>
-    </div>
-</div>
-
 <!-- Today's Schedules -->
 <?php if (!empty($today_schedules)): ?>
     <div class="card" style="border-left: 4px solid var(--primary-blue);">
@@ -92,8 +69,74 @@
 
 <!-- All Schedules -->
 <div class="card">
-    <div class="card-header">
-        <h2 class="card-title">All Doctor Schedules</h2>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 class="card-title" style="margin: 0;">All Doctor Schedules</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Schedules
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user-md" style="margin-right: 0.25rem;"></i>Doctor Name
+                </label>
+                <input type="text" id="filterDoctor" class="filter-input" placeholder="Search doctor..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-graduation-cap" style="margin-right: 0.25rem;"></i>Specialization
+                </label>
+                <input type="text" id="filterSpecialization" class="filter-input" placeholder="Search specialization..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                </label>
+                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Start Time
+                </label>
+                <input type="time" id="filterStartTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>End Time
+                </label>
+                <input type="time" id="filterEndTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-users" style="margin-right: 0.25rem;"></i>Min Max Appointments
+                </label>
+                <input type="number" id="filterMinAppointments" class="filter-input" placeholder="Min..." min="0" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Available
+                </label>
+                <select id="filterAvailable" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        </div>
     </div>
     <?php if (empty($schedules)): ?>
         <div class="empty-state">
@@ -105,20 +148,52 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'schedule_date';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= $current_sort === 'schedule_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('schedule_date')">
+                            Date
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th>Doctor</th>
                         <th>Specialization</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
+                        <th class="sortable <?= $current_sort === 'start_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('start_time')">
+                            Start Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'end_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('end_time')">
+                            End Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th>Max Appointments</th>
                         <th>Available</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <?php foreach ($schedules as $sched): ?>
-                        <tr>
-                            <td><strong><?= htmlspecialchars($sched['schedule_date']) ?></strong></td>
+                        <tr class="table-row" 
+                            data-doctor="<?= htmlspecialchars(strtolower(($sched['doc_first_name'] ?? '') . ' ' . ($sched['doc_last_name'] ?? ''))) ?>"
+                            data-specialization="<?= htmlspecialchars(strtolower($sched['spec_name'] ?? '')) ?>"
+                            data-date="<?= !empty($sched['schedule_date']) ? date('Y-m-d', strtotime($sched['schedule_date'])) : '' ?>"
+                            data-start-time="<?= htmlspecialchars($sched['start_time'] ?? '') ?>"
+                            data-end-time="<?= htmlspecialchars($sched['end_time'] ?? '') ?>"
+                            data-max-appointments="<?= (int)($sched['max_appointments'] ?? 0) ?>"
+                            data-available="<?= $sched['is_available'] ? 'yes' : 'no' ?>">
+                            <td><strong><?= $sched['schedule_date'] ? date('d M Y', strtotime($sched['schedule_date'])) : 'N/A' ?></strong></td>
                             <td>Dr. <?= htmlspecialchars($sched['doc_first_name'] . ' ' . $sched['doc_last_name']) ?></td>
                             <td><?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($sched['start_time']) ?></td>
@@ -147,7 +222,8 @@
         </div>
         
         <!-- Pagination -->
-        <div class="pagination">
+        <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div id="paginationContainer" class="pagination">
             <div class="pagination-controls">
                 <button class="pagination-btn" disabled>
                     <i class="fas fa-angle-double-left"></i>
@@ -166,157 +242,167 @@
                 </button>
             </div>
         </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
 <script>
-// Category tab functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    categoryTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            categoryTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            const category = this.dataset.category;
-            filterByCategory(category);
-        });
-    });
-});
-
-function filterByCategory(category) {
-    if (category === 'all') {
-        window.location.href = '/superadmin/schedules';
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
     } else {
-        window.location.href = '/superadmin/schedules?filter=' + category;
+        url.searchParams.set('order', 'ASC');
     }
+    
+    url.searchParams.set('sort', column);
+    url.searchParams.delete('page'); // Reset to page 1 when sorting
+    
+    window.location.href = url.toString();
 }
 
-function applyScheduleFilters() {
-    const filters = {
-        doctor: document.querySelector('input[name="filter_doctor"]:checked')?.value || '',
-        available: document.querySelector('input[name="filter_available"]:checked')?.value || ''
-    };
-    const params = new URLSearchParams();
-    if (filters.doctor) params.append('doctor', filters.doctor);
-    if (filters.available) params.append('available', filters.available);
-    const url = '/superadmin/schedules' + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = url;
-}
-
-function clearAllFilters() {
-    document.querySelectorAll('.filter-sidebar input[type="radio"]').forEach(radio => {
-        radio.checked = false;
-    });
-    const doctorSearch = document.getElementById('doctorSearch');
-    if (doctorSearch) doctorSearch.value = '';
-}
-</script>
-
-<!-- Filter Sidebar -->
-<div class="filter-sidebar" id="filterSidebar">
-    <div class="filter-sidebar-header">
-        <h3>Filters</h3>
-        <button type="button" class="filter-sidebar-close" onclick="toggleFilterSidebar()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
+// Filtering Functions
+function filterTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!tbody) return;
     
-    <!-- Doctor Filter -->
-    <?php if (!empty($filter_doctors)): ?>
-    <div class="filter-section">
-        <div class="filter-section-header" onclick="toggleFilterSection('doctor')">
-            <h4 class="filter-section-title">Doctor</h4>
-            <button type="button" class="filter-section-toggle" id="doctorToggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div class="filter-section-content" id="doctorContent">
-            <input type="text" class="filter-search-input" placeholder="Search Doctor" id="doctorSearch">
-            <div class="filter-radio-group" id="doctorList">
-                <?php foreach ($filter_doctors as $doctor): ?>
-                    <div class="filter-radio-item">
-                        <input type="radio" name="filter_doctor" id="doctor_<?= $doctor['doc_id'] ?>" value="<?= $doctor['doc_id'] ?>">
-                        <label for="doctor_<?= $doctor['doc_id'] ?>">Dr. <?= htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']) ?></label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
+    const rows = tbody.querySelectorAll('.table-row');
+    const filterDoctor = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
+    const filterSpecialization = document.getElementById('filterSpecialization')?.value.toLowerCase().trim() || '';
+    const filterDate = document.getElementById('filterDate')?.value || '';
+    const filterStartTime = document.getElementById('filterStartTime')?.value || '';
+    const filterEndTime = document.getElementById('filterEndTime')?.value || '';
+    const filterMinAppointments = document.getElementById('filterMinAppointments')?.value ? parseInt(document.getElementById('filterMinAppointments').value) : null;
+    const filterAvailable = document.getElementById('filterAvailable')?.value.toLowerCase().trim() || '';
     
-    <!-- Availability Filter -->
-    <div class="filter-section">
-        <div class="filter-section-header" onclick="toggleFilterSection('available')">
-            <h4 class="filter-section-title">Availability</h4>
-            <button type="button" class="filter-section-toggle" id="availableToggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div class="filter-section-content" id="availableContent">
-            <div class="filter-radio-group">
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_available" id="available_yes" value="yes">
-                    <label for="available_yes">Available</label>
-                </div>
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_available" id="available_no" value="no">
-                    <label for="available_no">Not Available</label>
-                </div>
-            </div>
-        </div>
-    </div>
+    let visibleCount = 0;
+    let hasActiveFilters = filterDoctor || filterSpecialization || filterDate || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
     
-    <!-- Filter Actions -->
-    <div class="filter-sidebar-actions">
-        <button type="button" class="filter-clear-btn" onclick="clearAllFilters()">Clear all</button>
-        <button type="button" class="filter-apply-btn" onclick="applyScheduleFilters()">Apply all filter</button>
-    </div>
-</div>
-
-<script>
-function toggleFilterSidebar() {
-    const sidebar = document.getElementById('filterSidebar');
-    const mainContent = document.querySelector('.main-content');
-    const filterBtn = document.querySelector('.filter-toggle-btn');
-    
-    sidebar.classList.toggle('active');
-    if (mainContent) {
-        mainContent.classList.toggle('filter-active');
-    }
-    if (filterBtn) {
-        filterBtn.classList.toggle('active');
-    }
-}
-
-function toggleFilterSection(sectionId) {
-    const content = document.getElementById(sectionId + 'Content');
-    const toggle = document.getElementById(sectionId + 'Toggle');
-    
-    if (content && toggle) {
-        content.classList.toggle('collapsed');
-        const icon = toggle.querySelector('i');
-        if (icon) {
-            icon.classList.toggle('fa-chevron-up');
-            icon.classList.toggle('fa-chevron-down');
+    rows.forEach(row => {
+        const doctor = row.getAttribute('data-doctor') || '';
+        const specialization = row.getAttribute('data-specialization') || '';
+        const date = row.getAttribute('data-date') || '';
+        const startTime = row.getAttribute('data-start-time') || '';
+        const endTime = row.getAttribute('data-end-time') || '';
+        const maxAppointments = parseInt(row.getAttribute('data-max-appointments') || '0');
+        const available = row.getAttribute('data-available') || '';
+        
+        const matchesDoctor = !filterDoctor || doctor.includes(filterDoctor);
+        const matchesSpecialization = !filterSpecialization || specialization.includes(filterSpecialization);
+        const matchesDate = !filterDate || date === filterDate;
+        const matchesStartTime = !filterStartTime || startTime === filterStartTime;
+        const matchesEndTime = !filterEndTime || endTime === filterEndTime;
+        const matchesMinAppointments = filterMinAppointments === null || maxAppointments >= filterMinAppointments;
+        const matchesAvailable = !filterAvailable || available === filterAvailable;
+        
+        if (matchesDoctor && matchesSpecialization && matchesDate && matchesStartTime && matchesEndTime && matchesMinAppointments && matchesAvailable) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
         }
+    });
+    
+    // Show/hide pagination and filter message
+    const paginationContainer = document.getElementById('paginationContainer');
+    let filterActiveMessage = document.getElementById('filterActiveMessage');
+    
+    if (hasActiveFilters) {
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        
+        if (!filterActiveMessage) {
+            filterActiveMessage = document.createElement('div');
+            filterActiveMessage.id = 'filterActiveMessage';
+            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
+            tbody.parentElement.parentElement.appendChild(filterActiveMessage);
+        }
+        
+        if (visibleCount === 0) {
+            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No schedules match the applied filters.';
+        } else {
+            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} schedule(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
+        }
+        filterActiveMessage.style.display = 'block';
+    } else {
+        if (paginationContainer) paginationContainer.style.display = '';
+        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
     }
 }
 
-// Search functionality
+function resetTableFilters() {
+    document.getElementById('filterDoctor').value = '';
+    document.getElementById('filterSpecialization').value = '';
+    document.getElementById('filterDate').value = '';
+    document.getElementById('filterStartTime').value = '';
+    document.getElementById('filterEndTime').value = '';
+    document.getElementById('filterMinAppointments').value = '';
+    document.getElementById('filterAvailable').value = '';
+    
+    filterTable();
+    resetToPaginatedView();
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none' || !filterBar.style.display) {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.style.background = 'var(--primary-blue)';
+        toggleBtn.style.color = 'white';
+        loadAllResults();
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.style.background = 'var(--bg-light)';
+        toggleBtn.style.color = 'var(--text-secondary)';
+        resetTableFilters();
+        resetToPaginatedView();
+    }
+}
+
+function loadAllResults() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('all_results', '1');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('all_results');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+// Initialize filter event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const doctorSearch = document.getElementById('doctorSearch');
-    if (doctorSearch) {
-        doctorSearch.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const doctorItems = document.querySelectorAll('#doctorList .filter-radio-item');
-            doctorItems.forEach(item => {
-                const label = item.querySelector('label');
-                if (label) {
-                    const text = label.textContent.toLowerCase();
-                    item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
-                }
-            });
-        });
+    const filterInputs = ['filterDoctor', 'filterSpecialization', 'filterDate', 'filterStartTime', 'filterEndTime', 'filterMinAppointments', 'filterAvailable'];
+    filterInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        }
+    });
+    
+    // Check if filters are active on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('all_results') === '1') {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        }
     }
 });
 </script>

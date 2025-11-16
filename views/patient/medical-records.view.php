@@ -290,7 +290,13 @@
                             </div>
                         </div>
                         <div class="record-doctor-info">
-                            <div class="doctor-avatar-small"><?= $docInitial ?></div>
+                            <div class="doctor-avatar-small" style="overflow: hidden;">
+                                <?php if (!empty($record['doctor_profile_picture'])): ?>
+                                    <img src="<?= htmlspecialchars($record['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
+                                <?php else: ?>
+                                    <?= $docInitial ?>
+                                <?php endif; ?>
+                            </div>
                             <div class="doctor-details">
                                 <h3><?= $docName ?></h3>
                                 <p><?= $specName ?></p>

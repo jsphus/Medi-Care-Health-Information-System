@@ -35,6 +35,12 @@ if (isset($_GET['search'])) {
 $filter_doctor = isset($_GET['doctor']) ? (int)$_GET['doctor'] : null;
 $filter_available = isset($_GET['available']) ? $_GET['available'] : '';
 
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+
 // Fetch schedules with filters
 try {
     $where_conditions = [];
@@ -60,6 +66,35 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'schedule_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['schedule_date', 'start_time', 'end_time'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'schedule_date';
+    }
+    
+    // Special handling for date/time sorting
+    if ($sort_column === 'schedule_date') {
+        $order_by = "s.schedule_date $sort_order, s.start_time $sort_order";
+    } else {
+        $order_by = "s.$sort_column $sort_order";
+    }
+
+    // Get total count for pagination
+    $count_stmt = $db->prepare("
+        SELECT COUNT(*) 
+        FROM schedules s
+        LEFT JOIN doctors d ON s.doc_id = d.doc_id
+        LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        $where_clause
+    ");
+    $count_stmt->execute($params);
+    $total_items = $count_stmt->fetchColumn();
+    $total_pages = ceil($total_items / $items_per_page);
+
     $stmt = $db->prepare("
         SELECT s.*, 
                d.doc_first_name, d.doc_last_name,
@@ -68,13 +103,21 @@ try {
         LEFT JOIN doctors d ON s.doc_id = d.doc_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
         $where_clause
-        ORDER BY s.schedule_date DESC, s.start_time ASC
+        ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute($params);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch schedules: ' . $e->getMessage();
     $schedules = [];
+    $total_items = 0;
+    $total_pages = 0;
 }
 
 // Fetch filter data from database

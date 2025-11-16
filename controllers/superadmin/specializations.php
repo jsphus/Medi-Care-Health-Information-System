@@ -75,6 +75,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle AJAX request to get doctors for a specialization
+if (isset($_GET['action']) && $_GET['action'] === 'get_doctors' && isset($_GET['spec_id'])) {
+    header('Content-Type: application/json');
+    $spec_id = (int)$_GET['spec_id'];
+    
+    try {
+        $stmt = $db->prepare("
+            SELECT d.*
+            FROM doctors d
+            WHERE d.doc_specialization_id = :spec_id
+            ORDER BY d.doc_first_name, d.doc_last_name
+        ");
+        $stmt->execute(['spec_id' => $spec_id]);
+        $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['success' => true, 'doctors' => $doctors]);
+        exit;
+    } catch (PDOException $e) {
+        echo json_encode(['error' => 'Failed to fetch doctors: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+
+// Handle sorting
+$sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'spec_name';
+$sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+
+// Validate sort column to prevent SQL injection
+$allowed_columns = ['spec_name', 'created_at'];
+if (!in_array($sort_column, $allowed_columns)) {
+    $sort_column = 'spec_name';
+}
+
+$order_by = "s.$sort_column $sort_order";
+
 // Fetch all specializations with doctor count
 try {
     $stmt = $db->query("
@@ -82,7 +120,7 @@ try {
         FROM specializations s
         LEFT JOIN doctors d ON s.spec_id = d.doc_specialization_id
         GROUP BY s.spec_id
-        ORDER BY s.spec_name ASC
+        ORDER BY $order_by
     ");
     $specializations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

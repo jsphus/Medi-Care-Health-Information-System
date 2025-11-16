@@ -47,11 +47,76 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Services</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Services</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleServiceFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
         <button type="button" class="btn btn-primary" onclick="openAddServiceModal()" style="display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add Service</span>
         </button>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="servicesFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Services
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetServiceFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-tag" style="margin-right: 0.25rem;"></i>Service Name
+                </label>
+                <input type="text" id="filterServiceName" class="filter-input" placeholder="Search service name..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-align-left" style="margin-right: 0.25rem;"></i>Description
+                </label>
+                <input type="text" id="filterDescription" class="filter-input" placeholder="Search description..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-dollar-sign" style="margin-right: 0.25rem;"></i>Price Range
+                </label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="filterPriceMin" class="filter-input" placeholder="Min" step="0.01" min="0" style="flex: 1; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <span style="color: var(--text-secondary);">-</span>
+                    <input type="number" id="filterPriceMax" class="filter-input" placeholder="Max" step="0.01" min="0" style="flex: 1; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                </div>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Duration Range (min)
+                </label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <input type="number" id="filterDurationMin" class="filter-input" placeholder="Min" min="1" style="flex: 1; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <span style="color: var(--text-secondary);">-</span>
+                    <input type="number" id="filterDurationMax" class="filter-input" placeholder="Max" min="1" style="flex: 1; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                </div>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-folder" style="margin-right: 0.25rem;"></i>Category
+                </label>
+                <select id="filterCategory" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Categories</option>
+                    <?php if (!empty($filter_categories)): ?>
+                        <?php foreach ($filter_categories as $category): ?>
+                            <option value="<?= htmlspecialchars($category) ?>"><?= htmlspecialchars($category) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+        </div>
     </div>
 
     <?php if (empty($services)): ?>
@@ -82,9 +147,15 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="servicesTableBody">
                     <?php foreach ($services as $service): ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
+                        <tr class="service-row" 
+                            data-service-name="<?= htmlspecialchars(strtolower($service['service_name'])) ?>"
+                            data-description="<?= htmlspecialchars(strtolower($service['service_description'] ?? '')) ?>"
+                            data-price="<?= floatval($service['service_price'] ?? 0) ?>"
+                            data-duration="<?= intval($service['service_duration_minutes'] ?? 30) ?>"
+                            data-category="<?= htmlspecialchars($service['service_category'] ?? '') ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
@@ -102,6 +173,12 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button class="btn btn-sm view-service-btn" 
+                                            data-service="<?= base64_encode(json_encode($service)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this service?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $service['service_id'] ?>">
@@ -110,11 +187,6 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <button class="btn btn-sm" 
-                                            title="More"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -125,7 +197,7 @@
         
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
                 Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
             </div>
@@ -162,6 +234,13 @@
                    style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
                     Next >
                 </a>
+            </div>
+        </div>
+        <!-- Filter Active Message -->
+        <div id="filterActiveMessage" style="display: none; padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); background: var(--primary-blue-bg);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; color: var(--primary-blue-dark); font-size: 0.875rem;">
+                <i class="fas fa-info-circle"></i>
+                <span>Filters are applied to the current page. Clear filters to see all results across all pages.</span>
             </div>
         </div>
         <?php endif; ?>
@@ -264,6 +343,132 @@
 </div>
 
 <script>
+// Dynamic Filtering System for Services Table
+function filterServices() {
+    const serviceNameFilter = document.getElementById('filterServiceName').value.toLowerCase().trim();
+    const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase().trim();
+    const priceMin = parseFloat(document.getElementById('filterPriceMin').value) || 0;
+    const priceMax = parseFloat(document.getElementById('filterPriceMax').value) || Infinity;
+    const durationMin = parseInt(document.getElementById('filterDurationMin').value) || 0;
+    const durationMax = parseInt(document.getElementById('filterDurationMax').value) || Infinity;
+    const categoryFilter = document.getElementById('filterCategory').value;
+    
+    const rows = document.querySelectorAll('.service-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const serviceName = row.getAttribute('data-service-name') || '';
+        const description = row.getAttribute('data-description') || '';
+        const price = parseFloat(row.getAttribute('data-price')) || 0;
+        const duration = parseInt(row.getAttribute('data-duration')) || 0;
+        const category = row.getAttribute('data-category') || '';
+        
+        // Apply filters
+        const matchesServiceName = !serviceNameFilter || serviceName.includes(serviceNameFilter);
+        const matchesDescription = !descriptionFilter || description.includes(descriptionFilter);
+        const matchesPrice = price >= priceMin && price <= priceMax;
+        const matchesDuration = duration >= durationMin && duration <= durationMax;
+        const matchesCategory = !categoryFilter || category === categoryFilter;
+        
+        // Show row if all filters match
+        if (matchesServiceName && matchesDescription && matchesPrice && matchesDuration && matchesCategory) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide "no results" message (only if filters are active)
+    const hasActiveFilters = serviceNameFilter || descriptionFilter || 
+                             document.getElementById('filterPriceMin').value || 
+                             document.getElementById('filterPriceMax').value ||
+                             document.getElementById('filterDurationMin').value ||
+                             document.getElementById('filterDurationMax').value ||
+                             categoryFilter;
+    
+    const tableBody = document.getElementById('servicesTableBody');
+    const noResultsMsg = document.getElementById('noResultsMessage');
+    const paginationContainer = document.getElementById('paginationContainer');
+    const filterActiveMessage = document.getElementById('filterActiveMessage');
+    
+    // Show/hide pagination based on filter state
+    if (paginationContainer) {
+        if (hasActiveFilters) {
+            paginationContainer.style.display = 'none';
+            if (filterActiveMessage) {
+                filterActiveMessage.style.display = 'block';
+            }
+        } else {
+            paginationContainer.style.display = 'flex';
+            if (filterActiveMessage) {
+                filterActiveMessage.style.display = 'none';
+            }
+        }
+    }
+    
+    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
+        if (!noResultsMsg) {
+            const msg = document.createElement('tr');
+            msg.id = 'noResultsMessage';
+            msg.innerHTML = '<td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No services match the current filters on this page.</p><p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-light);">Try clearing filters or navigate to another page.</p></td>';
+            tableBody.appendChild(msg);
+        }
+    } else if (noResultsMsg) {
+        noResultsMsg.remove();
+    }
+}
+
+function resetServiceFilters() {
+    document.getElementById('filterServiceName').value = '';
+    document.getElementById('filterDescription').value = '';
+    document.getElementById('filterPriceMin').value = '';
+    document.getElementById('filterPriceMax').value = '';
+    document.getElementById('filterDurationMin').value = '';
+    document.getElementById('filterDurationMax').value = '';
+    document.getElementById('filterCategory').value = '';
+    filterServices(); // This will restore pagination visibility
+}
+
+function toggleServiceFilters() {
+    const filterBar = document.getElementById('servicesFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none') {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+    }
+}
+
+// Add event listeners for real-time filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = [
+        'filterServiceName',
+        'filterDescription',
+        'filterPriceMin',
+        'filterPriceMax',
+        'filterDurationMin',
+        'filterDurationMax',
+        'filterCategory'
+    ];
+    
+    filterInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', filterServices);
+            input.addEventListener('change', filterServices);
+        }
+    });
+    
+    // Initial filter check (in case page loads with filters)
+    filterServices();
+});
+
 function openAddServiceModal() {
     document.getElementById('addModal').classList.add('active');
 }

@@ -23,36 +23,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($phone)) {
             $phone = formatPhoneNumber($phone);
         }
-        $date_of_birth = sanitize($_POST['date_of_birth'] ?? '');
+        $date_of_birth = !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null;
         $gender = sanitize($_POST['gender'] ?? '');
         $address = sanitize($_POST['address'] ?? '');
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE patients 
-                SET pat_first_name = :first_name, 
-                    pat_last_name = :last_name,
-                    pat_email = :email,
-                    pat_phone = :phone,
-                    pat_date_of_birth = :date_of_birth,
-                    pat_gender = :gender,
-                    pat_address = :address,
-                    updated_at = NOW()
-                WHERE pat_id = :patient_id
-            ");
-            $stmt->execute([
-                'first_name' => $first_name,
-                'last_name' => $last_name,
-                'email' => $email,
-                'phone' => $phone,
-                'date_of_birth' => $date_of_birth ?: null,
-                'gender' => $gender ?: null,
-                'address' => $address ?: null,
-                'patient_id' => $patient_id
-            ]);
-            $success = 'Account information updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Failed to update account: ' . $e->getMessage();
+        if (empty($first_name) || empty($last_name) || empty($email)) {
+            $error = 'First name, last name, and email are required';
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } else {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE patients 
+                    SET pat_first_name = :first_name, 
+                        pat_last_name = :last_name,
+                        pat_email = :email,
+                        pat_phone = :phone,
+                        pat_date_of_birth = :date_of_birth,
+                        pat_gender = :gender,
+                        pat_address = :address,
+                        updated_at = NOW()
+                    WHERE pat_id = :patient_id
+                ");
+                $stmt->execute([
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'date_of_birth' => $date_of_birth,
+                    'gender' => $gender ?: null,
+                    'address' => $address ?: null,
+                    'patient_id' => $patient_id
+                ]);
+                $success = 'Account information updated successfully';
+                // Refresh patient data
+                $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :patient_id");
+                $stmt->execute(['patient_id' => $patient_id]);
+                $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                $error = 'Failed to update account: ' . $e->getMessage();
+            }
         }
     }
     
@@ -90,9 +100,17 @@ try {
     $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :patient_id");
     $stmt->execute(['patient_id' => $patient_id]);
     $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Get profile picture URL
+    $user_id = $auth->getUserId();
+    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profile_picture_url = $user['profile_picture_url'] ?? null;
 } catch (PDOException $e) {
     $error = 'Failed to fetch account information: ' . $e->getMessage();
     $patient = null;
+    $profile_picture_url = null;
 }
 
 require_once __DIR__ . '/../../views/patient/account.view.php';

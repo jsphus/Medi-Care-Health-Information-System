@@ -85,10 +85,11 @@
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <button class="btn btn-sm" 
-                                            title="More"
+                                    <button class="btn btn-sm view-spec-btn" 
+                                            data-spec="<?= base64_encode(json_encode($spec)) ?>" 
+                                            title="View"
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
                             </td>

@@ -25,28 +25,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $position = sanitize($_POST['position'] ?? '');
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE staff 
-                SET staff_first_name = :first_name, 
-                    staff_last_name = :last_name,
-                    staff_email = :email,
-                    staff_phone = :phone,
-                    staff_position = :position,
-                    updated_at = NOW()
-                WHERE staff_id = :staff_id
-            ");
-            $stmt->execute([
-                'first_name' => $first_name,
-                'last_name' => $last_name,
-                'email' => $email,
-                'phone' => $phone,
-                'position' => $position,
-                'staff_id' => $staff_id
-            ]);
-            $success = 'Account information updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Failed to update account: ' . $e->getMessage();
+        if (empty($first_name) || empty($last_name) || empty($email)) {
+            $error = 'First name, last name, and email are required';
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } else {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE staff 
+                    SET staff_first_name = :first_name, 
+                        staff_last_name = :last_name,
+                        staff_email = :email,
+                        staff_phone = :phone,
+                        staff_position = :position,
+                        updated_at = NOW()
+                    WHERE staff_id = :staff_id
+                ");
+                $stmt->execute([
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'position' => $position,
+                    'staff_id' => $staff_id
+                ]);
+                $success = 'Account information updated successfully';
+                // Refresh staff data
+                $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :staff_id");
+                $stmt->execute(['staff_id' => $staff_id]);
+                $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                $error = 'Failed to update account: ' . $e->getMessage();
+            }
         }
     }
     
@@ -83,9 +93,17 @@ try {
     $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :staff_id");
     $stmt->execute(['staff_id' => $staff_id]);
     $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Get profile picture URL
+    $user_id = $auth->getUserId();
+    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profile_picture_url = $user['profile_picture_url'] ?? null;
 } catch (PDOException $e) {
     $error = 'Failed to fetch account information: ' . $e->getMessage();
     $staff = null;
+    $profile_picture_url = null;
 }
 
 require_once __DIR__ . '/../../views/staff/account.view.php';

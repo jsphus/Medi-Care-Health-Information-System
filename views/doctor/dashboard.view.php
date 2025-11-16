@@ -2,9 +2,18 @@
 
 <!-- Dashboard Header -->
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <div>
-        <h1 class="page-title" style="margin-bottom: 0.5rem;">Dashboard</h1>
-        <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Welcome back! Here's what's happening in your medical practice today.</p>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.5rem; overflow: hidden; flex-shrink: 0;">
+            <?php if (!empty($profile_picture_url)): ?>
+                <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+            <?php else: ?>
+                <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1)) ?>
+            <?php endif; ?>
+        </div>
+        <div>
+            <h1 class="page-title" style="margin-bottom: 0.5rem;">Welcome back, Dr. <?= htmlspecialchars($doctor['doc_first_name'] ?? 'Doctor') ?>! 👋</h1>
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Here's what's happening in your medical practice today.</p>
+        </div>
     </div>
     <div style="display: flex; gap: 1rem; align-items: center;">
         <a href="/doctor/schedules" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.5rem;">

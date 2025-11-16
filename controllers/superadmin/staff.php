@@ -163,10 +163,11 @@ if (isset($_GET['search'])) {
 $filter_status = isset($_GET['status']) ? sanitize($_GET['status']) : '';
 $filter_position = isset($_GET['position']) ? sanitize($_GET['position']) : '';
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch staff members with filters
 try {
@@ -190,6 +191,23 @@ try {
     
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
     
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'staff_hire_date', 'created_at'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'created_at';
+    }
+    
+    // Special handling for name sorting (sort by first name, then last name)
+    if ($sort_column === 'staff_first_name') {
+        $order_by = "staff_first_name $sort_order, staff_last_name $sort_order";
+    } else {
+        $order_by = "$sort_column $sort_order";
+    }
+    
     // Get total count for pagination
     $count_stmt = $db->prepare("SELECT COUNT(*) FROM staff $where_clause");
     $count_stmt->execute($params);
@@ -197,7 +215,7 @@ try {
     $total_pages = ceil($total_items / $items_per_page);
     
     // Fetch paginated results
-    $stmt = $db->prepare("SELECT * FROM staff $where_clause ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+    $stmt = $db->prepare("SELECT * FROM staff $where_clause ORDER BY $order_by LIMIT :limit OFFSET :offset");
     foreach ($params as $key => $value) {
         $stmt->bindValue(':' . $key, $value);
     }

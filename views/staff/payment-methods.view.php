@@ -109,10 +109,11 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm" 
-                                            title="More"
+                                    <button class="btn btn-sm view-method-btn" 
+                                            data-method="<?= base64_encode(json_encode($method)) ?>" 
+                                            title="View"
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
                             </td>

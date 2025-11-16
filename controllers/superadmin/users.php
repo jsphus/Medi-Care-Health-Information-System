@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([
                         'email' => $email,
                         'password' => $hashedPassword,
-                        'is_superadmin' => $is_superadmin
+                        'is_superadmin' => $is_superadmin ? 1 : 0
                     ]);
                     $success = 'User created successfully';
                 }
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'User not found';
                 } else {
                     // Determine role flags - preserve existing IDs if role is kept the same and no new role_id provided
-                    $is_superadmin = ($role === 'superadmin');
+                    $is_superadmin = ($role === 'superadmin') ? true : false;
                     
                     // If role is being changed, use the new role_id, otherwise preserve existing
                     if ($role === 'patient') {
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $stmt->execute([
                                 'email' => $email,
                                 'password' => $hashedPassword,
-                                'is_superadmin' => $is_superadmin,
+                                'is_superadmin' => $is_superadmin ? 1 : 0,
                                 'pat_id' => $pat_id,
                                 'staff_id' => $staff_id,
                                 'doc_id' => $doc_id,
@@ -173,7 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ");
                             $stmt->execute([
                                 'email' => $email,
-                                'is_superadmin' => $is_superadmin,
+                                'is_superadmin' => $is_superadmin ? 1 : 0,
                                 'pat_id' => $pat_id,
                                 'staff_id' => $staff_id,
                                 'doc_id' => $doc_id,
@@ -327,10 +327,11 @@ if (isset($_GET['search'])) {
 
 $filter_role = isset($_GET['role']) ? sanitize($_GET['role']) : '';
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch users with filters
 try {
@@ -356,6 +357,36 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['user_email', 'created_at', 'full_name', 'role'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'created_at';
+    }
+    
+    // Build ORDER BY clause based on sort column
+    if ($sort_column === 'full_name') {
+        // Sort by full name (patient first, then staff, then doctor, then superadmin)
+        $order_by = "COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
+                     s.staff_first_name || ' ' || s.staff_last_name,
+                     d.doc_first_name || ' ' || d.doc_last_name,
+                     'Super Admin') $sort_order";
+    } elseif ($sort_column === 'role') {
+        // Sort by role (Super Admin, Staff, Doctor, Patient)
+        $order_by = "CASE 
+            WHEN u.user_is_superadmin = true THEN 'Super Admin'
+            WHEN u.staff_id IS NOT NULL THEN 'Staff'
+            WHEN u.doc_id IS NOT NULL THEN 'Doctor'
+            WHEN u.pat_id IS NOT NULL THEN 'Patient'
+            ELSE 'None'
+        END $sort_order";
+    } else {
+        $order_by = "u.$sort_column $sort_order";
+    }
+
     // Get total count for pagination
     $count_stmt = $db->prepare("
         SELECT COUNT(*) 
@@ -379,6 +410,7 @@ try {
             u.staff_id, 
             u.doc_id, 
             u.created_at,
+            u.profile_picture_url,
             COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
                      s.staff_first_name || ' ' || s.staff_last_name,
                      d.doc_first_name || ' ' || d.doc_last_name,
@@ -411,7 +443,7 @@ try {
         LEFT JOIN staff s ON u.staff_id = s.staff_id
         LEFT JOIN doctors d ON u.doc_id = d.doc_id
         $where_clause
-        ORDER BY u.created_at DESC
+        ORDER BY $order_by
         LIMIT :limit OFFSET :offset
     ");
     foreach ($params as $key => $value) {

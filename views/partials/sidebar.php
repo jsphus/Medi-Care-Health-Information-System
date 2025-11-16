@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../includes/functions.php';
+
 // Determine user role
 $role = 'guest';
 if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
@@ -15,25 +18,104 @@ if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
 $userName = 'User';
 $userInitial = 'U';
 $userTitle = 'User';
+$profilePictureUrl = null;
 
-if (isset($_SESSION['user_email'])) {
-    $userName = $_SESSION['user_email'];
-    $userInitial = strtoupper(substr($_SESSION['user_email'], 0, 1));
-}
-
-// Try to get full name from session
+// Try to get full name from session first
 if (isset($_SESSION['pat_first_name']) && isset($_SESSION['pat_last_name'])) {
-    $userName = $_SESSION['pat_first_name'] . ' ' . $_SESSION['pat_last_name'];
-    $userInitial = strtoupper(substr($_SESSION['pat_first_name'], 0, 1));
+    $userName = ($_SESSION['pat_first_name'] ?? '') . ' ' . ($_SESSION['pat_last_name'] ?? '');
+    $userInitial = strtoupper(substr($_SESSION['pat_first_name'] ?? 'P', 0, 1));
     $userTitle = 'Patient';
 } elseif (isset($_SESSION['doc_first_name']) && isset($_SESSION['doc_last_name'])) {
-    $userName = $_SESSION['doc_first_name'] . ' ' . $_SESSION['doc_last_name'];
-    $userInitial = strtoupper(substr($_SESSION['doc_first_name'], 0, 1));
+    $userName = ($_SESSION['doc_first_name'] ?? '') . ' ' . ($_SESSION['doc_last_name'] ?? '');
+    $userInitial = strtoupper(substr($_SESSION['doc_first_name'] ?? 'D', 0, 1));
     $userTitle = 'Doctor';
 } elseif (isset($_SESSION['staff_first_name']) && isset($_SESSION['staff_last_name'])) {
-    $userName = $_SESSION['staff_first_name'] . ' ' . $_SESSION['staff_last_name'];
-    $userInitial = strtoupper(substr($_SESSION['staff_first_name'], 0, 1));
+    $userName = ($_SESSION['staff_first_name'] ?? '') . ' ' . ($_SESSION['staff_last_name'] ?? '');
+    $userInitial = strtoupper(substr($_SESSION['staff_first_name'] ?? 'S', 0, 1));
     $userTitle = 'Staff';
+}
+
+// If name not found in session, fetch from database
+if ($userName === 'User' && isset($_SESSION['user_id'])) {
+    try {
+        $db = Database::getInstance();
+        
+        // Fetch profile picture
+        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['profile_picture_url'])) {
+            $profilePictureUrl = $user['profile_picture_url'];
+        }
+        
+        // Fetch user name based on role
+        if (isset($_SESSION['pat_id']) && $_SESSION['pat_id'] !== null) {
+            $stmt = $db->prepare("SELECT pat_first_name, pat_last_name FROM patients WHERE pat_id = :pat_id");
+            $stmt->execute(['pat_id' => $_SESSION['pat_id']]);
+            $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($patient) {
+                $userName = trim(($patient['pat_first_name'] ?? '') . ' ' . ($patient['pat_last_name'] ?? ''));
+                if (!empty($userName)) {
+                    $userInitial = strtoupper(substr($patient['pat_first_name'] ?? 'P', 0, 1));
+                    $userTitle = 'Patient';
+                }
+            }
+        } elseif (isset($_SESSION['doc_id']) && $_SESSION['doc_id'] !== null) {
+            $stmt = $db->prepare("SELECT doc_first_name, doc_last_name FROM doctors WHERE doc_id = :doc_id");
+            $stmt->execute(['doc_id' => $_SESSION['doc_id']]);
+            $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($doctor) {
+                $userName = trim(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+                if (!empty($userName)) {
+                    $userInitial = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1));
+                    $userTitle = 'Doctor';
+                }
+            }
+        } elseif (isset($_SESSION['staff_id']) && $_SESSION['staff_id'] !== null) {
+            $stmt = $db->prepare("SELECT staff_first_name, staff_last_name FROM staff WHERE staff_id = :staff_id");
+            $stmt->execute(['staff_id' => $_SESSION['staff_id']]);
+            $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($staff) {
+                $userName = trim(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? ''));
+                if (!empty($userName)) {
+                    $userInitial = strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1));
+                    $userTitle = 'Staff';
+                }
+            }
+        } elseif (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
+            $userTitle = 'Super Admin';
+            // For superadmin, use email if name not available
+            if (isset($_SESSION['user_email'])) {
+                $userName = $_SESSION['user_email'];
+                $userInitial = strtoupper(substr($_SESSION['user_email'], 0, 1));
+            }
+        }
+        
+        // Fallback to email if name is still 'User'
+        if ($userName === 'User' && isset($_SESSION['user_email'])) {
+            $userName = $_SESSION['user_email'];
+            $userInitial = strtoupper(substr($_SESSION['user_email'], 0, 1));
+        }
+    } catch (PDOException $e) {
+        // Keep defaults if database query fails
+        if (isset($_SESSION['user_email'])) {
+            $userName = $_SESSION['user_email'];
+            $userInitial = strtoupper(substr($_SESSION['user_email'], 0, 1));
+        }
+    }
+} elseif (isset($_SESSION['user_id'])) {
+    // Fetch profile picture only if name was already set from session
+    try {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['profile_picture_url'])) {
+            $profilePictureUrl = $user['profile_picture_url'];
+        }
+    } catch (PDOException $e) {
+        // Keep profilePictureUrl as null
+    }
 }
 
 // Icon mapping function
@@ -152,7 +234,13 @@ $currentPath = $_SERVER['REQUEST_URI'];
     <div class="sidebar-profile-modern">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <div class="profile-info" onclick="toggleProfileMenu()">
-                <div class="profile-avatar-modern"><?= $userInitial ?></div>
+                <div class="profile-avatar-modern" style="overflow: hidden; position: relative;">
+                    <?php if (!empty($profilePictureUrl)): ?>
+                        <img src="<?= htmlspecialchars($profilePictureUrl) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    <?php else: ?>
+                        <?= $userInitial ?>
+                    <?php endif; ?>
+                </div>
                 <div class="profile-details">
                     <div class="profile-name-modern"><?= htmlspecialchars($userName) ?></div>
                     <div class="profile-title"><?= htmlspecialchars($userTitle) ?></div>
@@ -177,12 +265,6 @@ $currentPath = $_SERVER['REQUEST_URI'];
                 <i class="fas fa-shield-alt"></i>
                 <span>Privacy</span>
             </a>
-            <div class="profile-dropdown-divider"></div>
-            <div class="profile-dropdown-item dark-mode-toggle" onclick="toggleDarkMode(event)">
-                <i class="fas fa-moon"></i>
-                <span>Dark Mode</span>
-                <div class="toggle-switch" id="darkModeToggle"></div>
-            </div>
             <div class="profile-dropdown-divider"></div>
             <a href="/logout" class="profile-dropdown-item logout-item">
                 <i class="fas fa-sign-out-alt"></i>

@@ -145,11 +145,36 @@
             <table class="table">
                 <thead>
                     <tr>
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'schedule_date';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
                         <th>Doctor</th>
                         <th>Specialization</th>
-                        <th>Date</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
+                        <th class="sortable <?= $current_sort === 'schedule_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('schedule_date')">
+                            Date
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'start_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('start_time')">
+                            Start Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'end_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('end_time')">
+                            End Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th>Max Appts</th>
                         <th>Available</th>
                         <th>Actions</th>
@@ -291,6 +316,23 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    
+    window.location.href = url.toString();
+}
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

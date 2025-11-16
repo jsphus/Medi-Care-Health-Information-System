@@ -46,6 +46,11 @@ define('DB_PASSWORD', getenv('DB_PASSWORD'));
 define('SUPABASE_URL', getenv('SUPABASE_URL'));
 define('SUPABASE_KEY', getenv('SUPABASE_KEY'));
 
+// Cloudinary Configuration
+define('CLOUDINARY_CLOUD_NAME', getenv('CLOUDINARY_CLOUD_NAME') ?: '');
+define('CLOUDINARY_API_KEY', getenv('CLOUDINARY_API_KEY') ?: '');
+define('CLOUDINARY_API_SECRET', getenv('CLOUDINARY_API_SECRET') ?: '');
+
 // Session Configuration
 define('SESSION_LIFETIME', getenv('SESSION_LIFETIME') ?: 7200);
 

@@ -89,10 +89,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all schedules for this doctor
 try {
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'schedule_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['schedule_date', 'start_time', 'end_time'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'schedule_date';
+    }
+    
+    // Special handling for date/time sorting
+    if ($sort_column === 'schedule_date') {
+        $order_by = "schedule_date $sort_order, start_time $sort_order";
+    } else {
+        $order_by = "$sort_column $sort_order";
+    }
+    
     $stmt = $db->prepare("
         SELECT * FROM schedules 
         WHERE doc_id = :doctor_id 
-        ORDER BY schedule_date DESC, start_time ASC
+        ORDER BY $order_by
     ");
     $stmt->execute(['doctor_id' => $doctor_id]);
     $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);

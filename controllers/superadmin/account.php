@@ -18,13 +18,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update_profile') {
         $email = sanitize($_POST['email'] ?? '');
         
-        try {
-            $stmt = $db->prepare("UPDATE users SET user_email = :email, updated_at = NOW() WHERE user_id = :user_id");
-            $stmt->execute(['email' => $email, 'user_id' => $user_id]);
-            $_SESSION['user_email'] = $email;
-            $success = 'Account information updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Failed to update account: ' . $e->getMessage();
+        if (empty($email)) {
+            $error = 'Email is required';
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } else {
+            try {
+                $stmt = $db->prepare("UPDATE users SET user_email = :email, updated_at = NOW() WHERE user_id = :user_id");
+                $stmt->execute(['email' => $email, 'user_id' => $user_id]);
+                $_SESSION['user_email'] = $email;
+                $success = 'Account information updated successfully';
+                // Refresh user data
+                $stmt = $db->prepare("SELECT * FROM users WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                $error = 'Failed to update account: ' . $e->getMessage();
+            }
         }
     }
     
@@ -61,9 +71,11 @@ try {
     $stmt = $db->prepare("SELECT * FROM users WHERE user_id = :user_id");
     $stmt->execute(['user_id' => $user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profile_picture_url = $user['profile_picture_url'] ?? null;
 } catch (PDOException $e) {
     $error = 'Failed to fetch account information: ' . $e->getMessage();
     $user = null;
+    $profile_picture_url = null;
 }
 
 require_once __DIR__ . '/../../views/superadmin/account.view.php';

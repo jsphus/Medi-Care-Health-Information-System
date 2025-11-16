@@ -15,9 +15,17 @@ try {
     $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :patient_id");
     $stmt->execute(['patient_id' => $patient_id]);
     $patient = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Get profile picture URL
+    $user_id = $auth->getUserId();
+    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profile_picture_url = $user['profile_picture_url'] ?? null;
 } catch (PDOException $e) {
     $error = 'Failed to fetch patient info: ' . $e->getMessage();
     $patient = null;
+    $profile_picture_url = null;
 }
 
 // Get upcoming appointments (next 5)
@@ -28,12 +36,14 @@ try {
                d.doc_first_name, d.doc_last_name, d.doc_specialization_id,
                s.service_name, s.service_price,
                st.status_name, st.status_color,
-               sp.spec_name
+               sp.spec_name,
+               ud.profile_picture_url as doctor_profile_picture
         FROM appointments a
         LEFT JOIN doctors d ON a.doc_id = d.doc_id
         LEFT JOIN services s ON a.service_id = s.service_id
         LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         WHERE a.pat_id = :patient_id AND a.appointment_date >= :today
         ORDER BY a.appointment_date ASC, a.appointment_time ASC
         LIMIT 5
@@ -49,10 +59,12 @@ try {
     $stmt = $db->prepare("
         SELECT mr.*, 
                d.doc_first_name, d.doc_last_name,
-               a.appointment_date, a.appointment_id
+               a.appointment_date, a.appointment_id,
+               ud.profile_picture_url as doctor_profile_picture
         FROM medical_records mr
         LEFT JOIN doctors d ON mr.doc_id = d.doc_id
         LEFT JOIN appointments a ON mr.appointment_id = a.appointment_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         WHERE mr.pat_id = :patient_id
         ORDER BY mr.record_date DESC
         LIMIT 5

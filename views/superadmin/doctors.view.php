@@ -47,11 +47,59 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Doctors</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Doctors</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
         <button type="button" class="btn btn-primary" onclick="openAddDoctorModal()" style="display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add Doctor</span>
         </button>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Doctors
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user-md" style="margin-right: 0.25rem;"></i>Doctor Name
+                </label>
+                <input type="text" id="filterName" class="filter-input" placeholder="Search name..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-envelope" style="margin-right: 0.25rem;"></i>Email
+                </label>
+                <input type="text" id="filterEmail" class="filter-input" placeholder="Search email..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-stethoscope" style="margin-right: 0.25rem;"></i>Specialization
+                </label>
+                <input type="text" id="filterSpecialization" class="filter-input" placeholder="Search specialization..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-check-circle" style="margin-right: 0.25rem;"></i>Status
+                </label>
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <?php if (empty($doctors)): ?>
@@ -64,33 +112,93 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'created_at';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= ($current_sort === 'doc_first_name' || $current_sort === 'doc_last_name') ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_first_name')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Doctor Name
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_email' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_email')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Email
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_phone' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_phone')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Phone
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_specialization_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_specialization_id')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Specialization
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_license_number' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_license_number')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             License
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_consultation_fee' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_consultation_fee')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Fee
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'doc_status' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('doc_status')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Status
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('created_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Registered
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <?php foreach ($doctors as $doctor): ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
+                        <tr class="table-row" 
+                            data-name="<?= htmlspecialchars(strtolower(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''))) ?>"
+                            data-email="<?= htmlspecialchars(strtolower($doctor['doc_email'] ?? '')) ?>"
+                            data-specialization="<?= htmlspecialchars(strtolower($doctor['spec_name'] ?? '')) ?>"
+                            data-status="<?= htmlspecialchars(strtolower($doctor['doc_status'] ?? '')) ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
@@ -115,6 +223,7 @@
                                     <?= htmlspecialchars(ucfirst($status)) ?>
                                 </span>
                             </td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $doctor['created_at'] ? date('d M Y', strtotime($doctor['created_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-doctor-btn" 
@@ -122,6 +231,12 @@
                                             title="Edit"
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm view-doctor-btn" 
+                                            data-doctor="<?= base64_encode(json_encode($doctor)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this doctor?');">
                                         <input type="hidden" name="action" value="delete">
@@ -131,12 +246,6 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <button class="btn btn-sm view-doctor-btn" 
-                                            data-doctor="<?= base64_encode(json_encode($doctor)) ?>" 
-                                            title="More"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -147,7 +256,7 @@
         
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div id="paginationContainer" style="display: <?= isset($_GET['all_results']) && $_GET['all_results'] == '1' ? 'none' : 'flex' ?>; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
                 Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
             </div>
@@ -184,6 +293,13 @@
                    style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
                     Next >
                 </a>
+            </div>
+        </div>
+        <!-- Filter Active Message -->
+        <div id="filterActiveMessage" style="display: <?= isset($_GET['all_results']) && $_GET['all_results'] == '1' ? 'block' : 'none' ?>; padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); background: var(--primary-blue-bg);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; color: var(--primary-blue-dark); font-size: 0.875rem;">
+                <i class="fas fa-info-circle"></i>
+                <span>All results loaded for filtering. Filters work across all <?= $total_items ?? 0 ?> records.</span>
             </div>
         </div>
         <?php endif; ?>
@@ -748,6 +864,140 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Table Filtering Functions
+function filterTable() {
+    const nameFilter = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
+    const emailFilter = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
+    const specFilter = document.getElementById('filterSpecialization')?.value.toLowerCase().trim() || '';
+    const statusFilter = document.getElementById('filterStatus')?.value || '';
+    
+    const rows = document.querySelectorAll('.table-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const email = row.getAttribute('data-email') || '';
+        const spec = row.getAttribute('data-specialization') || '';
+        const status = row.getAttribute('data-status') || '';
+        
+        const matchesName = !nameFilter || name.includes(nameFilter);
+        const matchesEmail = !emailFilter || email.includes(emailFilter);
+        const matchesSpec = !specFilter || spec.includes(specFilter);
+        const matchesStatus = !statusFilter || status === statusFilter;
+        
+        if (matchesName && matchesEmail && matchesSpec && matchesStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    const hasActiveFilters = nameFilter || emailFilter || specFilter || statusFilter;
+    const tableBody = document.getElementById('tableBody');
+    const noResultsMsg = document.getElementById('noResultsMessage');
+    
+    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
+        if (!noResultsMsg) {
+            const msg = document.createElement('tr');
+            msg.id = 'noResultsMessage';
+            const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 8;
+            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No doctors match the current filters.</p></td>`;
+            tableBody.appendChild(msg);
+        }
+    } else if (noResultsMsg) {
+        noResultsMsg.remove();
+    }
+}
+
+function resetTableFilters() {
+    const inputs = ['filterName', 'filterEmail', 'filterSpecialization', 'filterStatus'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    resetToPaginatedView();
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar && toggleBtn) {
+        if (filterBar.style.display === 'none') {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            loadAllResults();
+        } else {
+            filterBar.style.display = 'none';
+            toggleBtn.classList.remove('active');
+            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            resetToPaginatedView();
+        }
+    }
+}
+
+function loadAllResults() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('all_results', '1');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('all_results');
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    url.searchParams.delete('page'); // Reset to page 1 when sorting
+    
+    window.location.href = url.toString();
+}
+
+// Initialize filtering
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAllResultsMode = urlParams.get('all_results') === '1';
+    
+    if (isAllResultsMode) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar && toggleBtn) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+        }
+    }
+    
+    const filterInputs = ['filterName', 'filterEmail', 'filterSpecialization', 'filterStatus'];
+    filterInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        }
+    });
+    filterTable();
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
+

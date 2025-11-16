@@ -138,7 +138,61 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All My Schedules</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All My Schedules</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Schedules
+            </h3>
+            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                <i class="fas fa-redo"></i>
+                <span>Reset Filters</span>
+            </button>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                </label>
+                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Start Time
+                </label>
+                <input type="time" id="filterStartTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>End Time
+                </label>
+                <input type="time" id="filterEndTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-users" style="margin-right: 0.25rem;"></i>Min Max Appointments
+                </label>
+                <input type="number" id="filterMinAppointments" class="filter-input" placeholder="Min..." min="0" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Available
+                </label>
+                <select id="filterAvailable" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <?php if (empty($schedules)): ?>
@@ -151,14 +205,36 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <?php
+                        $current_sort = $_GET['sort'] ?? 'schedule_date';
+                        $current_order = $_GET['order'] ?? 'DESC';
+                        ?>
+                        <th class="sortable <?= $current_sort === 'schedule_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('schedule_date')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Date
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'start_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('start_time')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Start Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                        <th class="sortable <?= $current_sort === 'end_time' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('end_time')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             End Time
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Max Appointments
@@ -169,9 +245,15 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tableBody">
                     <?php foreach ($schedules as $sched): ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
+                        <tr class="table-row" 
+                            data-date="<?= !empty($sched['schedule_date']) ? date('Y-m-d', strtotime($sched['schedule_date'])) : '' ?>"
+                            data-start-time="<?= htmlspecialchars($sched['start_time'] ?? '') ?>"
+                            data-end-time="<?= htmlspecialchars($sched['end_time'] ?? '') ?>"
+                            data-max-appointments="<?= (int)($sched['max_appointments'] ?? 0) ?>"
+                            data-available="<?= $sched['is_available'] ? 'yes' : 'no' ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
@@ -193,6 +275,12 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    <button class="btn btn-sm view-schedule-btn" 
+                                            data-schedule="<?= base64_encode(json_encode($sched)) ?>" 
+                                            title="View"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this schedule?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $sched['schedule_id'] ?>">
@@ -201,11 +289,6 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <button class="btn btn-sm" 
-                                            title="More"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-ellipsis-h"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -311,6 +394,121 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
             });
+        }
+    });
+});
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    
+    window.location.href = url.toString();
+}
+
+// Filtering Functions
+function filterTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('.table-row');
+    const filterDate = document.getElementById('filterDate')?.value || '';
+    const filterStartTime = document.getElementById('filterStartTime')?.value || '';
+    const filterEndTime = document.getElementById('filterEndTime')?.value || '';
+    const filterMinAppointments = document.getElementById('filterMinAppointments')?.value ? parseInt(document.getElementById('filterMinAppointments').value) : null;
+    const filterAvailable = document.getElementById('filterAvailable')?.value.toLowerCase().trim() || '';
+    
+    let visibleCount = 0;
+    let hasActiveFilters = filterDate || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
+    
+    rows.forEach(row => {
+        const date = row.getAttribute('data-date') || '';
+        const startTime = row.getAttribute('data-start-time') || '';
+        const endTime = row.getAttribute('data-end-time') || '';
+        const maxAppointments = parseInt(row.getAttribute('data-max-appointments') || '0');
+        const available = row.getAttribute('data-available') || '';
+        
+        const matchesDate = !filterDate || date === filterDate;
+        const matchesStartTime = !filterStartTime || startTime === filterStartTime;
+        const matchesEndTime = !filterEndTime || endTime === filterEndTime;
+        const matchesMinAppointments = filterMinAppointments === null || maxAppointments >= filterMinAppointments;
+        const matchesAvailable = !filterAvailable || available === filterAvailable;
+        
+        if (matchesDate && matchesStartTime && matchesEndTime && matchesMinAppointments && matchesAvailable) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide filter message
+    let filterActiveMessage = document.getElementById('filterActiveMessage');
+    
+    if (hasActiveFilters) {
+        if (!filterActiveMessage) {
+            filterActiveMessage = document.createElement('div');
+            filterActiveMessage.id = 'filterActiveMessage';
+            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
+            tbody.parentElement.parentElement.appendChild(filterActiveMessage);
+        }
+        
+        if (visibleCount === 0) {
+            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No schedules match the applied filters.';
+        } else {
+            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} schedule(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
+        }
+        filterActiveMessage.style.display = 'block';
+    } else {
+        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
+    }
+}
+
+function resetTableFilters() {
+    document.getElementById('filterDate').value = '';
+    document.getElementById('filterStartTime').value = '';
+    document.getElementById('filterEndTime').value = '';
+    document.getElementById('filterMinAppointments').value = '';
+    document.getElementById('filterAvailable').value = '';
+    
+    filterTable();
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none' || !filterBar.style.display) {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.style.background = 'var(--primary-blue)';
+        toggleBtn.style.color = 'white';
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.style.background = 'var(--bg-light)';
+        toggleBtn.style.color = 'var(--text-secondary)';
+        resetTableFilters();
+    }
+}
+
+// Initialize filter event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = ['filterDate', 'filterStartTime', 'filterEndTime', 'filterMinAppointments', 'filterAvailable'];
+    filterInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
         }
     });
 });

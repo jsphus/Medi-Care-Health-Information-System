@@ -144,6 +144,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all schedules with doctor info
 try {
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'schedule_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['schedule_date', 'start_time', 'end_time'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'schedule_date';
+    }
+    
+    // Special handling for date/time sorting
+    if ($sort_column === 'schedule_date') {
+        $order_by = "s.schedule_date $sort_order, s.start_time $sort_order";
+    } else {
+        $order_by = "s.$sort_column $sort_order";
+    }
+    
     $stmt = $db->query("
         SELECT s.*, 
                CONCAT(d.doc_first_name, ' ', d.doc_last_name) as doctor_name,
@@ -151,7 +168,7 @@ try {
         FROM schedules s
         JOIN doctors d ON s.doc_id = d.doc_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
-        ORDER BY s.schedule_date DESC, s.start_time
+        ORDER BY $order_by
     ");
     $all_schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

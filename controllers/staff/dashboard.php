@@ -7,6 +7,31 @@ $auth->requireStaff();
 
 $db = Database::getInstance();
 
+// Get staff name for greeting
+$staff_name = 'Staff';
+$profile_picture_url = null;
+try {
+    $staff_id = $auth->getStaffId();
+    if ($staff_id) {
+        $stmt = $db->prepare("SELECT staff_first_name, staff_last_name FROM staff WHERE staff_id = :staff_id");
+        $stmt->execute(['staff_id' => $staff_id]);
+        $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($staff) {
+            $staff_name = htmlspecialchars(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? ''));
+            $staff_name = trim($staff_name) ?: 'Staff';
+        }
+        
+        // Get profile picture URL
+        $user_id = $auth->getUserId();
+        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $profile_picture_url = $user['profile_picture_url'] ?? null;
+    }
+} catch (PDOException $e) {
+    // Use default name
+}
+
 // Get dashboard statistics
 try {
     // Count staff

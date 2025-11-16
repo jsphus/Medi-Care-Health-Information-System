@@ -27,18 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $stmt = $db->prepare("
-                    INSERT INTO payments (appointment_id, amount, payment_method_id, payment_status_id, 
-                                         payment_date, notes, created_at) 
-                    VALUES (:appointment_id, :amount, :payment_method_id, :payment_status_id, 
-                           :payment_date, :notes, NOW())
+                    INSERT INTO payments (appointment_id, payment_amount, payment_method_id, payment_status_id, 
+                                         payment_date, payment_notes, created_at) 
+                    VALUES (:appointment_id, :payment_amount, :payment_method_id, :payment_status_id, 
+                           :payment_date, :payment_notes, NOW())
                 ");
                 $stmt->execute([
                     'appointment_id' => $appointment_id,
-                    'amount' => $amount,
+                    'payment_amount' => $amount,
                     'payment_method_id' => $payment_method_id,
                     'payment_status_id' => $payment_status_id,
                     'payment_date' => $payment_date,
-                    'notes' => $notes
+                    'payment_notes' => $notes
                 ]);
                 $success = 'Payment record created successfully';
             } catch (PDOException $e) {
@@ -58,20 +58,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("
                 UPDATE payments 
-                SET amount = :amount, payment_method_id = :payment_method_id, 
+                SET payment_amount = :payment_amount, payment_method_id = :payment_method_id, 
                     payment_status_id = :payment_status_id, payment_date = :payment_date,
-                    notes = :notes, updated_at = NOW()
+                    payment_notes = :payment_notes, updated_at = NOW()
                 WHERE payment_id = :id
             ");
             $stmt->execute([
-                'amount' => $amount,
+                'payment_amount' => $amount,
                 'payment_method_id' => $payment_method_id,
                 'payment_status_id' => $payment_status_id,
                 'payment_date' => $payment_date,
-                'notes' => $notes,
+                'payment_notes' => $notes,
                 'id' => $id
             ]);
             $success = 'Payment record updated successfully';
+        } catch (PDOException $e) {
+            $error = 'Database error: ' . $e->getMessage();
+        }
+    }
+    
+    if ($action === 'update_status') {
+        $id = (int)$_POST['id'];
+        $payment_status_id = (int)$_POST['payment_status_id'];
+        
+        try {
+            $stmt = $db->prepare("
+                UPDATE payments 
+                SET payment_status_id = :payment_status_id, updated_at = NOW()
+                WHERE payment_id = :id
+            ");
+            $stmt->execute([
+                'payment_status_id' => $payment_status_id,
+                'id' => $id
+            ]);
+            $success = 'Payment status updated successfully';
         } catch (PDOException $e) {
             $error = 'Database error: ' . $e->getMessage();
         }
@@ -89,10 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Pagination
+// Pagination - check if we should load all results (for client-side filtering)
+$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = 10;
-$offset = ($page - 1) * $items_per_page;
+$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all payments with related data
 try {
@@ -100,6 +121,23 @@ try {
     $count_stmt = $db->query("SELECT COUNT(*) FROM payments p");
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
+    
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'payment_date';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['payment_date', 'payment_amount', 'payment_id', 'created_at'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'payment_date';
+    }
+    
+    // Special handling for date sorting
+    if ($sort_column === 'payment_date') {
+        $order_by = "p.payment_date $sort_order, p.created_at $sort_order";
+    } else {
+        $order_by = "p.$sort_column $sort_order";
+    }
     
     // Fetch paginated results
     $stmt = $db->prepare("
@@ -113,7 +151,7 @@ try {
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
-        ORDER BY p.payment_date DESC, p.created_at DESC
+        ORDER BY $order_by
         LIMIT :limit OFFSET :offset
     ");
     $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
@@ -168,7 +206,7 @@ try {
     $stats['pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
     // Total amount
-    $stmt = $db->query("SELECT COALESCE(SUM(amount), 0) as total FROM payments");
+    $stmt = $db->query("SELECT COALESCE(SUM(payment_amount), 0) as total FROM payments");
     $stats['total_amount'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 } catch (PDOException $e) {
     // Keep default values
