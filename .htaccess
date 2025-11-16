@@ -1,6 +1,10 @@
-RewriteEngine On
-RewriteBase /Medi-Care-Health-Information-System/
+# Use index.php for all requests
+DirectoryIndex index.php
 
+# Enable rewriting
+RewriteEngine On
+
+# Redirect everything to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
+RewriteRule ^(.*)$ index.php [L]
