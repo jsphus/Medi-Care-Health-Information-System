@@ -15,486 +15,376 @@ if (session_status() === PHP_SESSION_NONE) {
 <body>
 
 <style>
+/* Page layout */
+.register-page {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--bg-gradient);
+}
+
+/* Left panel - form */
+.register-left {
+    flex: 0 0 50%;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+}
+
+/* Right panel - welcome */
+.register-right {
+    flex: 1;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.register-right::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    transform: rotate(15deg);
+}
+
+/* Form card */
+.register-card {
+    background: white;
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    padding: 3rem;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.register-header {
+    text-align: left;
+    margin-bottom: 2rem;
+}
+
+.register-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.register-logo-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.register-logo-text {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.register-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.register-subtitle {
+    color: #6b7280;
+    font-size: 0.9375rem;
+}
+
+/* Form field wrapper */
+.form-icon-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+/* Inputs, selects, textareas */
+.form-icon-wrapper input,
+.form-icon-wrapper select,
+.form-icon-wrapper textarea {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-sizing: border-box;
+    height: 3rem;
+}
+
+/* Textarea adjustments */
+.form-icon-wrapper textarea {
+    height: auto;
+    min-height: 100px;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* Icons inside fields */
+.form-icon-wrapper .form-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: #6b7280;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Focus effect */
+.form-icon-wrapper input:focus,
+.form-icon-wrapper select:focus,
+.form-icon-wrapper textarea:focus {
+    border-color: var(--primary-blue);
+    outline: none;
+}
+
+.form-icon-wrapper input:focus + .form-icon,
+.form-icon-wrapper select:focus + .form-icon,
+.form-icon-wrapper textarea:focus + .form-icon {
+    color: var(--primary-blue);
+}
+
+/* Remove default arrow for selects and date inputs */
+.form-icon-wrapper select,
+.form-icon-wrapper input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* Submit button */
+.btn-register {
+    margin-top: 2rem;
+    height: 3rem;
+    font-size: 1rem;
+}
+
+/* Login link */
+.login-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.login-link a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.login-link a:hover {
+    color: var(--primary-blue-dark);
+    text-decoration: underline;
+}
+
+/* Welcome card */
+.welcome-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 1.5rem;
+    padding: 3rem;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.welcome-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.welcome-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 1.5rem;
+    transition: var(--transition);
+    font-size: 0.875rem;
+}
+
+.back-link:hover {
+    color: var(--primary-blue-dark);
+    transform: translateX(-4px);
+}
+
+@media (max-width: 1024px) {
     .register-page {
-        display: flex;
-        min-height: 100vh;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        background: var(--bg-gradient);
+        flex-direction: column;
     }
-    
-    .register-left {
-        flex: 0 0 50%;
-        background: #f8fafc;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem;
-        position: relative;
+    .register-left, .register-right {
+        flex: 0 0 auto;
+        padding: 2rem;
     }
-    
-    .register-right {
-        flex: 1;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 3rem;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .register-right::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 100%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        transform: rotate(15deg);
-    }
-    
-    .register-card {
-        background: white;
-        border-radius: 1.5rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        padding: 3rem;
-        max-width: 500px;
-        width: 100%;
-        position: relative;
-        z-index: 1;
-    }
-    
-    .register-header {
-        text-align: left;
-        margin-bottom: 2.5rem;
-    }
-    
-    .register-logo {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .register-logo-icon {
-        width: 56px;
-        height: 56px;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.75rem;
-        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
-    }
-    
-    .register-logo-text {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: #1f2937;
-        letter-spacing: -0.02em;
-    }
-    
-    .register-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #1f2937;
-        margin-bottom: 0.5rem;
-    }
-    
-    .register-subtitle {
-        color: #6b7280;
-        font-size: 0.9375rem;
-    }
-    
-    .register-form {
-        margin-top: 2rem;
-    }
-    
-    .form-icon-wrapper {
-        position: relative;
-    }
-    
-    .form-icon-wrapper input,
-    .form-icon-wrapper select,
-    .form-icon-wrapper textarea {
-        padding-left: 3rem;
-        padding-right: 1rem;
-    }
-    
-    .form-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(35%);
-        color: #6b7280;
-        font-size: 1.125rem;
-        pointer-events: none;
-        z-index: 1;
-    }
-    
-    .form-group textarea {
-        padding-left: 1rem;
-        min-height: 100px;
-        resize: vertical;
-    }
-    
-    .form-group input:focus + .form-icon,
-    .form-group input:not(:placeholder-shown) + .form-icon,
-    .form-group select:focus + .form-icon {
-        color: var(--primary-blue);
-    }
-    
-    .btn-register {
-        width: 100%;
-        padding: 0.875rem;
-        background: #1f2937;
-        color: white;
-        border: none;
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: var(--transition);
-        margin-top: 0.5rem;
-    }
-    
-    .btn-register:hover {
-        background: #111827;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(31, 41, 55, 0.3);
-    }
-    
-    .login-link {
-        text-align: center;
-        margin-top: 1.5rem;
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-    
-    .login-link a {
-        color: var(--primary-blue);
-        text-decoration: none;
-        font-weight: 600;
-        transition: var(--transition);
-    }
-    
-    .login-link a:hover {
-        color: var(--primary-blue-dark);
-        text-decoration: underline;
-    }
-    
     .welcome-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 1.5rem;
-        padding: 3rem;
-        max-width: 500px;
-        width: 100%;
-        position: relative;
-        z-index: 1;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 100%;
     }
-    
-    .welcome-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: white;
-        margin-bottom: 1.5rem;
-        line-height: 1.2;
-    }
-    
-    .welcome-text {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1rem;
-        line-height: 1.7;
-    }
-    
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--primary-blue);
-        text-decoration: none;
-        font-weight: 500;
-        margin-top: 1.5rem;
-        transition: var(--transition);
-        font-size: 0.875rem;
-    }
-    
-    .back-link:hover {
-        color: var(--primary-blue-dark);
-        transform: translateX(-4px);
-    }
-    
-    @media (max-width: 1024px) {
-        .register-page {
-            flex-direction: column;
-        }
-        
-        .register-left {
-            flex: 0 0 auto;
-            min-height: auto;
-            padding: 2rem;
-        }
-        
-        .register-right {
-            flex: 0 0 auto;
-            padding: 2rem;
-        }
-        
-        .welcome-card {
-            max-width: 100%;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .register-card {
-            padding: 2rem;
-        }
-        
-        .welcome-card {
-            padding: 2rem;
-        }
-        
-        .welcome-title {
-            font-size: 2rem;
-        }
-    }
+}
 </style>
 
 <div class="register-page">
-    <!-- Left Panel - Registration Form -->
+
+    <!-- Left Panel -->
     <div class="register-left">
         <div class="register-card">
             <div class="register-header">
                 <div class="register-logo">
-                    <div class="register-logo-icon">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
+                    <div class="register-logo-icon"><i class="fas fa-heartbeat"></i></div>
                     <div class="register-logo-text">Medi-Care</div>
                 </div>
                 <h1 class="register-title">Register as <?= ucfirst($role) ?></h1>
                 <p class="register-subtitle">Fill in your details to create an account</p>
             </div>
-            
+
             <?php if (!empty($error)): ?>
-                <div class="alert alert-error">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <span><?= htmlspecialchars($error) ?></span>
-                </div>
+                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
-            
             <?php if (!empty($success)): ?>
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i>
-                    <span><?= htmlspecialchars($success) ?></span>
-                </div>
+                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
             <?php endif; ?>
-            
+
             <form method="post" action="" class="register-form">
                 <input type="hidden" name="role" value="<?= htmlspecialchars($role) ?>">
-                
-                <!-- Common Fields -->
-                <div class="form-group form-icon-wrapper">
-                    <label for="first_name">First Name *</label>
-                    <input type="text" id="first_name" name="first_name" placeholder="Enter your first name" required value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
+
+                <!-- First Name -->
+                <div class="form-icon-wrapper">
+                    <input type="text" name="first_name" placeholder="First Name" required value="<?= htmlspecialchars($_POST['first_name'] ?? '') ?>">
                     <i class="fas fa-user form-icon"></i>
                 </div>
-                
-                <div class="form-group form-icon-wrapper">
-                    <label for="last_name">Last Name *</label>
-                    <input type="text" id="last_name" name="last_name" placeholder="Enter your last name" required value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
+
+                <!-- Last Name -->
+                <div class="form-icon-wrapper">
+                    <input type="text" name="last_name" placeholder="Last Name" required value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">
                     <i class="fas fa-user form-icon"></i>
                 </div>
-                
-                <div class="form-group form-icon-wrapper email">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" placeholder="Enter your email" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+
+                <!-- Email -->
+                <div class="form-icon-wrapper">
+                    <input type="email" name="email" placeholder="Email" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
                     <i class="fas fa-envelope form-icon"></i>
                 </div>
-                
-                <div class="form-group form-icon-wrapper">
-                    <label for="phone">Phone Number</label>
-                    <input type="tel" id="phone" name="phone" placeholder="Enter your phone number (e.g., 0912-345-6789)" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+
+                <!-- Phone -->
+                <div class="form-icon-wrapper">
+                    <input type="tel" name="phone" placeholder="Phone Number" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
                     <i class="fas fa-phone form-icon"></i>
                 </div>
-                
-                <div class="form-group form-icon-wrapper password">
-                    <label for="password">Password *</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password (min. 8 characters)" required minlength="8">
+
+                <!-- Password -->
+                <div class="form-icon-wrapper">
+                    <input type="password" name="password" placeholder="Password" required minlength="8">
                     <i class="fas fa-lock form-icon"></i>
                 </div>
-                
-                <div class="form-group form-icon-wrapper password">
-                    <label for="confirm_password">Confirm Password *</label>
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required minlength="8">
+
+                <!-- Confirm Password -->
+                <div class="form-icon-wrapper">
+                    <input type="password" name="confirm_password" placeholder="Confirm Password" required minlength="8">
                     <i class="fas fa-lock form-icon"></i>
                 </div>
-                
-                <!-- Patient Specific Fields -->
+
+                <!-- Patient Fields -->
                 <?php if ($role === 'patient'): ?>
-                    <div class="form-group">
-                        <label for="date_of_birth">Date of Birth</label>
-                        <input type="date" id="date_of_birth" name="date_of_birth" value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
+                    <div class="form-icon-wrapper">
+                        <input type="date" name="date_of_birth" value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
+                        <i class="fas fa-calendar form-icon"></i>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="gender">Gender</label>
-                        <select id="gender" name="gender">
-                            <option value="">Select gender</option>
+
+                    <div class="form-icon-wrapper">
+                        <select name="gender">
+                            <option value="">Select Gender</option>
                             <option value="Male" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Male') ? 'selected' : '' ?>>Male</option>
                             <option value="Female" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Female') ? 'selected' : '' ?>>Female</option>
                             <option value="Other" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Other') ? 'selected' : '' ?>>Other</option>
                         </select>
+                        <i class="fas fa-venus-mars form-icon"></i>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="address">Address</label>
-                        <textarea id="address" name="address" placeholder="Enter your address"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+
+                    <div class="form-icon-wrapper">
+                        <textarea name="address" placeholder="Enter your address"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+                        <i class="fas fa-address-card form-icon"></i>
                     </div>
-                    
-                    <div class="form-group form-icon-wrapper">
-                        <label for="emergency_contact">Emergency Contact Name</label>
-                        <input type="text" id="emergency_contact" name="emergency_contact" placeholder="Emergency contact name" value="<?= htmlspecialchars($_POST['emergency_contact'] ?? '') ?>">
+
+                    <div class="form-icon-wrapper">
+                        <input type="text" name="emergency_contact" placeholder="Emergency Contact Name" value="<?= htmlspecialchars($_POST['emergency_contact'] ?? '') ?>">
                         <i class="fas fa-user form-icon"></i>
                     </div>
-                    
-                    <div class="form-group form-icon-wrapper">
-                        <label for="emergency_phone">Emergency Contact Phone</label>
-                        <input type="tel" id="emergency_phone" name="emergency_phone" placeholder="Emergency contact phone (e.g., 0912-345-6789)" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
+
+                    <div class="form-icon-wrapper">
+                        <input type="tel" name="emergency_phone" placeholder="Emergency Contact Phone" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
                         <i class="fas fa-phone form-icon"></i>
                     </div>
                 <?php endif; ?>
-                
-                <!-- Doctor Specific Fields -->
-                <?php if ($role === 'doctor'): ?>
-                    <div class="form-group form-icon-wrapper">
-                        <label for="license_number">License Number *</label>
-                        <input type="text" id="license_number" name="license_number" placeholder="Enter your medical license number" required value="<?= htmlspecialchars($_POST['license_number'] ?? '') ?>">
-                        <i class="fas fa-certificate form-icon"></i>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="specialization_id">Specialization</label>
-                        <select id="specialization_id" name="specialization_id">
-                            <option value="">Select specialization</option>
-                            <?php foreach ($specializations as $spec): ?>
-                                <option value="<?= $spec['spec_id'] ?>" <?= (isset($_POST['specialization_id']) && $_POST['specialization_id'] == $spec['spec_id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($spec['spec_name']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="experience_years">Years of Experience</label>
-                        <input type="number" id="experience_years" name="experience_years" placeholder="Years of experience" min="0" value="<?= htmlspecialchars($_POST['experience_years'] ?? '') ?>">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="consultation_fee">Consultation Fee</label>
-                        <input type="number" id="consultation_fee" name="consultation_fee" placeholder="Consultation fee" step="0.01" min="0" value="<?= htmlspecialchars($_POST['consultation_fee'] ?? '') ?>">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="qualification">Qualification</label>
-                        <textarea id="qualification" name="qualification" placeholder="Enter your qualifications"><?= htmlspecialchars($_POST['qualification'] ?? '') ?></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="bio">Bio</label>
-                        <textarea id="bio" name="bio" placeholder="Enter a brief bio"><?= htmlspecialchars($_POST['bio'] ?? '') ?></textarea>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- Staff Specific Fields -->
-                <?php if ($role === 'staff'): ?>
-                    <div class="form-group form-icon-wrapper">
-                        <label for="position">Position</label>
-                        <input type="text" id="position" name="position" placeholder="Enter your position (e.g., Receptionist, Nurse)" value="<?= htmlspecialchars($_POST['position'] ?? '') ?>">
-                        <i class="fas fa-briefcase form-icon"></i>
-                    </div>
-                <?php endif; ?>
-                
+
+                <!-- Submit -->
                 <button type="submit" class="btn-register">Create Account</button>
             </form>
-            
+
             <div class="login-link">
                 Already have an account? <a href="/login">Sign in</a>
             </div>
-            
+
             <div style="text-align: center; margin-top: 1.5rem;">
                 <a href="/register" class="back-link">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Back to Role Selection</span>
+                    <i class="fas fa-arrow-left"></i> Back to Role Selection
                 </a>
             </div>
         </div>
     </div>
-    
-    <!-- Right Panel - Welcome Section -->
+
+    <!-- Right Panel -->
     <div class="register-right">
         <div class="welcome-card">
             <h2 class="welcome-title">Welcome to Medi-Care</h2>
             <p class="welcome-text">
                 <?php if ($role === 'patient'): ?>
-                    Join thousands of patients who trust Medi-Care for their healthcare needs. Book appointments with verified doctors and manage your health records all in one place.
+                    Join thousands of patients who trust Medi-Care. Book appointments and manage health records.
                 <?php elseif ($role === 'doctor'): ?>
-                    Connect with patients and manage your practice efficiently. Join our network of medical professionals and provide quality healthcare services.
+                    Connect with patients and manage your practice efficiently.
                 <?php else: ?>
-                    Support our clinic operations and help provide excellent patient care. Join our dedicated team of healthcare professionals.
+                    Support our clinic operations and help provide excellent patient care.
                 <?php endif; ?>
             </p>
         </div>
     </div>
 </div>
 
-<script>
-// Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
-function formatPhoneNumber(value) {
-    if (!value) return '';
-    let digits = value.toString().replace(/\D/g, '');
-    if (digits.length > 11) digits = digits.substring(0, 11);
-    if (digits.length >= 7) {
-        return digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7);
-    } else if (digits.length >= 4) {
-        return digits.substring(0, 4) + '-' + digits.substring(4);
-    }
-    return digits;
-}
-
-function formatPhoneInput(inputId) {
-    const input = document.getElementById(inputId);
-    if (input && !input.hasAttribute('data-phone-formatted')) {
-        input.setAttribute('data-phone-formatted', 'true');
-        input.addEventListener('input', function(e) {
-            const cursorPosition = e.target.selectionStart;
-            const oldValue = e.target.value;
-            const formatted = formatPhoneNumber(e.target.value);
-            if (oldValue !== formatted) {
-                e.target.value = formatted;
-                const newCursorPosition = cursorPosition + (formatted.length - oldValue.length);
-                setTimeout(() => e.target.setSelectionRange(newCursorPosition, newCursorPosition), 0);
-            }
-        });
-        input.addEventListener('blur', function(e) {
-            if (e.target.value) e.target.value = formatPhoneNumber(e.target.value);
-        });
-        if (input.value) input.value = formatPhoneNumber(input.value);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    formatPhoneInput('phone');
-    formatPhoneInput('emergency_phone');
-});
-</script>
-
 </body>
 </html>
-
