@@ -19,27 +19,65 @@
 <?php endif; ?>
 
 <!-- Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Records</span>
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Records This Month Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Records This Month</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['records_this_month'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Created this month
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Records This Month</span>
+
+    <!-- Pending Follow-ups Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Pending Follow-ups</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['pending_followups'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Upcoming follow-up dates
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['this_month'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Pending Follow-up</span>
+
+    <!-- Unique Patients Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Unique Patients</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['unique_patients'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Patients with records
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['pending_followup'] ?? 0 ?></div>
+    </div>
+
+    <!-- Records Today Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Records Today</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['records_today'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Created today
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -230,13 +268,17 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Patient: <span style="color: var(--status-error);">*</span></label>
-                    <select name="pat_id" required class="form-control">
+                    <select name="pat_id" id="add_patient_select" required class="form-control" style="width: 100%;">
                         <option value="">Select Patient</option>
-                        <?php foreach ($patients as $patient): ?>
-                            <option value="<?= $patient['pat_id'] ?>">
-                                <?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
+                        <?php if (!empty($patients)): ?>
+                            <?php foreach ($patients as $patient): ?>
+                                <option value="<?= $patient['pat_id'] ?>">
+                                    <?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="" disabled>No patients available</option>
+                        <?php endif; ?>
                     </select>
                 </div>
                 <div class="form-group">

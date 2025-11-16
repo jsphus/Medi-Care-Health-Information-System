@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -9,6 +10,9 @@ $auth->requireSuperAdmin();
 $db = Database::getInstance();
 $error = '';
 $success = '';
+
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -102,28 +106,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
         $status = sanitize($_POST['status'] ?? 'active');
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE staff 
-                SET staff_first_name = :first_name, staff_last_name = :last_name, staff_email = :email, 
-                    staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
-                    staff_salary = :salary, staff_status = :status, updated_at = NOW()
-                WHERE staff_id = :id
-            ");
-            $stmt->execute([
-                'first_name' => $first_name,
-                'last_name' => $last_name,
-                'email' => $email,
-                'phone' => $phone,
-                'position' => $position,
-                'hire_date' => $hire_date,
-                'salary' => $salary,
-                'status' => $status,
-                'id' => $id
-            ]);
-            $success = 'Staff member updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
+        // Get user_id for profile picture update
+        $stmt = $db->prepare("SELECT user_id FROM users WHERE staff_id = :staff_id");
+        $stmt->execute(['staff_id' => $id]);
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user_id = $userData['user_id'] ?? null;
+        
+        // Handle profile picture upload/removal
+        $profilePictureUrl = null;
+        $removeProfilePicture = isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1';
+        
+        if ($user_id) {
+            if ($removeProfilePicture) {
+                // Get current profile picture URL
+                $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
+                $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                $oldUrl = $currentUser['profile_picture_url'] ?? null;
+                
+                // Delete from Cloudinary if exists
+                if ($oldUrl) {
+                    try {
+                        $cloudinary = new CloudinaryUpload();
+                        $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                        if ($oldPublicId) {
+                            $cloudinary->deleteImage($oldPublicId);
+                        }
+                    } catch (Exception $e) {
+                        error_log('Failed to delete old profile picture: ' . $e->getMessage());
+                    }
+                }
+                $profilePictureUrl = null;
+            } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                try {
+                    $cloudinary = new CloudinaryUpload();
+                    $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $user_id);
+                    
+                    if (is_array($result) && isset($result['url'])) {
+                        // Get old profile picture URL before updating
+                        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                        $stmt->execute(['user_id' => $user_id]);
+                        $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                        
+                        // Delete old image from Cloudinary if exists
+                        if ($oldUrl) {
+                            $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            if ($oldPublicId) {
+                                $cloudinary->deleteImage($oldPublicId);
+                            }
+                        }
+                        
+                        $profilePictureUrl = $result['url'];
+                    } else {
+                        $error = is_string($result) ? $result : 'Failed to upload profile picture';
+                    }
+                } catch (Exception $e) {
+                    $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                }
+            } else {
+                // Keep existing profile picture
+                $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
+                $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                $profilePictureUrl = $currentUser['profile_picture_url'] ?? null;
+            }
+            
+            // Update profile picture in users table if we have a user_id
+            if ($user_id && empty($error)) {
+                $stmt = $db->prepare("UPDATE users SET profile_picture_url = :profile_picture_url WHERE user_id = :user_id");
+                $stmt->execute(['profile_picture_url' => $profilePictureUrl, 'user_id' => $user_id]);
+            }
+        }
+        
+        if (empty($error)) {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE staff 
+                    SET staff_first_name = :first_name, staff_last_name = :last_name, staff_email = :email, 
+                        staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
+                        staff_salary = :salary, staff_status = :status, updated_at = NOW()
+                    WHERE staff_id = :id
+                ");
+                $stmt->execute([
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'position' => $position,
+                    'hire_date' => $hire_date,
+                    'salary' => $salary,
+                    'status' => $status,
+                    'id' => $id
+                ]);
+                $success = 'Staff member updated successfully';
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
         }
     }
     

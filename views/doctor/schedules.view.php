@@ -67,70 +67,75 @@
     </div>
 <?php endif; ?>
 
-<!-- Create New Schedule -->
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">Add New Schedule</h2>
-    </div>
-    <div class="card-body">
-        <form method="POST">
-            <input type="hidden" name="action" value="create">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>Date: <span style="color: var(--status-error);">*</span></label>
-                    <input type="date" name="schedule_date" required class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
-                    <input type="time" name="start_time" required class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
-                    <input type="time" name="end_time" required class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" min="1" value="10" class="form-control">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_available" value="1" checked style="width: auto;">
-                    <span>Available for appointments</span>
-                </label>
-            </div>
-            <div class="action-buttons" style="margin-top: 1.5rem;">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Schedule</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Schedules</span>
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Today's Appointments Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Today's Appointments</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['today_appointments'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Scheduled for today
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Today's Schedules</span>
+
+    <!-- Available Slots Today Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Available Slots Today</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['available_slots_today'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Open appointment slots
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['today'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Upcoming Schedules</span>
+
+    <!-- This Week's Schedules Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">This Week's Schedules</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['this_week_schedules'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Next 7 days
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['upcoming'] ?? 0 ?></div>
+    </div>
+
+    <!-- Next Schedule Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Next Schedule</div>
+                <?php if ($stats['next_schedule']): ?>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                        <?= date('M d', strtotime($stats['next_schedule']['schedule_date'])) ?>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                        <?= date('g:i A', strtotime($stats['next_schedule']['start_time'])) ?>
+                    </div>
+                <?php else: ?>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        No upcoming
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                        No future schedules
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -144,6 +149,10 @@
                 <i class="fas fa-filter"></i>
             </button>
         </div>
+        <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-plus"></i>
+            <span>Add New Schedule</span>
+        </button>
     </div>
 
     <!-- Filter Bar (Hidden by default) -->
@@ -299,6 +308,55 @@
     <?php endif; ?>
 </div>
 
+<!-- Add Schedule Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Schedule</h2>
+            <button type="button" class="modal-close" onclick="closeAddScheduleModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="create">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="schedule_date" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="start_time" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="end_time" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Max Appointments:</label>
+                    <input type="number" name="max_appointments" min="1" value="10" class="form-control">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="is_available" value="1" checked style="width: auto;">
+                    <span>Available for appointments</span>
+                </label>
+            </div>
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Schedule</span>
+                </button>
+                <button type="button" onclick="closeAddScheduleModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Edit Schedule Modal -->
 <div id="editModal" class="modal">
     <div class="modal-content">
@@ -350,6 +408,16 @@
 </div>
 
 <script>
+function openAddScheduleModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+
+function closeAddScheduleModal() {
+    const modal = document.getElementById('addModal');
+    modal.classList.remove('active');
+    modal.querySelector('form').reset();
+}
+
 function editSchedule(sched) {
     document.getElementById('edit_id').value = sched.schedule_id;
     document.getElementById('edit_schedule_date').value = sched.schedule_date;
@@ -389,10 +457,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Reset add form when modal closes
+    const addModal = document.getElementById('addModal');
+    if (addModal) {
+        addModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.querySelector('form').reset();
+            }
+        });
+    }
+    
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
+                // Reset add form if it's the add modal
+                if (modal.id === 'addModal') {
+                    modal.querySelector('form').reset();
+                }
             });
         }
     });

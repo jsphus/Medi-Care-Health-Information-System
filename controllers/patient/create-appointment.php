@@ -15,6 +15,9 @@ $reschedule_id = isset($_GET['reschedule']) ? sanitize($_GET['reschedule']) : nu
 $selected_doctor_id = isset($_GET['doctor_id']) ? (int)$_GET['doctor_id'] : null;
 $existing_appointment = null;
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // If rescheduling, get the existing appointment details
 if ($reschedule_id) {
     try {

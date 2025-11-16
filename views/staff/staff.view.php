@@ -64,39 +64,23 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Staff Name
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Email
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Phone
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Position
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Hire Date
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Salary
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Status
-                        </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Staff Name</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Email</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Phone</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Position</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Hire Date</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Salary</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Status</th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($staff_members as $staff): ?>
-                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
-                            onmouseover="this.style.background='#f9fafb'" 
-                            onmouseout="this.style.background='white'">
+                        <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                                     <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1)) ?>
+                                    <?= strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1)) ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars($staff['staff_first_name'] . ' ' . $staff['staff_last_name']) ?></strong>
                                 </div>
@@ -107,22 +91,21 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $staff['staff_hire_date'] ? date('d M Y', strtotime($staff['staff_hire_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary); font-weight: 600;">₱<?= number_format($staff['staff_salary'] ?? 0, 2) ?></td>
                             <td style="padding: 1rem;">
-                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= ($staff['staff_status'] ?? 'active') === 'active' ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;' ?>">
-                                    <?= htmlspecialchars(ucfirst($staff['staff_status'] ?? 'active')) ?>
+                                <?php
+                                $status = $staff['staff_status'] ?? 'active';
+                                $bgColor = $status === 'active' ? '#10b98120' : '#ef444420';
+                                $textColor = $status === 'active' ? '#10b981' : '#ef4444';
+                                ?>
+                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= htmlspecialchars($bgColor) ?>; color: <?= htmlspecialchars($textColor) ?>;">
+                                    <?= htmlspecialchars(ucfirst($status)) ?>
                                 </span>
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <button class="btn btn-sm edit-staff-btn" 
-                                            data-staff="<?= base64_encode(json_encode($staff)) ?>" 
-                                            title="Edit"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
+                                    <button class="btn btn-sm edit-staff-btn" data-staff="<?= htmlspecialchars(base64_encode(json_encode($staff))) ?>" title="Edit" style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm view-staff-btn" 
-                                            data-staff="<?= base64_encode(json_encode($staff)) ?>" 
-                                            title="View"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                    <button class="btn btn-sm view-staff-btn" data-staff="<?= htmlspecialchars(base64_encode(json_encode($staff))) ?>" title="View" style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -132,6 +115,8 @@
                 </tbody>
             </table>
         </div>
+    <?php endif; ?>
+</div>
 
 <!-- Add Staff Modal -->
 <div id="addModal" class="modal">
@@ -268,7 +253,6 @@ function closeAddStaffModal() {
     document.querySelector('#addModal form').reset();
 }
 
-// Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
 function formatPhoneNumber(value) {
     if (!value) return '';
     let digits = value.toString().replace(/\D/g, '');
@@ -319,19 +303,7 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
-// Category tab functionality
 document.addEventListener('DOMContentLoaded', function() {
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    categoryTabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            categoryTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-            const category = this.dataset.category;
-            filterByCategory(category);
-        });
-    });
-    
-    // Add event listeners for edit buttons
     document.querySelectorAll('.edit-staff-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             try {
@@ -346,8 +318,38 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Initialize phone number formatting
     formatPhoneInput('edit_phone');
+    
+    const positionSearch = document.getElementById('positionSearch');
+    if (positionSearch) {
+        positionSearch.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const positionItems = document.querySelectorAll('#positionList .filter-radio-item');
+            positionItems.forEach(item => {
+                const label = item.querySelector('label');
+                if (label) {
+                    const text = label.textContent.toLowerCase();
+                    item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+                }
+            });
+        });
+    }
+    
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+    });
 });
 
 function filterByCategory(category) {
@@ -377,70 +379,7 @@ function clearAllFilters() {
     const positionSearch = document.getElementById('positionSearch');
     if (positionSearch) positionSearch.value = '';
 }
-</script>
 
-<!-- Filter Sidebar -->
-<div class="filter-sidebar" id="filterSidebar">
-    <div class="filter-sidebar-header">
-        <h3>Filters</h3>
-        <button type="button" class="filter-sidebar-close" onclick="toggleFilterSidebar()">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-    
-    <!-- Status Filter -->
-    <div class="filter-section">
-        <div class="filter-section-header" onclick="toggleFilterSection('status')">
-            <h4 class="filter-section-title">Status</h4>
-            <button type="button" class="filter-section-toggle" id="statusToggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div class="filter-section-content" id="statusContent">
-            <div class="filter-radio-group">
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_status" id="status_active" value="active">
-                    <label for="status_active">Active</label>
-                </div>
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_status" id="status_inactive" value="inactive">
-                    <label for="status_inactive">Inactive</label>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Position Filter -->
-    <?php if (!empty($filter_positions)): ?>
-    <div class="filter-section">
-        <div class="filter-section-header" onclick="toggleFilterSection('position')">
-            <h4 class="filter-section-title">Position</h4>
-            <button type="button" class="filter-section-toggle" id="positionToggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div class="filter-section-content" id="positionContent">
-            <input type="text" class="filter-search-input" placeholder="Search Position" id="positionSearch">
-            <div class="filter-radio-group" id="positionList">
-                <?php foreach ($filter_positions as $position): ?>
-                    <div class="filter-radio-item">
-                        <input type="radio" name="filter_position" id="position_<?= htmlspecialchars(strtolower(str_replace(' ', '_', $position))) ?>" value="<?= htmlspecialchars($position) ?>">
-                        <label for="position_<?= htmlspecialchars(strtolower(str_replace(' ', '_', $position))) ?>"><?= htmlspecialchars($position) ?></label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-    
-    <!-- Filter Actions -->
-    <div class="filter-sidebar-actions">
-        <button type="button" class="filter-clear-btn" onclick="clearAllFilters()">Clear all</button>
-        <button type="button" class="filter-apply-btn" onclick="applyStaffFilters()">Apply all filter</button>
-    </div>
-</div>
-
-<script>
 function toggleFilterSidebar() {
     const sidebar = document.getElementById('filterSidebar');
     const mainContent = document.querySelector('.main-content');
@@ -468,42 +407,65 @@ function toggleFilterSection(sectionId) {
         }
     }
 }
-
-// Search functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const positionSearch = document.getElementById('positionSearch');
-    if (positionSearch) {
-        positionSearch.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const positionItems = document.querySelectorAll('#positionList .filter-radio-item');
-            positionItems.forEach(item => {
-                const label = item.querySelector('label');
-                if (label) {
-                    const text = label.textContent.toLowerCase();
-                    item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
-                }
-            });
-        });
-    }
-    
-    // Close modals on outside click
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-            }
-        });
-    });
-    
-    // Close modals on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal.active').forEach(modal => {
-                modal.classList.remove('active');
-            });
-        }
-    });
-});
 </script>
 
+<!-- Filter Sidebar -->
+<div class="filter-sidebar" id="filterSidebar">
+    <div class="filter-sidebar-header">
+        <h3>Filters</h3>
+        <button type="button" class="filter-sidebar-close" onclick="toggleFilterSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <div class="filter-section">
+        <div class="filter-section-header" onclick="toggleFilterSection('status')">
+            <h4 class="filter-section-title">Status</h4>
+            <button type="button" class="filter-section-toggle" id="statusToggle">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+        <div class="filter-section-content" id="statusContent">
+            <div class="filter-radio-group">
+                <div class="filter-radio-item">
+                    <input type="radio" name="filter_status" id="status_active" value="active">
+                    <label for="status_active">Active</label>
+                </div>
+                <div class="filter-radio-item">
+                    <input type="radio" name="filter_status" id="status_inactive" value="inactive">
+                    <label for="status_inactive">Inactive</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <?php if (!empty($filter_positions)): ?>
+    <div class="filter-section">
+        <div class="filter-section-header" onclick="toggleFilterSection('position')">
+            <h4 class="filter-section-title">Position</h4>
+            <button type="button" class="filter-section-toggle" id="positionToggle">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+        <div class="filter-section-content" id="positionContent">
+            <input type="text" class="filter-search-input" placeholder="Search Position" id="positionSearch">
+            <div class="filter-radio-group" id="positionList">
+                <?php foreach ($filter_positions as $position): ?>
+                    <div class="filter-radio-item">
+                        <input type="radio" name="filter_position" id="position_<?= htmlspecialchars(strtolower(str_replace(' ', '_', $position))) ?>" value="<?= htmlspecialchars($position) ?>">
+                        <label for="position_<?= htmlspecialchars(strtolower(str_replace(' ', '_', $position))) ?>"><?= htmlspecialchars($position) ?></label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    
+    <div class="filter-sidebar-actions">
+        <button type="button" class="filter-clear-btn" onclick="clearAllFilters()">Clear all</button>
+        <button type="button" class="filter-apply-btn" onclick="applyStaffFilters()">Apply all filter</button>
+    </div>
+</div>
+
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
+

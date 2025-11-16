@@ -11,6 +11,9 @@ $patient_id = $auth->getPatientId();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Get appointment data from session or POST
 $appointment_data = null;
 

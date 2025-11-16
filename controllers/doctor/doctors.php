@@ -10,6 +10,9 @@ $db = Database::getInstance();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -174,25 +177,46 @@ try {
     $specializations = [];
 }
 
-// Calculate statistics for summary cards
+// Calculate useful statistics for summary cards
 $stats = [
-    'total' => 0,
-    'active' => 0,
-    'inactive' => 0
+    'active_doctors' => 0,
+    'doctors_with_schedules_today' => 0,
+    'doctors_with_user_accounts' => 0,
+    'average_consultation_fee' => 0
 ];
 
 try {
-    // Total doctors
-    $stmt = $db->query("SELECT COUNT(*) as count FROM doctors");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $today = date('Y-m-d');
     
     // Active doctors
     $stmt = $db->query("SELECT COUNT(*) as count FROM doctors WHERE doc_status = 'active'");
-    $stats['active'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stats['active_doctors'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Inactive doctors
-    $stmt = $db->query("SELECT COUNT(*) as count FROM doctors WHERE doc_status = 'inactive'");
-    $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // Doctors with schedules today
+    $stmt = $db->prepare("
+        SELECT COUNT(DISTINCT doc_id) as count 
+        FROM schedules 
+        WHERE schedule_date = :today AND is_available = 1
+    ");
+    $stmt->execute(['today' => $today]);
+    $stats['doctors_with_schedules_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Doctors with user accounts
+    $stmt = $db->query("
+        SELECT COUNT(DISTINCT doc_id) as count 
+        FROM users 
+        WHERE doc_id IS NOT NULL
+    ");
+    $stats['doctors_with_user_accounts'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Average consultation fee
+    $stmt = $db->query("
+        SELECT AVG(doc_consultation_fee) as avg_fee 
+        FROM doctors 
+        WHERE doc_status = 'active' AND doc_consultation_fee IS NOT NULL AND doc_consultation_fee > 0
+    ");
+    $avg_fee = $stmt->fetch(PDO::FETCH_ASSOC)['avg_fee'];
+    $stats['average_consultation_fee'] = $avg_fee ? round($avg_fee, 2) : 0;
 } catch (PDOException $e) {
     // Keep default values
 }

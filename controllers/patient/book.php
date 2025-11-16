@@ -9,6 +9,9 @@ $auth->requirePatient();
 $db = Database::getInstance();
 $error = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle search and filter
 $search_query = '';
 if (isset($_GET['search'])) {

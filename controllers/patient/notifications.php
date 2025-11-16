@@ -10,6 +10,9 @@ $db = Database::getInstance();
 $patient_id = $auth->getPatientId();
 $error = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // For now, we'll show appointment-based notifications
 // In a full implementation, you'd have a notifications table
 try {

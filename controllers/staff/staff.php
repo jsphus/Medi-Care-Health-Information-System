@@ -11,6 +11,9 @@ $error = '';
 $success = '';
 $search_query = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';

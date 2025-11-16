@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -127,36 +128,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
         } else {
-            try {
-                $stmt = $db->prepare("
-                    UPDATE patients 
-                    SET pat_first_name = :first_name, pat_last_name = :last_name, pat_email = :email, 
-                        pat_phone = :phone, pat_date_of_birth = :date_of_birth, pat_gender = :gender, 
-                        pat_address = :address, pat_emergency_contact = :emergency_contact,
-                        pat_emergency_phone = :emergency_phone, pat_medical_history = :medical_history,
-                        pat_allergies = :allergies, pat_insurance_provider = :insurance_provider,
-                        pat_insurance_number = :insurance_number, updated_at = NOW()
-                    WHERE pat_id = :id
-                ");
-                $stmt->execute([
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'date_of_birth' => $date_of_birth,
-                    'gender' => $gender,
-                    'address' => $address,
-                    'emergency_contact' => $emergency_contact,
-                    'emergency_phone' => $emergency_phone,
-                    'medical_history' => $medical_history,
-                    'allergies' => $allergies,
-                    'insurance_provider' => $insurance_provider,
-                    'insurance_number' => $insurance_number,
-                    'id' => $id
-                ]);
-                $success = 'Patient updated successfully';
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
+            // Get user_id for profile picture update
+            $stmt = $db->prepare("SELECT user_id FROM users WHERE pat_id = :pat_id");
+            $stmt->execute(['pat_id' => $id]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user_id = $userData['user_id'] ?? null;
+            
+            // Handle profile picture upload/removal
+            $profilePictureUrl = null;
+            $removeProfilePicture = isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1';
+            
+            if ($user_id) {
+                if ($removeProfilePicture) {
+                    // Get current profile picture URL
+                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                    $stmt->execute(['user_id' => $user_id]);
+                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $oldUrl = $currentUser['profile_picture_url'] ?? null;
+                    
+                    // Delete from Cloudinary if exists
+                    if ($oldUrl) {
+                        try {
+                            $cloudinary = new CloudinaryUpload();
+                            $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            if ($oldPublicId) {
+                                $cloudinary->deleteImage($oldPublicId);
+                            }
+                        } catch (Exception $e) {
+                            error_log('Failed to delete old profile picture: ' . $e->getMessage());
+                        }
+                    }
+                    $profilePictureUrl = null;
+                } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                    try {
+                        $cloudinary = new CloudinaryUpload();
+                        $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $user_id);
+                        
+                        if (is_array($result) && isset($result['url'])) {
+                            // Get old profile picture URL before updating
+                            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                            $stmt->execute(['user_id' => $user_id]);
+                            $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                            $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                            
+                            // Delete old image from Cloudinary if exists
+                            if ($oldUrl) {
+                                $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                                if ($oldPublicId) {
+                                    $cloudinary->deleteImage($oldPublicId);
+                                }
+                            }
+                            
+                            $profilePictureUrl = $result['url'];
+                        } else {
+                            $error = is_string($result) ? $result : 'Failed to upload profile picture';
+                        }
+                    } catch (Exception $e) {
+                        $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                    }
+                } else {
+                    // Keep existing profile picture
+                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                    $stmt->execute(['user_id' => $user_id]);
+                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $profilePictureUrl = $currentUser['profile_picture_url'] ?? null;
+                }
+            }
+            
+            if (empty($error)) {
+                try {
+                    $stmt = $db->prepare("
+                        UPDATE patients 
+                        SET pat_first_name = :first_name, pat_last_name = :last_name, pat_email = :email, 
+                            pat_phone = :phone, pat_date_of_birth = :date_of_birth, pat_gender = :gender, 
+                            pat_address = :address, pat_emergency_contact = :emergency_contact,
+                            pat_emergency_phone = :emergency_phone, pat_medical_history = :medical_history,
+                            pat_allergies = :allergies, pat_insurance_provider = :insurance_provider,
+                            pat_insurance_number = :insurance_number, updated_at = NOW()
+                        WHERE pat_id = :id
+                    ");
+                    $stmt->execute([
+                        'first_name' => $first_name,
+                        'last_name' => $last_name,
+                        'email' => $email,
+                        'phone' => $phone,
+                        'date_of_birth' => $date_of_birth,
+                        'gender' => $gender,
+                        'address' => $address,
+                        'emergency_contact' => $emergency_contact,
+                        'emergency_phone' => $emergency_phone,
+                        'medical_history' => $medical_history,
+                        'allergies' => $allergies,
+                        'insurance_provider' => $insurance_provider,
+                        'insurance_number' => $insurance_number,
+                        'id' => $id
+                    ]);
+                    
+                    // Update profile picture in users table if we have a user_id
+                    if ($user_id) {
+                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :profile_picture_url WHERE user_id = :user_id");
+                        $stmt->execute(['profile_picture_url' => $profilePictureUrl, 'user_id' => $user_id]);
+                    }
+                    
+                    $success = 'Patient updated successfully';
+                } catch (PDOException $e) {
+                    $error = 'Database error: ' . $e->getMessage();
+                }
             }
         }
     }
@@ -269,8 +346,15 @@ try {
         $order_by = "$sort_column $sort_order";
     }
     
-    // Fetch paginated results
-    $stmt = $db->prepare("SELECT * FROM patients $where_clause ORDER BY $order_by LIMIT :limit OFFSET :offset");
+    // Fetch paginated results with profile pictures
+    $stmt = $db->prepare("
+        SELECT p.*, u.profile_picture_url
+        FROM patients p
+        LEFT JOIN users u ON p.pat_id = u.pat_id
+        $where_clause 
+        ORDER BY $order_by 
+        LIMIT :limit OFFSET :offset
+    ");
     foreach ($params as $key => $value) {
         $stmt->bindValue(':' . $key, $value);
     }
@@ -306,16 +390,38 @@ try {
     $filter_insurance_providers = [];
 }
 
+// Fetch doctors with profile pictures for doctors cards
+$doctors = [];
+try {
+    $stmt = $db->query("
+        SELECT d.*, s.spec_name, u.profile_picture_url
+        FROM doctors d
+        LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
+        LEFT JOIN users u ON d.doc_id = u.doc_id
+        WHERE d.doc_status = 'active'
+        ORDER BY d.doc_first_name, d.doc_last_name
+        LIMIT 12
+    ");
+    $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $doctors = [];
+}
+
 // Include the view
 // Calculate statistics for summary cards
 $stats = [
+    'total' => 0,
     'total_this_month' => 0,
-    'pending' => 0,
     'active' => 0,
     'inactive' => 0
 ];
 
 try {
+    // Total patients
+    $stmt = $db->query("SELECT COUNT(*) as count FROM patients");
+    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
     // Total patients this month
     $stmt = $db->query("SELECT COUNT(*) as count FROM patients WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)");
     $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
@@ -327,9 +433,6 @@ try {
     // Inactive patients (patients without user accounts)
     $stmt = $db->query("SELECT COUNT(*) as count FROM patients p LEFT JOIN users u ON p.pat_id = u.pat_id WHERE u.user_id IS NULL");
     $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    
-    // Pending (can be used for patients needing attention)
-    $stats['pending'] = 0;
 } catch (PDOException $e) {
     // Keep default values
 }

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -119,32 +120,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
         } else {
-            try {
-                $stmt = $db->prepare("
-                    UPDATE doctors 
-                    SET doc_first_name = :first_name, doc_last_name = :last_name, doc_email = :email, 
-                        doc_phone = :phone, doc_specialization_id = :specialization_id, doc_license_number = :license_number,
-                        doc_experience_years = :experience_years, doc_consultation_fee = :consultation_fee,
-                        doc_qualification = :qualification, doc_bio = :bio, doc_status = :status, updated_at = NOW()
-                    WHERE doc_id = :id
-                ");
-                $stmt->execute([
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'specialization_id' => $specialization_id,
-                    'license_number' => $license_number,
-                    'experience_years' => $experience_years,
-                    'consultation_fee' => $consultation_fee,
-                    'qualification' => $qualification,
-                    'bio' => $bio,
-                    'status' => $status,
-                    'id' => $id
-                ]);
-                $success = 'Doctor updated successfully';
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
+            // Get user_id for profile picture update
+            $stmt = $db->prepare("SELECT user_id FROM users WHERE doc_id = :doc_id");
+            $stmt->execute(['doc_id' => $id]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user_id = $userData['user_id'] ?? null;
+            
+            // Handle profile picture upload/removal
+            $profilePictureUrl = null;
+            $removeProfilePicture = isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1';
+            
+            if ($user_id) {
+                if ($removeProfilePicture) {
+                    // Get current profile picture URL
+                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                    $stmt->execute(['user_id' => $user_id]);
+                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $oldUrl = $currentUser['profile_picture_url'] ?? null;
+                    
+                    // Delete from Cloudinary if exists
+                    if ($oldUrl) {
+                        try {
+                            $cloudinary = new CloudinaryUpload();
+                            $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            if ($oldPublicId) {
+                                $cloudinary->deleteImage($oldPublicId);
+                            }
+                        } catch (Exception $e) {
+                            error_log('Failed to delete old profile picture: ' . $e->getMessage());
+                        }
+                    }
+                    $profilePictureUrl = null;
+                } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                    try {
+                        $cloudinary = new CloudinaryUpload();
+                        $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $user_id);
+                        
+                        if (is_array($result) && isset($result['url'])) {
+                            // Get old profile picture URL before updating
+                            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                            $stmt->execute(['user_id' => $user_id]);
+                            $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                            $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                            
+                            // Delete old image from Cloudinary if exists
+                            if ($oldUrl) {
+                                $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                                if ($oldPublicId) {
+                                    $cloudinary->deleteImage($oldPublicId);
+                                }
+                            }
+                            
+                            $profilePictureUrl = $result['url'];
+                        } else {
+                            $error = is_string($result) ? $result : 'Failed to upload profile picture';
+                        }
+                    } catch (Exception $e) {
+                        $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                    }
+                } else {
+                    // Keep existing profile picture
+                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                    $stmt->execute(['user_id' => $user_id]);
+                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $profilePictureUrl = $currentUser['profile_picture_url'] ?? null;
+                }
+            }
+            
+            if (empty($error)) {
+                try {
+                    $stmt = $db->prepare("
+                        UPDATE doctors 
+                        SET doc_first_name = :first_name, doc_last_name = :last_name, doc_email = :email, 
+                            doc_phone = :phone, doc_specialization_id = :specialization_id, doc_license_number = :license_number,
+                            doc_experience_years = :experience_years, doc_consultation_fee = :consultation_fee,
+                            doc_qualification = :qualification, doc_bio = :bio, doc_status = :status, updated_at = NOW()
+                        WHERE doc_id = :id
+                    ");
+                    $stmt->execute([
+                        'first_name' => $first_name,
+                        'last_name' => $last_name,
+                        'email' => $email,
+                        'phone' => $phone,
+                        'specialization_id' => $specialization_id,
+                        'license_number' => $license_number,
+                        'experience_years' => $experience_years,
+                        'consultation_fee' => $consultation_fee,
+                        'qualification' => $qualification,
+                        'bio' => $bio,
+                        'status' => $status,
+                        'id' => $id
+                    ]);
+                    
+                    // Update profile picture in users table if we have a user_id
+                    if ($user_id) {
+                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :profile_picture_url WHERE user_id = :user_id");
+                        $stmt->execute(['profile_picture_url' => $profilePictureUrl, 'user_id' => $user_id]);
+                    }
+                    
+                    $success = 'Doctor updated successfully';
+                } catch (PDOException $e) {
+                    $error = 'Database error: ' . $e->getMessage();
+                }
             }
         }
     }
@@ -258,11 +335,12 @@ try {
         $order_by = "d.$sort_column $sort_order";
     }
     
-    // Fetch paginated results
+    // Fetch paginated results with profile pictures
     $stmt = $db->prepare("
-        SELECT d.*, s.spec_name 
+        SELECT d.*, s.spec_name, u.profile_picture_url
         FROM doctors d
         LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
+        LEFT JOIN users u ON d.doc_id = u.doc_id
         $where_clause
         ORDER BY $order_by
         LIMIT :limit OFFSET :offset

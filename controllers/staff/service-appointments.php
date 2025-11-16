@@ -1,12 +1,16 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../includes/functions.php';
 
 $auth = new Auth();
 $auth->requireStaff();
 
 $db = Database::getInstance();
 $error = '';
+
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
 
 // Get service ID from query string
 $service_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;

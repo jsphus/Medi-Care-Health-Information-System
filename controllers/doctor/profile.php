@@ -11,6 +11,9 @@ $doctor_id = $auth->getDoctorId();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle profile update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = sanitize($_POST['first_name']);

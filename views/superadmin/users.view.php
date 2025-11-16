@@ -352,9 +352,31 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" id="edit_id">
+            
+            <!-- Profile Picture Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Profile Picture</h3>
+                <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex-shrink: 0;">
+                        <div id="edit_profile_picture_preview" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <span id="edit_profile_picture_initials">U</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label class="form-label-modern">Upload New Picture</label>
+                        <input type="file" name="profile_picture" id="edit_profile_picture_input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="form-control" style="padding: 0.5rem;">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Max 5MB. Formats: JPG, PNG, GIF, WEBP</small>
+                        <button type="button" id="edit_remove_profile_picture_btn" onclick="removeProfilePicture('edit')" class="btn btn-sm" style="margin-top: 0.5rem; display: none; background: #ef4444; color: white;">
+                            <i class="fas fa-trash"></i>
+                            <span>Remove Picture</span>
+                        </button>
+                        <input type="hidden" name="remove_profile_picture" id="edit_remove_profile_picture" value="0">
+                    </div>
+                </div>
+            </div>
             
             <!-- User Account Section -->
             <div style="margin-bottom: 2rem;">
@@ -657,8 +679,25 @@ function viewUserProfile(user) {
         profileLink = `/superadmin/patients?id=${user.pat_id}`;
     }
     
+    // Get profile picture or generate initials
+    const profilePicture = user.profile_picture_url || '';
+    const firstName = user.full_name ? user.full_name.split(' ')[0] : 'U';
+    const firstLetter = firstName.charAt(0).toUpperCase();
+    
     const content = `
         <div style="padding: 2rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-light);">
+                <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    ${profilePicture ? `<img src="${profilePicture}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">` : firstLetter}
+                </div>
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 1.5rem;">${user.full_name || 'N/A'}</h3>
+                    <p style="margin: 0; color: var(--text-secondary);">${user.user_email || 'N/A'}</p>
+                    <div style="margin-top: 0.5rem;">
+                        <span class="badge" style="background: ${getRoleColor(role)}20; color: ${getRoleColor(role)}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">${role}</span>
+                    </div>
+                </div>
+            </div>
             <div style="margin-bottom: 1.5rem;">
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">User Information</h3>
                 <div style="display: grid; gap: 1rem;">
@@ -673,9 +712,6 @@ function viewUserProfile(user) {
                     </div>
                     <div>
                         <strong>Phone:</strong> ${user.phone_number || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Role:</strong> <span class="badge" style="background: ${getRoleColor(role)}20; color: ${getRoleColor(role)};">${role}</span>
                     </div>
                     <div>
                         <strong>Date Created:</strong> ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
@@ -713,6 +749,9 @@ function editUser(user) {
     document.getElementById('edit_id').value = user.user_id;
     document.getElementById('edit_email').value = user.user_email || '';
     document.getElementById('edit_password').value = '';
+    
+    // Update profile picture preview
+    updateProfilePicturePreview('edit', user.profile_picture_url || '', user.full_name || 'U');
     
     // Hide all profile sections first
     document.getElementById('patient_fields').style.display = 'none';
@@ -1200,6 +1239,81 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     filterTable();
+});
+
+// Profile picture preview and management
+function updateProfilePicturePreview(prefix, imageUrl, name) {
+    const preview = document.getElementById(prefix + '_profile_picture_preview');
+    const initials = document.getElementById(prefix + '_profile_picture_initials');
+    const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+    const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+    
+    if (preview && initials) {
+        if (imageUrl) {
+            preview.innerHTML = `<img src="${imageUrl}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        } else {
+            const firstLetter = name.charAt(0).toUpperCase();
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+        if (removeInput) removeInput.value = '0';
+    }
+}
+
+function removeProfilePicture(prefix) {
+    if (confirm('Are you sure you want to remove the profile picture?')) {
+        const preview = document.getElementById(prefix + '_profile_picture_preview');
+        const initials = document.getElementById(prefix + '_profile_picture_initials');
+        const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+        const fileInput = document.getElementById(prefix + '_profile_picture_input');
+        const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+        
+        if (preview && initials) {
+            const firstLetter = initials.textContent || 'U';
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+        }
+        if (removeInput) removeInput.value = '1';
+        if (fileInput) fileInput.value = '';
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+}
+
+// Profile picture preview on file selection
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('edit_profile_picture_input');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP image.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('edit_profile_picture_preview');
+                    const removeBtn = document.getElementById('edit_remove_profile_picture_btn');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    }
+                    if (removeBtn) removeBtn.style.display = 'inline-flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 

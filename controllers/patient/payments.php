@@ -11,6 +11,9 @@ $patient_id = $auth->getPatientId();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle payment creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_payment') {
     $appointment_id = sanitize($_POST['appointment_id'] ?? '');

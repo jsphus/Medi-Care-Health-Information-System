@@ -28,149 +28,51 @@
     </div>
 <?php endif; ?>
 
-<!-- Create Doctor Form -->
-<div class="card">
-    <div class="card-header">
-        <h2 class="card-title">Add New Doctor</h2>
-    </div>
-    <div class="card-body">
-        <form method="POST" action="">
-            <input type="hidden" name="action" value="create">
-            
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>First Name: <span style="color: var(--status-error);">*</span></label>
-                    <input type="text" name="first_name" required class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Last Name: <span style="color: var(--status-error);">*</span></label>
-                    <input type="text" name="last_name" required class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Email: <span style="color: var(--status-error);">*</span></label>
-                    <input type="email" name="email" required class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Phone:</label>
-                    <input type="text" name="phone" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Specialization:</label>
-                    <select name="specialization_id" class="form-control">
-                        <option value="">Select Specialization</option>
-                        <?php foreach ($specializations as $spec): ?>
-                            <option value="<?= $spec['spec_id'] ?>"><?= htmlspecialchars($spec['spec_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>License Number:</label>
-                    <input type="text" name="license_number" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Experience (Years):</label>
-                    <input type="number" name="experience_years" min="0" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Consultation Fee:</label>
-                    <input type="number" name="consultation_fee" step="0.01" min="0" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select name="status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="form-group form-grid-full">
-                <label>Qualification:</label>
-                <textarea name="qualification" rows="2" class="form-control"></textarea>
-            </div>
-            
-            <div class="form-group form-grid-full">
-                <label>Bio:</label>
-                <textarea name="bio" rows="3" class="form-control"></textarea>
-            </div>
-            
-            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-light);">
-            
-            <div class="info-box" style="margin-bottom: 1.5rem;">
-                <i class="fas fa-lock"></i>
-                <p><strong>User Account (Login Credentials):</strong> Check the box below to create a user account for this doctor to login to the system.</p>
-            </div>
-            
-            <div class="form-group form-grid-full">
-                <label style="display: flex; align-items: center; cursor: pointer;">
-                    <input type="checkbox" name="create_user" value="1" id="create_user_checkbox" onchange="togglePasswordField()" style="margin-right: 0.5rem; width: auto;">
-                    <span>Create user account for login</span>
-                </label>
-            </div>
-            
-            <div class="form-group form-grid-full" id="password_field" style="display: none;">
-                <label>Password: <span style="color: var(--status-error);">*</span></label>
-                <input type="password" name="password" id="password_input" minlength="6" placeholder="Minimum 6 characters" class="form-control">
-                <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">The doctor will use their email and this password to login.</small>
-            </div>
-            
-            <div class="action-buttons" style="margin-top: 1.5rem;">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Doctor</span>
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function togglePasswordField() {
-    const checkbox = document.getElementById('create_user_checkbox');
-    const passwordField = document.getElementById('password_field');
-    const passwordInput = document.getElementById('password_input');
-    
-    if (checkbox.checked) {
-        passwordField.style.display = 'block';
-        passwordInput.required = true;
-    } else {
-        passwordField.style.display = 'none';
-        passwordInput.required = false;
-        passwordInput.value = '';
-    }
-}
-</script>
-
 <!-- Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Doctors</span>
+<div class="stat-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Active Doctors Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Active Doctors</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['active_doctors'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Currently active
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Active Doctors</span>
+
+    <!-- Doctors with Schedules Today Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Scheduled Today</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['doctors_with_schedules_today'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    With available schedules
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Inactive Doctors</span>
+
+    <!-- Doctors with User Accounts Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">With User Accounts</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['doctors_with_user_accounts'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Can login to system
+                </div>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
     </div>
 </div>
 
@@ -179,6 +81,10 @@ function togglePasswordField() {
     <!-- Table Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
         <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Doctors</h2>
+        <button type="button" class="btn btn-primary" onclick="openAddDoctorModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-plus"></i>
+            <span>Add New Doctor</span>
+        </button>
     </div>
 
     <?php if (empty($doctors)): ?>
@@ -262,6 +168,117 @@ function togglePasswordField() {
             </table>
         </div>
     <?php endif; ?>
+</div>
+
+<!-- Add Doctor Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Doctor</h2>
+            <button type="button" class="modal-close" onclick="closeAddDoctorModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="create">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>First Name: <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" name="first_name" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Last Name: <span style="color: var(--status-error);">*</span></label>
+                    <input type="text" name="last_name" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Email: <span style="color: var(--status-error);">*</span></label>
+                    <input type="email" name="email" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone:</label>
+                    <input type="text" name="phone" id="add_phone" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Specialization:</label>
+                    <select name="specialization_id" class="form-control">
+                        <option value="">Select Specialization</option>
+                        <?php foreach ($specializations as $spec): ?>
+                            <option value="<?= $spec['spec_id'] ?>"><?= htmlspecialchars($spec['spec_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>License Number:</label>
+                    <input type="text" name="license_number" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Experience (Years):</label>
+                    <input type="number" name="experience_years" min="0" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Consultation Fee:</label>
+                    <input type="number" name="consultation_fee" step="0.01" min="0" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select name="status" class="form-control">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group form-grid-full">
+                <label>Qualification:</label>
+                <textarea name="qualification" rows="2" class="form-control"></textarea>
+            </div>
+            
+            <div class="form-group form-grid-full">
+                <label>Bio:</label>
+                <textarea name="bio" rows="3" class="form-control"></textarea>
+            </div>
+            
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-light);">
+            
+            <div class="info-box" style="margin-bottom: 1.5rem;">
+                <i class="fas fa-lock"></i>
+                <p><strong>User Account (Login Credentials):</strong> Check the box below to create a user account for this doctor to login to the system.</p>
+            </div>
+            
+            <div class="form-group form-grid-full">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" name="create_user" value="1" id="add_create_user_checkbox" onchange="toggleAddPasswordField()" style="margin-right: 0.5rem; width: auto;">
+                    <span>Create user account for login</span>
+                </label>
+            </div>
+            
+            <div class="form-group form-grid-full" id="add_password_field" style="display: none;">
+                <label>Password: <span style="color: var(--status-error);">*</span></label>
+                <input type="password" name="password" id="add_password_input" minlength="6" placeholder="Minimum 6 characters" class="form-control">
+                <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">The doctor will use their email and this password to login.</small>
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Doctor</span>
+                </button>
+                <button type="button" onclick="closeAddDoctorModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Edit Modal -->
@@ -391,6 +408,34 @@ function formatPhoneInput(inputId) {
     }
 }
 
+function openAddDoctorModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+
+function closeAddDoctorModal() {
+    const modal = document.getElementById('addModal');
+    modal.classList.remove('active');
+    modal.querySelector('form').reset();
+    document.getElementById('add_password_field').style.display = 'none';
+    document.getElementById('add_password_input').required = false;
+    document.getElementById('add_create_user_checkbox').checked = false;
+}
+
+function toggleAddPasswordField() {
+    const checkbox = document.getElementById('add_create_user_checkbox');
+    const passwordField = document.getElementById('add_password_field');
+    const passwordInput = document.getElementById('add_password_input');
+    
+    if (checkbox.checked) {
+        passwordField.style.display = 'block';
+        passwordInput.required = true;
+    } else {
+        passwordField.style.display = 'none';
+        passwordInput.required = false;
+        passwordInput.value = '';
+    }
+}
+
 function editDoctor(doctor) {
     document.getElementById('edit_id').value = doctor.doc_id;
     document.getElementById('edit_first_name').value = doctor.doc_first_name;
@@ -411,9 +456,35 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
-// Initialize phone number formatting
+// Initialize phone number formatting and modal handlers
 document.addEventListener('DOMContentLoaded', function() {
     formatPhoneInput('edit_phone');
+    formatPhoneInput('add_phone');
+    
+    // Close modals on outside click and Escape key
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (this.id === 'addModal') {
+                    closeAddDoctorModal();
+                } else {
+                    this.classList.remove('active');
+                }
+            }
+        });
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                if (modal.id === 'addModal') {
+                    closeAddDoctorModal();
+                } else {
+                    modal.classList.remove('active');
+                }
+            });
+        }
+    });
 });
 </script>
 

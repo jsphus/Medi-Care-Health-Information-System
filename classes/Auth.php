@@ -47,23 +47,158 @@ class Auth {
     }
     
     public function isStaff() {
+        // If viewing as staff, return true
+        if (isset($_SESSION['view_as_role']) && $_SESSION['view_as_role'] === 'staff') {
+            return true;
+        }
         return $this->isLoggedIn() && isset($_SESSION['staff_id']) && $_SESSION['staff_id'] !== null;
     }
     
     public function isDoctor() {
+        // If viewing as doctor, return true
+        if (isset($_SESSION['view_as_role']) && $_SESSION['view_as_role'] === 'doctor') {
+            return true;
+        }
         return $this->isLoggedIn() && isset($_SESSION['doc_id']) && $_SESSION['doc_id'] !== null;
     }
     
     public function isPatient() {
+        // If viewing as patient, return true
+        if (isset($_SESSION['view_as_role']) && $_SESSION['view_as_role'] === 'patient') {
+            return true;
+        }
         return $this->isLoggedIn() && isset($_SESSION['pat_id']) && $_SESSION['pat_id'] !== null;
     }
     
     public function getRole() {
+        // Check if viewing as another role
+        if (isset($_SESSION['view_as_role'])) {
+            return $_SESSION['view_as_role'];
+        }
+        
         if ($this->isSuperAdmin()) return 'superadmin';
         if ($this->isStaff()) return 'staff';
         if ($this->isDoctor()) return 'doctor';
         if ($this->isPatient()) return 'patient';
         return null;
+    }
+    
+    public function isViewingAs() {
+        return isset($_SESSION['view_as_role']) && isset($_SESSION['original_user_id']);
+    }
+    
+    public function getOriginalUserId() {
+        return $_SESSION['original_user_id'] ?? null;
+    }
+    
+    public function startViewAs($role) {
+        // Only super admin can use view-as
+        // Check original superadmin status if already viewing as
+        $isOriginalSuperAdmin = false;
+        if ($this->isViewingAs()) {
+            $isOriginalSuperAdmin = $_SESSION['original_is_superadmin'] ?? false;
+        } else {
+            $isOriginalSuperAdmin = $this->isSuperAdmin();
+        }
+        
+        if (!$isOriginalSuperAdmin) {
+            return false;
+        }
+        
+        // If already viewing as, restore first, then start new view-as
+        if ($this->isViewingAs()) {
+            $this->stopViewAs();
+        }
+        
+        // Store original session data
+        $_SESSION['original_user_id'] = $_SESSION['user_id'];
+        $_SESSION['original_is_superadmin'] = $_SESSION['is_superadmin'];
+        $_SESSION['original_pat_id'] = $_SESSION['pat_id'] ?? null;
+        $_SESSION['original_staff_id'] = $_SESSION['staff_id'] ?? null;
+        $_SESSION['original_doc_id'] = $_SESSION['doc_id'] ?? null;
+        
+        // Set view-as role
+        $_SESSION['view_as_role'] = $role;
+        
+        // Get a sample user of the target role from database
+        try {
+            switch ($role) {
+                case 'doctor':
+                    $stmt = $this->db->query("SELECT u.user_id, u.doc_id FROM users u WHERE u.doc_id IS NOT NULL LIMIT 1");
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($user) {
+                        $_SESSION['user_id'] = $user['user_id'];
+                        $_SESSION['doc_id'] = $user['doc_id'];
+                        $_SESSION['pat_id'] = null;
+                        $_SESSION['staff_id'] = null;
+                        $_SESSION['is_superadmin'] = false;
+                    } else {
+                        return false;
+                    }
+                    break;
+                    
+                case 'patient':
+                    $stmt = $this->db->query("SELECT u.user_id, u.pat_id FROM users u WHERE u.pat_id IS NOT NULL LIMIT 1");
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($user) {
+                        $_SESSION['user_id'] = $user['user_id'];
+                        $_SESSION['pat_id'] = $user['pat_id'];
+                        $_SESSION['doc_id'] = null;
+                        $_SESSION['staff_id'] = null;
+                        $_SESSION['is_superadmin'] = false;
+                    } else {
+                        return false;
+                    }
+                    break;
+                    
+                case 'staff':
+                    $stmt = $this->db->query("SELECT u.user_id, u.staff_id FROM users u WHERE u.staff_id IS NOT NULL LIMIT 1");
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($user) {
+                        $_SESSION['user_id'] = $user['user_id'];
+                        $_SESSION['staff_id'] = $user['staff_id'];
+                        $_SESSION['pat_id'] = null;
+                        $_SESSION['doc_id'] = null;
+                        $_SESSION['is_superadmin'] = false;
+                    } else {
+                        return false;
+                    }
+                    break;
+                    
+                default:
+                    return false;
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            error_log("View as error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    public function stopViewAs() {
+        if (!$this->isViewingAs()) {
+            return false;
+        }
+        
+        // Restore original session data
+        if (isset($_SESSION['original_user_id'])) {
+            $_SESSION['user_id'] = $_SESSION['original_user_id'];
+            $_SESSION['is_superadmin'] = $_SESSION['original_is_superadmin'] ?? false;
+            $_SESSION['pat_id'] = $_SESSION['original_pat_id'] ?? null;
+            $_SESSION['staff_id'] = $_SESSION['original_staff_id'] ?? null;
+            $_SESSION['doc_id'] = $_SESSION['original_doc_id'] ?? null;
+        }
+        
+        // Clear view-as data
+        unset($_SESSION['view_as_role']);
+        unset($_SESSION['original_user_id']);
+        unset($_SESSION['original_is_superadmin']);
+        unset($_SESSION['original_pat_id']);
+        unset($_SESSION['original_staff_id']);
+        unset($_SESSION['original_doc_id']);
+        
+        return true;
     }
     
     public function getUserId() {
@@ -99,6 +234,7 @@ class Auth {
     
     public function requireStaff() {
         $this->requireLogin();
+        // Allow if viewing as staff or is super admin (even when viewing as)
         if (!$this->isStaff() && !$this->isSuperAdmin()) {
             header('Location: /');
             exit;
@@ -107,6 +243,7 @@ class Auth {
     
     public function requireDoctor() {
         $this->requireLogin();
+        // Allow if viewing as doctor or is super admin (even when viewing as)
         if (!$this->isDoctor() && !$this->isSuperAdmin()) {
             header('Location: /');
             exit;
@@ -115,7 +252,8 @@ class Auth {
     
     public function requirePatient() {
         $this->requireLogin();
-        if (!$this->isPatient()) {
+        // Allow if viewing as patient or is super admin (even when viewing as)
+        if (!$this->isPatient() && !$this->isSuperAdmin()) {
             header('Location: /');
             exit;
         }

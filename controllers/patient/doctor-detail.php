@@ -9,6 +9,9 @@ $auth->requirePatient();
 $db = Database::getInstance();
 $error = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Get doctor ID from URL
 $doctor_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 

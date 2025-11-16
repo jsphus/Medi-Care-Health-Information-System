@@ -6,8 +6,12 @@ require_once __DIR__ . '/../../includes/functions.php';
 $auth = new Auth();
 $auth->requirePatient();
 
+$db = Database::getInstance();
 $error = '';
 $success = '';
+
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $success = 'Privacy settings saved successfully';

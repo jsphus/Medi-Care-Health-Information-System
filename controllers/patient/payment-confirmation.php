@@ -10,6 +10,9 @@ $db = Database::getInstance();
 $patient_id = $auth->getPatientId();
 $error = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Get appointment ID from URL
 $appointment_id = isset($_GET['appointment_id']) ? sanitize($_GET['appointment_id']) : '';
 

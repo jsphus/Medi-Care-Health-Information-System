@@ -11,6 +11,9 @@ $doctor_id = $auth->getDoctorId();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -132,26 +135,56 @@ try {
     $today_schedules = [];
 }
 
-// Calculate statistics for summary cards
+// Calculate useful statistics for summary cards
 $stats = [
-    'total' => 0,
-    'today' => 0,
-    'upcoming' => 0
+    'today_appointments' => 0,
+    'available_slots_today' => 0,
+    'next_schedule' => null,
+    'this_week_schedules' => 0
 ];
 
 try {
-    // Total schedules for this doctor
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM doctor_schedules WHERE doc_id = :doctor_id");
-    $stmt->execute(['doctor_id' => $doctor_id]);
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $today = date('Y-m-d');
     
-    // Today's schedules
-    $stats['today'] = count($today_schedules);
+    // Today's appointments count
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM appointments WHERE doc_id = :doctor_id AND appointment_date = :today");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
+    $stats['today_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Upcoming schedules (future dates)
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM doctor_schedules WHERE doc_id = :doctor_id AND schedule_date > CURRENT_DATE");
-    $stmt->execute(['doctor_id' => $doctor_id]);
-    $stats['upcoming'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // Available slots today (total max appointments - booked appointments)
+    $total_max_slots = 0;
+    foreach ($today_schedules as $sched) {
+        if ($sched['is_available']) {
+            $total_max_slots += (int)$sched['max_appointments'];
+        }
+    }
+    $stats['available_slots_today'] = max(0, $total_max_slots - $stats['today_appointments']);
+    
+    // Next upcoming schedule
+    $stmt = $db->prepare("
+        SELECT schedule_date, start_time 
+        FROM schedules 
+        WHERE doc_id = :doctor_id 
+        AND (schedule_date > :today OR (schedule_date = :today AND start_time > TIME(NOW())))
+        AND is_available = 1
+        ORDER BY schedule_date ASC, start_time ASC 
+        LIMIT 1
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
+    $next_schedule = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['next_schedule'] = $next_schedule;
+    
+    // This week's schedules count (next 7 days)
+    $week_end = date('Y-m-d', strtotime('+7 days'));
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM schedules 
+        WHERE doc_id = :doctor_id 
+        AND schedule_date >= :today 
+        AND schedule_date <= :week_end
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today, 'week_end' => $week_end]);
+    $stats['this_week_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 } catch (PDOException $e) {
     // Keep default values
 }

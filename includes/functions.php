@@ -93,3 +93,28 @@ function getDefaultAvatar($name, $size = 80) {
     return $firstLetter;
 }
 
+/**
+ * Initialize profile picture URL for the current logged-in user
+ * This function should be called in all controllers to ensure consistent profile picture display
+ * @param Auth $auth Auth instance
+ * @param PDO $db Database connection
+ * @return string|null Profile picture URL or null
+ */
+function initializeProfilePicture($auth, $db) {
+    try {
+        $user_id = $auth->getUserId();
+        if (!$user_id) {
+            return null;
+        }
+        
+        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+        $stmt->execute(['user_id' => $user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $user['profile_picture_url'] ?? null;
+    } catch (PDOException $e) {
+        error_log("Error fetching profile picture: " . $e->getMessage());
+        return null;
+    }
+}
+

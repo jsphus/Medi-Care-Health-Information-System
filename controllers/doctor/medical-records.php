@@ -152,43 +152,69 @@ try {
     $filter_patients = [];
 }
 
-// Fetch patients for dropdown (from doctor's appointments)
+// Fetch patients for dropdown (all patients, not just those with appointments)
 try {
-    $stmt = $db->prepare("
-        SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name
-        FROM patients p
-        INNER JOIN appointments a ON p.pat_id = a.pat_id
-        WHERE a.doc_id = :doctor_id
-        ORDER BY p.pat_first_name
+    $stmt = $db->query("
+        SELECT pat_id, pat_first_name, pat_last_name
+        FROM patients
+        ORDER BY pat_first_name, pat_last_name
     ");
-    $stmt->execute(['doctor_id' => $doctor_id]);
     $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $patients = [];
 }
 
-// Calculate statistics for summary cards
+// Calculate useful statistics for summary cards
 $stats = [
-    'total' => 0,
-    'this_month' => 0,
-    'pending_followup' => 0
+    'records_this_month' => 0,
+    'pending_followups' => 0,
+    'unique_patients' => 0,
+    'records_today' => 0
 ];
 
 try {
-    // Total medical records for this doctor
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM medical_records WHERE doc_id = :doctor_id");
-    $stmt->execute(['doctor_id' => $doctor_id]);
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $today = date('Y-m-d');
+    $month_start = date('Y-m-01');
     
     // Records this month
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM medical_records WHERE doc_id = :doctor_id AND DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE)");
-    $stmt->execute(['doctor_id' => $doctor_id]);
-    $stats['this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM medical_records 
+        WHERE doc_id = :doctor_id 
+        AND record_date >= :month_start
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'month_start' => $month_start]);
+    $stats['records_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Pending follow-up
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM medical_records WHERE doc_id = :doctor_id AND follow_up_date IS NOT NULL AND follow_up_date >= CURRENT_DATE");
+    // Pending follow-ups (upcoming follow-up dates)
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM medical_records 
+        WHERE doc_id = :doctor_id 
+        AND follow_up_date IS NOT NULL 
+        AND follow_up_date >= :today
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
+    $stats['pending_followups'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Unique patients with records
+    $stmt = $db->prepare("
+        SELECT COUNT(DISTINCT pat_id) as count 
+        FROM medical_records 
+        WHERE doc_id = :doctor_id
+    ");
     $stmt->execute(['doctor_id' => $doctor_id]);
-    $stats['pending_followup'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stats['unique_patients'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Records created today
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM medical_records 
+        WHERE doc_id = :doctor_id 
+        AND DATE(created_at) = :today
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
+    $stats['records_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 } catch (PDOException $e) {
     // Keep default values
 }

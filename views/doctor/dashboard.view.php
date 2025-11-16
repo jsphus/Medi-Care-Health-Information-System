@@ -23,197 +23,415 @@
     </div>
 </div>
 
-<!-- Statistics Cards -->
+<!-- Top Summary Cards Row -->
 <div class="stat-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Appointments Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Appointments</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['total_appointments']) ?>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: #ef4444;">
+                    <span>-4.3%</span>
+                    <span style="color: var(--text-secondary);">then last month</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Total Patients Card -->
     <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Patients</div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Total Patients</div>
                 <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?php 
-                    $total_patients = $stats['total_patients'];
-                    if ($total_patients >= 1000) {
-                        echo number_format($total_patients / 1000, 1) . 'k';
-                    } else {
-                        echo $total_patients;
-                    }
-                    ?>
+                    <?= number_format($stats['total_patients']) ?>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--status-success); font-size: 0.875rem;">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>+<?= $total_patients > 0 ? round(($total_patients * 0.23)) : 0 ?>%</span>
+                <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--status-success);">
+                    <span>+6.5%</span>
+                    <span style="color: var(--text-secondary);">then last month</span>
                 </div>
-            </div>
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-users" style="color: var(--primary-blue); font-size: 1.5rem;"></i>
             </div>
         </div>
     </div>
 
-    <!-- Active Doctors Card -->
+    <!-- Admitted Patients Card -->
     <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Active Doctors</div>
-                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;"><?= $stats['active_doctors'] ?></div>
-                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--status-success); font-size: 0.875rem;">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>+<?= $stats['active_doctors'] > 0 ? round(($stats['active_doctors'] * 0.10)) : 0 ?>%</span>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Admitted Patients</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['admitted_patients']) ?>
                 </div>
-            </div>
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-user-md" style="color: var(--status-success); font-size: 1.5rem;"></i>
+                <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--status-success);">
+                    <span>+6.5%</span>
+                    <span style="color: var(--text-secondary);">then last month</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Today Appointments Card -->
+    <!-- Today's Revenue Card -->
     <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Today Appointments</div>
-                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;"><?= $stats['today_appointments'] ?></div>
-                <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--status-success); font-size: 0.875rem;">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>+<?= $stats['today_appointments'] > 0 ? round(($stats['today_appointments'] * 0.13)) : 0 ?>%</span>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500;">Today's Revenue</div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    $<?= number_format($stats['today_revenue'], 2) ?>
                 </div>
-            </div>
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-calendar-check" style="color: #f59e0b; font-size: 1.5rem;"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pending Lab Results Card -->
-    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <div>
-                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Pending lab results</div>
-                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;"><?= $stats['pending_lab_results'] ?></div>
-                <div style="display: flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-size: 0.875rem;">
-                    <i class="fas fa-sync-alt" style="font-size: 0.75rem;"></i>
-                    <span>+<?= $stats['pending_lab_results'] > 0 ? round(($stats['pending_lab_results'] * 0.64)) : 0 ?>%</span>
+                <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--status-success);">
+                    <span>+6.5%</span>
+                    <span style="color: var(--text-secondary);">then last month</span>
                 </div>
-            </div>
-            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(251, 191, 36, 0.1); display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-flask" style="color: #fbbf24; font-size: 1.5rem;"></i>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Main Content Grid -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-    <!-- Recent Appointment Section -->
+<!-- Main Content Area -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Left Column: Patient List Table -->
     <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recent Appointment</h2>
-            <select class="form-control" style="width: auto; padding: 0.5rem 1rem; font-size: 0.875rem;">
-                <option>Today</option>
-                <option>This Week</option>
-                <option>This Month</option>
-            </select>
-        </div>
+        <h2 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Patient list</h2>
         
-        <?php if (empty($recent_appointments)): ?>
+        <?php if (empty($patient_list)): ?>
             <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                <i class="fas fa-calendar" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                <p style="margin: 0;">No recent appointments</p>
+                <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                <p style="margin: 0;">No patient records found</p>
             </div>
         <?php else: ?>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <?php foreach ($recent_appointments as $apt): ?>
-                    <?php
-                    $patName = htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''));
-                    $docName = 'Dr. ' . htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? ''));
-                    $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';
-                    $statusName = strtolower($apt['status_name'] ?? 'scheduled');
-                    $serviceName = htmlspecialchars($apt['service_name'] ?? 'Consultation');
-                    
-                    // Determine status badge color
-                    $statusColor = '#10b981'; // green for completed/active
-                    $statusText = 'Completed';
-                    if (strpos($statusName, 'pending') !== false || strpos($statusName, 'scheduled') !== false) {
-                        $statusColor = '#f59e0b'; // yellow for pending
-                        $statusText = 'Pending';
-                    } elseif (strpos($statusName, 'active') !== false || strpos($statusName, 'confirmed') !== false) {
-                        $statusColor = '#10b981'; // green for active
-                        $statusText = 'Active';
-                    }
-                    ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 8px;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;"><?= $patName ?></div>
-                            <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                                <?= $docName ?> - <?= $appointmentTime ?>
-                            </div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
-                            <span style="font-size: 0.75rem; color: var(--text-secondary);"><?= $serviceName ?></span>
-                            <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $statusColor ?>20; color: <?= $statusColor ?>;">
-                                <?= $statusText ?>
-                            </span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">#</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Date</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Patient list</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Age</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Reason</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Type</th>
+                            <th style="padding: 0.75rem; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary);">Report</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($patient_list as $index => $patient): ?>
+                            <?php
+                            $patientName = htmlspecialchars(($patient['pat_first_name'] ?? '') . ' ' . ($patient['pat_last_name'] ?? ''));
+                            $appointmentDate = isset($patient['appointment_date']) ? date('n/j/y', strtotime($patient['appointment_date'])) : 'N/A';
+                            $age = '';
+                            if (!empty($patient['pat_date_of_birth'])) {
+                                $birthDate = new DateTime($patient['pat_date_of_birth']);
+                                $today = new DateTime();
+                                $age = $today->diff($birthDate)->y;
+                            }
+                            $reason = htmlspecialchars($patient['appointment_notes'] ?? $patient['service_name'] ?? '---');
+                            $appointmentType = $patient['appointment_type'] ?? 'First visit';
+                            $hasReport = $patient['has_report'] ?? 'No';
+                            ?>
+                            <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary);"><?= str_pad($index + 1, 2, '0', STR_PAD_LEFT) ?></td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary);"><?= $appointmentDate ?></td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary); font-weight: 500;"><?= $patientName ?></td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary);"><?= $age ? $age : '---' ?></td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary);"><?= $reason ?></td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem;">
+                                    <?php if ($appointmentType === 'Follow up'): ?>
+                                        <span style="color: var(--status-success); font-weight: 500;">Follow up</span>
+                                    <?php else: ?>
+                                        <span style="color: var(--text-primary);"><?= htmlspecialchars($appointmentType) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="padding: 0.75rem; font-size: 0.875rem; color: var(--text-primary);">
+                                    <?php if ($hasReport === 'Yes'): ?>
+                                        <span style="color: var(--text-primary);">Yes</span>
+                                    <?php else: ?>
+                                        <span style="color: var(--text-secondary);"><?= $hasReport === 'No' ? 'No' : '---' ?></span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
         <?php endif; ?>
     </div>
 
-    <!-- Right Column -->
+    <!-- Right Column: Calendar and New Appointments -->
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Quick Actions Section -->
+        <!-- Calendar Widget -->
         <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Quick Actions</h2>
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <a href="/doctor/appointments/today" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-calendar-plus" style="color: var(--primary-blue);"></i>
-                        <span style="font-weight: 500;">Schedule Appointment</span>
-                    </div>
-                    <button class="btn btn-sm" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Add</button>
-                </a>
-                <a href="/doctor/appointments/today" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-calendar-check" style="color: var(--primary-blue);"></i>
-                        <span style="font-weight: 500;">View Appointments</span>
-                    </div>
-                    <button class="btn btn-sm" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</button>
-                </a>
-                <a href="/doctor/doctors" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-user-md" style="color: var(--primary-blue);"></i>
-                        <span style="font-weight: 500;">View Doctors</span>
-                    </div>
-                    <button class="btn btn-sm" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">View</button>
-                </a>
-                <a href="/doctor/medical-records" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-file-medical" style="color: var(--primary-blue);"></i>
-                        <span style="font-weight: 500;">Create Medical Record</span>
-                    </div>
-                    <button class="btn btn-sm" style="padding: 0.25rem 0.75rem; font-size: 0.875rem;">Create</button>
-                </a>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 id="calendar-month-header" style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary); text-transform: uppercase;">
+                    <?= strtoupper(date('F Y')) ?>
+                </h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="changeMonth(-1)" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 0.25rem 0.5rem;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button onclick="changeMonth(1)" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 0.25rem 0.5rem;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="calendar-widget" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
+                <!-- Calendar will be generated by JavaScript -->
             </div>
         </div>
 
-        <!-- Patient Analytics Section -->
+        <!-- New Appointments List -->
         <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h2 style="margin: 0 0 1.5rem 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Patient Analytics</h2>
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-                <button class="btn btn-sm btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">7 Days</button>
-                <button class="btn btn-sm" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #f3f4f6; color: var(--text-secondary);">30 Days</button>
-                <button class="btn btn-sm" style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #f3f4f6; color: var(--text-secondary);">90 Days</button>
-            </div>
-            <div style="min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f9fafb; border-radius: 8px; padding: 2rem;">
-                <p style="color: var(--text-secondary); margin: 0; text-align: center; font-size: 0.875rem;">
-                    Chart component will be integrated here<br>
-                    <span style="font-size: 0.75rem; opacity: 0.7;">Patient registration and appointment trends.</span>
-                </p>
-            </div>
+            <h3 style="margin: 0 0 1.5rem 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">New Appointments</h3>
+            
+            <?php if (empty($new_appointments)): ?>
+                <div style="text-align: center; padding: 1rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar" style="font-size: 1.5rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                    <p style="margin: 0; font-size: 0.875rem;">No upcoming appointments</p>
+                </div>
+            <?php else: ?>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <?php foreach ($new_appointments as $apt): ?>
+                        <?php
+                        $patName = htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''));
+                        $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';
+                        $reason = htmlspecialchars($apt['appointment_notes'] ?? $apt['service_name'] ?? 'Consultation');
+                        $appointmentType = $apt['appointment_type'] ?? 'First Visit';
+                        if (!empty($apt['pat_date_of_birth'])) {
+                            $birthDate = new DateTime($apt['pat_date_of_birth']);
+                            $today = new DateTime();
+                            $age = $today->diff($birthDate)->y;
+                        } else {
+                            $age = '';
+                        }
+                        ?>
+                        <div style="display: flex; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
+                                <?= strtoupper(substr($apt['pat_first_name'] ?? 'P', 0, 1)) ?>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                    <?= $patName ?>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                    age: <?= $age ? $age . ' years' : 'N/A' ?>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                                    reason: <?= $reason ?>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                        Time: <?= $appointmentTime ?>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                        Type: <?= htmlspecialchars($appointmentType) ?>
+                                    </div>
+                                </div>
+                                <a href="/doctor/appointments/today" style="display: inline-block; margin-top: 0.5rem; padding: 0.375rem 0.75rem; background: var(--primary-blue); color: white; border-radius: 6px; text-decoration: none; font-size: 0.75rem; font-weight: 500;">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
+
+<!-- Bottom Charts Row -->
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Patient Appointment Type Donut Chart -->
+    <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0 1.5rem 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">Patient Appointment Type</h3>
+        <div style="position: relative; height: 250px;">
+            <canvas id="appointmentTypeChart"></canvas>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 12px; height: 12px; border-radius: 2px; background: var(--status-success);"></div>
+                <span style="font-size: 0.875rem; color: var(--text-primary);">Follow up</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 12px; height: 12px; border-radius: 2px; background: #f59e0b;"></div>
+                <span style="font-size: 0.875rem; color: var(--text-primary);">Emergency</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 12px; height: 12px; border-radius: 2px; background: var(--primary-blue);"></div>
+                <span style="font-size: 0.875rem; color: var(--text-primary);">First visit</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Patients Visit Line Graph -->
+    <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="margin: 0 0 1.5rem 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">Monthly Patients Visit</h3>
+        <div style="position: relative; height: 250px;">
+            <canvas id="monthlyVisitChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Calendar Widget
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+
+function generateCalendar() {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const calendarWidget = document.getElementById('calendar-widget');
+    
+    // Update header
+    const header = document.getElementById('calendar-month-header');
+    if (header) {
+        header.textContent = monthNames[currentMonth].toUpperCase() + ' ' + currentYear;
+    }
+    
+    // Clear previous calendar
+    calendarWidget.innerHTML = '';
+    
+    // Add day headers
+    dayNames.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.style.cssText = 'text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); padding: 0.5rem;';
+        dayHeader.textContent = day;
+        calendarWidget.appendChild(dayHeader);
+    });
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const today = new Date();
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.style.cssText = 'padding: 0.5rem; text-align: center;';
+        calendarWidget.appendChild(emptyCell);
+    }
+    
+    // Add days of month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.style.cssText = 'padding: 0.5rem; text-align: center; font-size: 0.875rem; cursor: pointer; border-radius: 6px;';
+        
+        // Highlight today
+        if (day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()) {
+            dayCell.style.cssText += 'background: var(--primary-blue); color: white; font-weight: 600;';
+        } else {
+            dayCell.style.cssText += 'color: var(--text-primary);';
+        }
+        
+        dayCell.textContent = day;
+        dayCell.onmouseover = function() {
+            if (!this.style.background || !this.style.background.includes('var(--primary-blue)')) {
+                this.style.background = '#f3f4f6';
+            }
+        };
+        dayCell.onmouseout = function() {
+            if (!this.style.background || !this.style.background.includes('var(--primary-blue)')) {
+                this.style.background = '';
+            }
+        };
+        calendarWidget.appendChild(dayCell);
+    }
+}
+
+function changeMonth(direction) {
+    currentMonth += direction;
+    if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+    } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+    }
+    generateCalendar();
+}
+
+// Initialize calendar
+generateCalendar();
+
+// Appointment Type Donut Chart
+const appointmentTypeCtx = document.getElementById('appointmentTypeChart').getContext('2d');
+const appointmentTypeChart = new Chart(appointmentTypeCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Follow up', 'Emergency', 'First visit'],
+        datasets: [{
+            data: [
+                <?= $appointment_type_chart['Follow up'] ?? 0 ?>,
+                <?= $appointment_type_chart['Emergency'] ?? 0 ?>,
+                <?= $appointment_type_chart['First visit'] ?? 0 ?>
+            ],
+            backgroundColor: [
+                'var(--status-success)',
+                '#f59e0b',
+                'var(--primary-blue)'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Monthly Patients Visit Line Chart
+const monthlyVisitCtx = document.getElementById('monthlyVisitChart').getContext('2d');
+const monthlyVisitChart = new Chart(monthlyVisitCtx, {
+    type: 'line',
+    data: {
+        labels: ['week 1', 'week 2', 'week 3', 'week 4'],
+        datasets: [{
+            label: 'No. of patients',
+            data: <?= json_encode($weekly_visits) ?>,
+            borderColor: 'var(--primary-blue)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: 'var(--primary-blue)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 10
+                },
+                grid: {
+                    color: '#f3f4f6'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

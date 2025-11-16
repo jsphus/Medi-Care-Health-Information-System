@@ -19,22 +19,71 @@
 <?php endif; ?>
 
 <!-- Summary Cards -->
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
             <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Patients</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= ($stats['active'] ?? 0) + ($stats['inactive'] ?? 0) ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">New Patients This Month</span>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">New This Month</span>
         </div>
         <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total_this_month'] ?? 0 ?></div>
     </div>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;"></div>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">Active</span>
+        </div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
+    </div>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #9b59b6;"></div>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">Inactive</span>
+        </div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
+    </div>
 </div>
+
+<!-- Doctors Cards Section -->
+<?php if (!empty($doctors)): ?>
+<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Active Doctors</h2>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+        <?php foreach ($doctors as $doctor): ?>
+            <?php
+            $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
+            $doctorName = 'Dr. ' . htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+            $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+            ?>
+            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid var(--border-light); transition: all 0.2s;" 
+                 onmouseover="this.style.borderColor='var(--primary-blue)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.15)';" 
+                 onmouseout="this.style.borderColor='var(--border-light)'; this.style.boxShadow='none';">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.75rem; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                    <?php if (!empty($doctor['profile_picture_url'])): ?>
+                        <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
+                    <?php else: ?>
+                        <?= $initials ?>
+                    <?php endif; ?>
+                </div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= $doctorName ?>
+                </div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                    <?= $specialization ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
@@ -180,8 +229,12 @@
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= strtoupper(substr($patient['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
+                                        <?php if (!empty($patient['profile_picture_url'])): ?>
+                                            <img src="<?= htmlspecialchars($patient['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <?= strtoupper(substr($patient['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                        <?php endif; ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?></strong>
                                 </div>
@@ -424,9 +477,31 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" id="edit_id">
+            
+            <!-- Profile Picture Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Profile Picture</h3>
+                <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex-shrink: 0;">
+                        <div id="edit_profile_picture_preview" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <span id="edit_profile_picture_initials">P</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label class="form-label-modern">Upload New Picture</label>
+                        <input type="file" name="profile_picture" id="edit_profile_picture_input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="form-control" style="padding: 0.5rem;">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Max 5MB. Formats: JPG, PNG, GIF, WEBP</small>
+                        <button type="button" id="edit_remove_profile_picture_btn" onclick="removeProfilePicture('edit')" class="btn btn-sm" style="margin-top: 0.5rem; display: none; background: #ef4444; color: white;">
+                            <i class="fas fa-trash"></i>
+                            <span>Remove Picture</span>
+                        </button>
+                        <input type="hidden" name="remove_profile_picture" id="edit_remove_profile_picture" value="0">
+                    </div>
+                </div>
+            </div>
             
             <div class="form-grid">
                 <div class="form-group">
@@ -595,6 +670,10 @@ function editPatient(patient) {
     document.getElementById('edit_allergies').value = patient.pat_allergies || '';
     document.getElementById('edit_insurance_provider').value = patient.pat_insurance_provider || '';
     document.getElementById('edit_insurance_number').value = patient.pat_insurance_number || '';
+    
+    // Update profile picture preview
+    updateProfilePicturePreview('edit', patient.profile_picture_url || '', patient.pat_first_name || 'P');
+    
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -603,9 +682,25 @@ function closeEditModal() {
 }
 
 function viewPatientDetails(patient) {
+    // Get profile picture or generate initials
+    const profilePicture = patient.profile_picture_url || '';
+    const firstName = patient.pat_first_name || 'P';
+    const firstLetter = firstName.charAt(0).toUpperCase();
+    const fullName = `${patient.pat_first_name || ''} ${patient.pat_last_name || ''}`.trim();
+    
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">
             <div class="card-body">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-light);">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        ${profilePicture ? `<img src="${profilePicture}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">` : firstLetter}
+                    </div>
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 1.5rem;">${fullName || 'N/A'}</h3>
+                        <p style="margin: 0; color: var(--text-secondary);">${patient.pat_email || 'N/A'}</p>
+                        ${patient.pat_gender ? `<p style="margin: 0.25rem 0 0 0; color: var(--text-secondary);">${patient.pat_gender.charAt(0).toUpperCase() + patient.pat_gender.slice(1)}</p>` : ''}
+                    </div>
+                </div>
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Patient Information</h3>
                 <div class="form-grid">
                     <div>
@@ -1006,6 +1101,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     filterTable();
+});
+
+// Profile picture preview and management
+function updateProfilePicturePreview(prefix, imageUrl, name) {
+    const preview = document.getElementById(prefix + '_profile_picture_preview');
+    const initials = document.getElementById(prefix + '_profile_picture_initials');
+    const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+    const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+    
+    if (preview && initials) {
+        if (imageUrl) {
+            preview.innerHTML = `<img src="${imageUrl}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        } else {
+            const firstLetter = name.charAt(0).toUpperCase();
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+        if (removeInput) removeInput.value = '0';
+    }
+}
+
+function removeProfilePicture(prefix) {
+    if (confirm('Are you sure you want to remove the profile picture?')) {
+        const preview = document.getElementById(prefix + '_profile_picture_preview');
+        const initials = document.getElementById(prefix + '_profile_picture_initials');
+        const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+        const fileInput = document.getElementById(prefix + '_profile_picture_input');
+        const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+        
+        if (preview && initials) {
+            const firstLetter = initials.textContent || 'P';
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+        }
+        if (removeInput) removeInput.value = '1';
+        if (fileInput) fileInput.value = '';
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+}
+
+// Profile picture preview on file selection
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('edit_profile_picture_input');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP image.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('edit_profile_picture_preview');
+                    const removeBtn = document.getElementById('edit_remove_profile_picture_btn');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    }
+                    if (removeBtn) removeBtn.style.display = 'inline-flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 </script>
 

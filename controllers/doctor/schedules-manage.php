@@ -10,6 +10,9 @@ $db = Database::getInstance();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = initializeProfilePicture($auth, $db);
+
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -204,6 +207,49 @@ try {
     ")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $doctors = [];
+}
+
+// Calculate useful statistics for summary cards
+$stats = [
+    'total_schedules' => 0,
+    'schedules_today' => 0,
+    'upcoming_schedules' => 0,
+    'doctors_with_schedules' => 0
+];
+
+try {
+    $today = date('Y-m-d');
+    
+    // Total schedules
+    $stmt = $db->query("SELECT COUNT(*) as count FROM schedules");
+    $stats['total_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Schedules today
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM schedules 
+        WHERE schedule_date = :today AND is_available = 1
+    ");
+    $stmt->execute(['today' => $today]);
+    $stats['schedules_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Upcoming schedules (future dates)
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM schedules 
+        WHERE schedule_date > :today AND is_available = 1
+    ");
+    $stmt->execute(['today' => $today]);
+    $stats['upcoming_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Doctors with schedules
+    $stmt = $db->query("
+        SELECT COUNT(DISTINCT doc_id) as count 
+        FROM schedules
+    ");
+    $stats['doctors_with_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+} catch (PDOException $e) {
+    // Keep default values
 }
 
 // Include the view

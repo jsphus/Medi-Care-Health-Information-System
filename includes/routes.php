@@ -4,6 +4,7 @@ return [
     'login' => 'controllers/login.php',
     'register' => 'controllers/register.php',
     'logout' => 'controllers/logout.php',
+    'view-as' => 'controllers/view-as.php',
     
     // Super Admin Routes
     'superadmin/dashboard' => 'controllers/superadmin/dashboard.php',

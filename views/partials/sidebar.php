@@ -3,16 +3,9 @@ require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 
 // Determine user role
-$role = 'guest';
-if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
-    $role = 'superadmin';
-} elseif (isset($_SESSION['staff_id']) && $_SESSION['staff_id'] !== null) {
-    $role = 'staff';
-} elseif (isset($_SESSION['doc_id']) && $_SESSION['doc_id'] !== null) {
-    $role = 'doctor';
-} elseif (isset($_SESSION['pat_id']) && $_SESSION['pat_id'] !== null) {
-    $role = 'patient';
-}
+require_once __DIR__ . '/../../classes/Auth.php';
+$auth = new Auth();
+$role = $auth->getRole() ?? 'guest';
 
 // Get user information
 $userName = 'User';
@@ -230,6 +223,56 @@ $currentPath = $_SERVER['REQUEST_URI'];
         <?php endforeach; ?>
     </div>
     
+    <!-- View As Section (Super Admin Only) -->
+    <?php
+    $isOriginalSuperAdmin = false;
+    $isViewingAs = false;
+    $viewingAsRole = null;
+    
+    if ($auth->isViewingAs()) {
+        $isOriginalSuperAdmin = $_SESSION['original_is_superadmin'] ?? false;
+        $isViewingAs = true;
+        $viewingAsRole = $_SESSION['view_as_role'] ?? null;
+    } else {
+        $isOriginalSuperAdmin = $auth->isSuperAdmin();
+    }
+    
+    if ($isOriginalSuperAdmin):
+    ?>
+    <div class="view-as-section" style="padding: 1rem; border-top: 1px solid #e5e7eb; margin-top: auto;">
+        <?php if ($isViewingAs): ?>
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 0.5rem; padding: 0.75rem; margin-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: #92400e;">
+                    <i class="fas fa-eye" style="font-size: 0.875rem;"></i>
+                    <span style="font-weight: 600;">Viewing as <?= ucfirst($viewingAsRole) ?></span>
+                </div>
+            </div>
+            <a href="/view-as?action=exit" class="view-as-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; background: #ef4444; color: white; border: none; border-radius: 0.5rem; text-decoration: none; font-size: 0.875rem; font-weight: 500; width: 100%; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                <i class="fas fa-times"></i>
+                <span>Exit View As</span>
+            </a>
+        <?php else: ?>
+            <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: #6b7280; font-weight: 500;">
+                <i class="fas fa-user-secret"></i> View As
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <a href="/view-as?action=doctor" class="view-as-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem; transition: background 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                    <i class="fas fa-user-md"></i>
+                    <span>View as Doctor</span>
+                </a>
+                <a href="/view-as?action=patient" class="view-as-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #10b981; color: white; border: none; border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem; transition: background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                    <i class="fas fa-user"></i>
+                    <span>View as Patient</span>
+                </a>
+                <a href="/view-as?action=staff" class="view-as-btn" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: #8b5cf6; color: white; border: none; border-radius: 0.375rem; text-decoration: none; font-size: 0.8125rem; transition: background 0.2s;" onmouseover="this.style.background='#7c3aed'" onmouseout="this.style.background='#8b5cf6'">
+                    <i class="fas fa-user-tie"></i>
+                    <span>View as Staff</span>
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    
     <!-- User Profile Section -->
     <div class="sidebar-profile-modern">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -266,7 +309,7 @@ $currentPath = $_SERVER['REQUEST_URI'];
                 <span>Privacy</span>
             </a>
             <div class="profile-dropdown-divider"></div>
-            <a href="/logout" class="profile-dropdown-item logout-item">
+            <a href="/logout" class="profile-dropdown-item logout-item" id="logoutLink">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
@@ -319,6 +362,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Search functionality
+    document.getElementById('sidebarSearch')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const menuItems = document.querySelectorAll('.menu-item-modern');
+        
+        menuItems.forEach(item => {
+            const label = item.querySelector('.menu-label')?.textContent.toLowerCase() || '';
+            if (label.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = searchTerm ? 'none' : 'flex';
+            }
+        });
+    });
+    
+    // Logout confirmation
+    const logoutLink = document.getElementById('logoutLink');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Use the same confirmation modal as delete user
+            if (typeof showConfirm === 'function') {
+                showConfirm(
+                    'Are you sure you want to logout?',
+                    'Confirm Logout',
+                    'Yes, Logout',
+                    'Cancel',
+                    'warning'
+                ).then(confirmed => {
+                    if (confirmed) {
+                        window.location.href = '/logout';
+                    }
+                });
+            } else {
+                // Fallback to browser confirm if modal not loaded
+                if (confirm('Are you sure you want to logout?')) {
+                    window.location.href = '/logout';
+                }
+            }
+        });
+    }
 });
 
 // Profile menu toggle
@@ -335,20 +421,5 @@ document.addEventListener('click', function(event) {
     if (profileSection && dropdown && !profileSection.contains(event.target)) {
         dropdown.classList.remove('active');
     }
-});
-
-// Search functionality
-document.getElementById('sidebarSearch')?.addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const menuItems = document.querySelectorAll('.menu-item-modern');
-    
-    menuItems.forEach(item => {
-        const label = item.querySelector('.menu-label')?.textContent.toLowerCase() || '';
-        if (label.includes(searchTerm)) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = searchTerm ? 'none' : 'flex';
-        }
-    });
 });
 </script>

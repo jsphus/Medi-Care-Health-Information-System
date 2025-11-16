@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -137,52 +138,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     
                     if (empty($error)) {
-                        // Update user account
-                        if (!empty($password)) {
-                            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                            $stmt = $db->prepare("
-                                UPDATE users 
-                                SET user_email = :email, 
-                                    user_password = :password, 
-                                    user_is_superadmin = :is_superadmin,
-                                    pat_id = :pat_id,
-                                    staff_id = :staff_id,
-                                    doc_id = :doc_id,
-                                    updated_at = NOW()
-                                WHERE user_id = :id
-                            ");
-                            $stmt->execute([
-                                'email' => $email,
-                                'password' => $hashedPassword,
-                                'is_superadmin' => $is_superadmin ? 1 : 0,
-                                'pat_id' => $pat_id,
-                                'staff_id' => $staff_id,
-                                'doc_id' => $doc_id,
-                                'id' => $id
-                            ]);
+                        // Handle profile picture upload/removal
+                        $profilePictureUrl = null;
+                        $removeProfilePicture = isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1';
+                        
+                        if ($removeProfilePicture) {
+                            // Get current profile picture URL
+                            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :id");
+                            $stmt->execute(['id' => $id]);
+                            $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                            $oldUrl = $currentUser['profile_picture_url'] ?? null;
+                            
+                            // Delete from Cloudinary if exists
+                            if ($oldUrl) {
+                                try {
+                                    $cloudinary = new CloudinaryUpload();
+                                    $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                                    if ($oldPublicId) {
+                                        $cloudinary->deleteImage($oldPublicId);
+                                    }
+                                } catch (Exception $e) {
+                                    // Log error but don't fail the update
+                                    error_log('Failed to delete old profile picture: ' . $e->getMessage());
+                                }
+                            }
+                            $profilePictureUrl = null;
+                        } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                            try {
+                                $cloudinary = new CloudinaryUpload();
+                                $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $id);
+                                
+                                if (is_array($result) && isset($result['url'])) {
+                                    // Get old profile picture URL before updating
+                                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :id");
+                                    $stmt->execute(['id' => $id]);
+                                    $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                                    $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                                    
+                                    // Delete old image from Cloudinary if exists
+                                    if ($oldUrl) {
+                                        $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                                        if ($oldPublicId) {
+                                            $cloudinary->deleteImage($oldPublicId);
+                                        }
+                                    }
+                                    
+                                    $profilePictureUrl = $result['url'];
+                                } else {
+                                    $error = is_string($result) ? $result : 'Failed to upload profile picture';
+                                }
+                            } catch (Exception $e) {
+                                $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                            }
                         } else {
-                            $stmt = $db->prepare("
-                                UPDATE users 
-                                SET user_email = :email, 
-                                    user_is_superadmin = :is_superadmin,
-                                    pat_id = :pat_id,
-                                    staff_id = :staff_id,
-                                    doc_id = :doc_id,
-                                    updated_at = NOW()
-                                WHERE user_id = :id
-                            ");
-                            $stmt->execute([
-                                'email' => $email,
-                                'is_superadmin' => $is_superadmin ? 1 : 0,
-                                'pat_id' => $pat_id,
-                                'staff_id' => $staff_id,
-                                'doc_id' => $doc_id,
-                                'id' => $id
-                            ]);
+                            // Keep existing profile picture
+                            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :id");
+                            $stmt->execute(['id' => $id]);
+                            $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                            $profilePictureUrl = $currentUser['profile_picture_url'] ?? null;
                         }
                         
-                        // Update profile based on role
-                        if ($role === 'patient' && $pat_id) {
+                        if (empty($error)) {
+                            try {
+                                // Update user account
+                                if (!empty($password)) {
+                                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                                $stmt = $db->prepare("
+                                    UPDATE users 
+                                    SET user_email = :email, 
+                                        user_password = :password, 
+                                        user_is_superadmin = :is_superadmin,
+                                        pat_id = :pat_id,
+                                        staff_id = :staff_id,
+                                        doc_id = :doc_id,
+                                        profile_picture_url = :profile_picture_url,
+                                        updated_at = NOW()
+                                    WHERE user_id = :id
+                                ");
+                                $stmt->execute([
+                                    'email' => $email,
+                                    'password' => $hashedPassword,
+                                    'is_superadmin' => $is_superadmin ? 1 : 0,
+                                    'pat_id' => $pat_id,
+                                    'staff_id' => $staff_id,
+                                    'doc_id' => $doc_id,
+                                    'profile_picture_url' => $profilePictureUrl,
+                                    'id' => $id
+                                ]);
+                                } else {
+                                $stmt = $db->prepare("
+                                    UPDATE users 
+                                    SET user_email = :email, 
+                                        user_is_superadmin = :is_superadmin,
+                                        pat_id = :pat_id,
+                                        staff_id = :staff_id,
+                                        doc_id = :doc_id,
+                                        profile_picture_url = :profile_picture_url,
+                                        updated_at = NOW()
+                                    WHERE user_id = :id
+                                ");
+                                $stmt->execute([
+                                    'email' => $email,
+                                    'is_superadmin' => $is_superadmin ? 1 : 0,
+                                    'pat_id' => $pat_id,
+                                    'staff_id' => $staff_id,
+                                    'doc_id' => $doc_id,
+                                    'profile_picture_url' => $profilePictureUrl,
+                                    'id' => $id
+                                ]);
+                                }
+                            
+                            // Update profile based on role
+                            if ($role === 'patient' && $pat_id) {
                             $first_name = sanitize($_POST['first_name'] ?? '');
                             $last_name = sanitize($_POST['last_name'] ?? '');
                             $phone = sanitize($_POST['phone'] ?? '');
@@ -228,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'insurance_number' => $insurance_number,
                                 'id' => $pat_id
                             ]);
-                        } elseif ($role === 'staff' && $staff_id) {
+                            } elseif ($role === 'staff' && $staff_id) {
                             $first_name = sanitize($_POST['first_name'] ?? '');
                             $last_name = sanitize($_POST['last_name'] ?? '');
                             $phone = sanitize($_POST['phone'] ?? '');
@@ -258,7 +325,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'status' => $status,
                                 'id' => $staff_id
                             ]);
-                        } elseif ($role === 'doctor' && $doc_id) {
+                            } elseif ($role === 'doctor' && $doc_id) {
                             $first_name = sanitize($_POST['first_name'] ?? '');
                             $last_name = sanitize($_POST['last_name'] ?? '');
                             $phone = sanitize($_POST['phone'] ?? '');
@@ -295,9 +362,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'status' => $status,
                                 'id' => $doc_id
                             ]);
-                        }
+                            }
                         
-                        $success = 'User updated successfully';
+                            $success = 'User updated successfully';
+                            } catch (PDOException $e) {
+                                $error = 'Database error: ' . $e->getMessage();
+                            }
+                        }
                     }
                 }
             } catch (PDOException $e) {

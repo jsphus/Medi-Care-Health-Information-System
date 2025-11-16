@@ -196,8 +196,12 @@
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= strtoupper(substr($member['staff_first_name'] ?? 'S', 0, 1)) ?>
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
+                                        <?php if (!empty($member['profile_picture_url'])): ?>
+                                            <img src="<?= htmlspecialchars($member['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <?= strtoupper(substr($member['staff_first_name'] ?? 'S', 0, 1)) ?>
+                                        <?php endif; ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars($member['staff_first_name'] . ' ' . $member['staff_last_name']) ?></strong>
                                 </div>
@@ -396,9 +400,32 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" id="edit_id">
+            
+            <!-- Profile Picture Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Profile Picture</h3>
+                <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex-shrink: 0;">
+                        <div id="edit_profile_picture_preview" style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <span id="edit_profile_picture_initials">S</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label class="form-label-modern">Upload New Picture</label>
+                        <input type="file" name="profile_picture" id="edit_profile_picture_input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" class="form-control" style="padding: 0.5rem;">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Max 5MB. Formats: JPG, PNG, GIF, WEBP</small>
+                        <button type="button" id="edit_remove_profile_picture_btn" onclick="removeProfilePicture('edit')" class="btn btn-sm" style="margin-top: 0.5rem; display: none; background: #ef4444; color: white;">
+                            <i class="fas fa-trash"></i>
+                            <span>Remove Picture</span>
+                        </button>
+                        <input type="hidden" name="remove_profile_picture" id="edit_remove_profile_picture" value="0">
+                    </div>
+                </div>
+            </div>
+            
             <div class="form-grid">
                 <div class="form-group">
                     <label>First Name: <span style="color: var(--status-error);">*</span></label>
@@ -522,6 +549,10 @@ function editStaff(staff) {
     document.getElementById('edit_hire_date').value = staff.staff_hire_date || '';
     document.getElementById('edit_salary').value = staff.staff_salary || '';
     document.getElementById('edit_status').value = staff.staff_status || 'active';
+    
+    // Update profile picture preview
+    updateProfilePicturePreview('edit', staff.profile_picture_url || '', staff.staff_first_name || 'S');
+    
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -530,9 +561,29 @@ function closeEditModal() {
 }
 
 function viewStaffDetails(staff) {
+    // Get profile picture or generate initials
+    const profilePicture = staff.profile_picture_url || '';
+    const firstName = staff.staff_first_name || 'S';
+    const firstLetter = firstName.charAt(0).toUpperCase();
+    const fullName = `${staff.staff_first_name || ''} ${staff.staff_last_name || ''}`.trim();
+    
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">
             <div class="card-body">
+                <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-light);">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 3rem; overflow: hidden; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                        ${profilePicture ? `<img src="${profilePicture}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">` : firstLetter}
+                    </div>
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 1.5rem;">${fullName || 'N/A'}</h3>
+                        <p style="margin: 0; color: var(--text-secondary);">${staff.staff_position || 'N/A'}</p>
+                        <div style="margin-top: 0.5rem;">
+                            <span class="status-badge ${(staff.staff_status || 'active') === 'active' ? 'active' : 'inactive'}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
+                                ${staff.staff_status || 'active'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Staff Information</h3>
                 <div class="form-grid">
                     <div>
@@ -769,6 +820,81 @@ function resetToPaginatedView() {
     url.searchParams.delete('page');
     window.location.href = url.toString();
 }
+
+// Profile picture preview and management
+function updateProfilePicturePreview(prefix, imageUrl, name) {
+    const preview = document.getElementById(prefix + '_profile_picture_preview');
+    const initials = document.getElementById(prefix + '_profile_picture_initials');
+    const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+    const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+    
+    if (preview && initials) {
+        if (imageUrl) {
+            preview.innerHTML = `<img src="${imageUrl}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        } else {
+            const firstLetter = name.charAt(0).toUpperCase();
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+        if (removeInput) removeInput.value = '0';
+    }
+}
+
+function removeProfilePicture(prefix) {
+    if (confirm('Are you sure you want to remove the profile picture?')) {
+        const preview = document.getElementById(prefix + '_profile_picture_preview');
+        const initials = document.getElementById(prefix + '_profile_picture_initials');
+        const removeInput = document.getElementById(prefix + '_remove_profile_picture');
+        const fileInput = document.getElementById(prefix + '_profile_picture_input');
+        const removeBtn = document.getElementById(prefix + '_remove_profile_picture_btn');
+        
+        if (preview && initials) {
+            const firstLetter = initials.textContent || 'S';
+            preview.innerHTML = `<span id="${prefix}_profile_picture_initials">${firstLetter}</span>`;
+        }
+        if (removeInput) removeInput.value = '1';
+        if (fileInput) fileInput.value = '';
+        if (removeBtn) removeBtn.style.display = 'none';
+    }
+}
+
+// Profile picture preview on file selection
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('edit_profile_picture_input');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload JPG, PNG, GIF, or WEBP image.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('edit_profile_picture_preview');
+                    const removeBtn = document.getElementById('edit_remove_profile_picture_btn');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    }
+                    if (removeBtn) removeBtn.style.display = 'inline-flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
