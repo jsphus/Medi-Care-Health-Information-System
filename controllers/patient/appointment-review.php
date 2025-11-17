@@ -57,9 +57,10 @@ $doctor = null;
 if ($appointment_data && isset($appointment_data['doctor_id'])) {
     try {
         $stmt = $db->prepare("
-            SELECT d.*, s.spec_name 
+            SELECT d.*, s.spec_name, u.profile_picture_url
             FROM doctors d
             LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
+            LEFT JOIN users u ON d.doc_id = u.doc_id
             WHERE d.doc_id = :doctor_id AND d.doc_status = 'active'
         ");
         $stmt->execute(['doctor_id' => $appointment_data['doctor_id']]);

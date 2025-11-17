@@ -104,6 +104,14 @@
         color: white;
         font-weight: 700;
         font-size: 1.25rem;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .doctor-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .doctor-details {
@@ -252,8 +260,15 @@
                     $initials = strtoupper(substr($doctor['doc_first_name'], 0, 1) . substr($doctor['doc_last_name'], 0, 1));
                     $doctorName = 'Dr. ' . htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']);
                     $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+                    $profile_picture = $doctor['profile_picture_url'] ?? '';
                     ?>
-                    <div class="doctor-avatar"><?= $initials ?></div>
+                    <div class="doctor-avatar">
+                        <?php if (!empty($profile_picture)): ?>
+                            <img src="<?= htmlspecialchars($profile_picture) ?>" alt="<?= $doctorName ?>">
+                        <?php else: ?>
+                            <?= $initials ?>
+                        <?php endif; ?>
+                    </div>
                     <div class="doctor-details">
                         <div class="doctor-name"><?= $doctorName ?></div>
                         <div class="doctor-spec"><?= $specialization ?></div>

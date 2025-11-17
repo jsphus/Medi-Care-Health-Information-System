@@ -25,10 +25,10 @@
     
     .doctor-detail-card {
         background: white;
-        border-radius: 0.75rem;
+        border-radius: 12px;
         padding: 2rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
+        border: 1px solid var(--border-light);
     }
     
     .doctor-header {
@@ -36,7 +36,7 @@
         gap: 2rem;
         margin-bottom: 2rem;
         padding-bottom: 2rem;
-        border-bottom: 2px solid #f3f4f6;
+        border-bottom: 1px solid var(--border-light);
     }
     
     .doctor-avatar-detail {
@@ -52,6 +52,13 @@
         font-size: 2.5rem;
         flex-shrink: 0;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+    
+    .doctor-avatar-detail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .doctor-header-info {
@@ -132,46 +139,30 @@
     }
     
     .book-appointment-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 0.75rem;
-        padding: 2rem;
-        text-align: center;
-        color: white;
         margin-top: 2rem;
-    }
-    
-    .book-appointment-section h3 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 1rem;
-        color: white;
-    }
-    
-    .book-appointment-section p {
-        margin-bottom: 1.5rem;
-        opacity: 0.9;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-light);
+        text-align: center;
     }
     
     .btn-book-large {
-        background: white;
-        color: #667eea;
-        padding: 1rem 2.5rem;
-        border-radius: 0.5rem;
-        font-weight: 700;
-        font-size: 1.125rem;
+        background: var(--primary-blue);
+        color: white;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
         border: none;
         cursor: pointer;
         transition: all 0.2s;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 0.75rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        gap: 0.5rem;
     }
     
     .btn-book-large:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        background: var(--primary-blue-dark);
     }
     
     @media (max-width: 768px) {
@@ -215,7 +206,13 @@
         
         <div class="doctor-detail-card">
             <div class="doctor-header">
-                <div class="doctor-avatar-detail"><?= $initials ?></div>
+                <div class="doctor-avatar-detail">
+                    <?php if (!empty($doctor['profile_picture_url'])): ?>
+                        <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="<?= $doctorName ?>">
+                    <?php else: ?>
+                        <?= $initials ?>
+                    <?php endif; ?>
+                </div>
                 <div class="doctor-header-info">
                     <h1 class="doctor-name-detail"><?= $doctorName ?></h1>
                     <div class="doctor-specialization-detail"><?= $specialization ?></div>
@@ -282,15 +279,13 @@
                 </div>
             </div>
             <?php endif; ?>
-        </div>
-        
-        <div class="book-appointment-section">
-            <h3>Ready to Book an Appointment?</h3>
-            <p>Schedule your consultation with <?= $doctorName ?> today</p>
-            <a href="/patient/appointments/create?doctor_id=<?= $doctor['doc_id'] ?>" class="btn-book-large">
-                <i class="fas fa-calendar-check"></i>
-                Book Appointment
-            </a>
+            
+            <div class="book-appointment-section">
+                <a href="/patient/appointments/create?doctor_id=<?= $doctor['doc_id'] ?>" class="btn-book-large">
+                    <i class="fas fa-calendar-check"></i>
+                    Book Appointment
+                </a>
+            </div>
         </div>
     <?php endif; ?>
 </div>
