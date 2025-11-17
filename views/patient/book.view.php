@@ -32,17 +32,17 @@
     
     .doctors-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
     
     .doctor-card {
-        background: white;
-        border: 1px solid #f3f4f6;
+        background: #f9fafb;
+        border: 1px solid var(--border-light);
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        text-align: center;
         transition: all 0.2s;
         cursor: pointer;
         text-decoration: none;
@@ -50,14 +50,12 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        text-align: center;
     }
     
     .doctor-card:hover,
     .doctor-card:focus {
-        border-color: #3b82f6;
+        border-color: var(--primary-blue);
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-        transform: translateY(-2px);
     }
     
     .doctor-avatar-large {
@@ -65,14 +63,21 @@
         height: 80px;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
         font-weight: 700;
         font-size: 1.75rem;
-        margin-bottom: 1rem;
+        margin: 0 auto 1rem;
+        overflow: hidden;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .doctor-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     
     .doctor-name {
@@ -85,14 +90,35 @@
     .doctor-specialization {
         font-size: 0.875rem;
         color: var(--text-secondary);
-        margin-bottom: 1rem;
     }
     
     .doctor-fee {
         font-size: 1rem;
         font-weight: 600;
         color: #3b82f6;
-        margin-top: auto;
+        margin-top: 0.5rem;
+    }
+    
+    .search-input-modern:focus {
+        outline: none;
+        border-color: var(--status-success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        background: var(--bg-white);
+    }
+    
+    .category-tab:hover {
+        border-color: var(--status-success);
+        color: var(--status-success);
+    }
+    
+    .category-tab.active {
+        background: var(--status-success);
+        border-color: var(--status-success);
+        color: var(--text-white);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--border-light);
     }
     
     .empty-state {
@@ -147,6 +173,7 @@
         .category-tabs {
             overflow-x: auto;
             flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
         }
     }
 </style>
@@ -167,28 +194,31 @@
     <?php endif; ?>
     
     <!-- Search and Filter Bar -->
-    <div class="search-filter-bar-modern">
-        <form method="GET" id="searchForm" style="flex: 1; display: flex; align-items: center; gap: 0.75rem;" onsubmit="handleSearchSubmit(event);">
-            <div class="search-input-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" 
-                       name="search" 
-                       id="searchInput"
-                       class="search-input-modern"
-                       placeholder="Search doctors by name or specialization..." 
-                       value="<?= htmlspecialchars($search_query) ?>"
-                       aria-label="Search doctors">
-            </div>
-            <?php if ($search_query || $filter_specialization): ?>
-            <a href="/patient/book" class="btn-action btn-secondary" style="padding: 0.75rem 1.5rem; text-decoration: none; white-space: nowrap;">
-                <i class="fas fa-times"></i> Clear
-            </a>
-            <?php endif; ?>
-        </form>
-        <div class="category-tabs">
-            <button type="button" class="category-tab <?= empty($filter_specialization) ? 'active' : '' ?>" data-specialization="all" onclick="filterBySpecialization('all')">All</button>
+    <div class="search-filter-bar-modern" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <form method="GET" id="searchForm" style="flex: 1; display: flex; align-items: center; gap: 0.75rem; min-width: 250px;" onsubmit="handleSearchSubmit(event);">
+                <div class="search-input-wrapper" style="position: relative; flex: 1; min-width: 250px;">
+                    <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.875rem;"></i>
+                    <input type="text" 
+                           name="search" 
+                           id="searchInput"
+                           class="search-input-modern"
+                           placeholder="Search doctors by name or specialization..." 
+                           value="<?= htmlspecialchars($search_query) ?>"
+                           aria-label="Search doctors"
+                           style="width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; transition: var(--transition); background: var(--bg-light);">
+                </div>
+                <?php if ($search_query || $filter_specialization): ?>
+                <a href="/patient/book" class="btn-action btn-secondary" style="padding: 0.625rem 1rem; text-decoration: none; white-space: nowrap; background: var(--bg-light); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                <?php endif; ?>
+            </form>
+        </div>
+        <div class="category-tabs" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
+            <button type="button" class="category-tab <?= empty($filter_specialization) ? 'active' : '' ?>" data-specialization="all" onclick="filterBySpecialization('all')" style="padding: 0.5rem 1rem; background: var(--bg-white); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: var(--transition); white-space: nowrap;">All</button>
             <?php foreach ($specializations as $spec): ?>
-                <button type="button" class="category-tab <?= ($filter_specialization == $spec['spec_id']) ? 'active' : '' ?>" data-specialization="<?= $spec['spec_id'] ?>" onclick="filterBySpecialization('<?= $spec['spec_id'] ?>')">
+                <button type="button" class="category-tab <?= ($filter_specialization == $spec['spec_id']) ? 'active' : '' ?>" data-specialization="<?= $spec['spec_id'] ?>" onclick="filterBySpecialization('<?= $spec['spec_id'] ?>')" style="padding: 0.5rem 1rem; background: var(--bg-white); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: var(--transition); white-space: nowrap;">
                     <?= htmlspecialchars($spec['spec_name']) ?>
                 </button>
             <?php endforeach; ?>
@@ -204,21 +234,31 @@
             <?php endif; ?>
         </div>
     <?php else: ?>
-        <div class="doctors-grid">
-            <?php foreach ($doctors as $doctor): ?>
-                <?php
-                $initials = strtoupper(substr($doctor['doc_first_name'], 0, 1) . substr($doctor['doc_last_name'], 0, 1));
-                $doctorName = 'Dr. ' . htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']);
-                $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
-                $fee = $doctor['doc_consultation_fee'] ?? 0;
-                ?>
-                <a href="/patient/doctor-detail?id=<?= $doctor['doc_id'] ?>" class="doctor-card" aria-label="View details for <?= $doctorName ?>">
-                    <div class="doctor-avatar-large"><?= $initials ?></div>
-                    <div class="doctor-name"><?= $doctorName ?></div>
-                    <div class="doctor-specialization"><?= $specialization ?></div>
-                    <div class="doctor-fee">₱<?= number_format($fee, 2) ?>/consultation</div>
-                </a>
-            <?php endforeach; ?>
+        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem;">
+            <div class="doctors-grid">
+                <?php foreach ($doctors as $doctor): ?>
+                    <?php
+                    $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
+                    $doctorName = 'Dr. ' . htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+                    $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+                    $fee = $doctor['doc_consultation_fee'] ?? 0;
+                    ?>
+                    <a href="/patient/doctor-detail?id=<?= $doctor['doc_id'] ?>" class="doctor-card" aria-label="View details for <?= $doctorName ?>">
+                        <div class="doctor-avatar-large">
+                            <?php if (!empty($doctor['profile_picture_url'])): ?>
+                                <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor">
+                            <?php else: ?>
+                                <?= $initials ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="doctor-name"><?= $doctorName ?></div>
+                        <div class="doctor-specialization"><?= $specialization ?></div>
+                        <?php if ($fee > 0): ?>
+                            <div class="doctor-fee">₱<?= number_format($fee, 2) ?>/consultation</div>
+                        <?php endif; ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
         </div>
     <?php endif; ?>
 </div>
