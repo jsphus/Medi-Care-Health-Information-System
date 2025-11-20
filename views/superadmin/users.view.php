@@ -412,15 +412,15 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>First Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="first_name" id="edit_pat_first_name" class="form-control">
+                        <input type="text" name="pat_first_name" id="edit_pat_first_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="last_name" id="edit_pat_last_name" class="form-control">
+                        <input type="text" name="pat_last_name" id="edit_pat_last_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="edit_pat_phone" class="form-control">
+                        <input type="text" name="pat_phone" id="edit_pat_phone" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Date of Birth:</label>
@@ -476,15 +476,15 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>First Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="first_name" id="edit_staff_first_name" class="form-control">
+                        <input type="text" name="staff_first_name" id="edit_staff_first_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="last_name" id="edit_staff_last_name" class="form-control">
+                        <input type="text" name="staff_last_name" id="edit_staff_last_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="edit_staff_phone" class="form-control">
+                        <input type="text" name="staff_phone" id="edit_staff_phone" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Position:</label>
@@ -514,15 +514,15 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>First Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="first_name" id="edit_doc_first_name" class="form-control">
+                        <input type="text" name="doc_first_name" id="edit_doc_first_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
-                        <input type="text" name="last_name" id="edit_doc_last_name" class="form-control">
+                        <input type="text" name="doc_last_name" id="edit_doc_last_name" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Phone:</label>
-                        <input type="text" name="phone" id="edit_doc_phone" class="form-control">
+                        <input type="text" name="doc_phone" id="edit_doc_phone" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Specialization:</label>

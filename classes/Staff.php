@@ -158,7 +158,7 @@ class Staff extends Entity {
     }
 
     // Delete staff (maintains backward compatibility)
-    public function delete($id = null) {
+    public function delete($id = null): array {
         if ($id !== null) {
             $this->staff_id = $id;
         }

@@ -3,6 +3,10 @@ require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
+require_once __DIR__ . '/../../classes/Patient.php';
+require_once __DIR__ . '/../../classes/Staff.php';
+require_once __DIR__ . '/../../classes/Doctor.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -250,141 +254,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             
                             // Update profile based on role
                             if ($role === 'patient' && $pat_id) {
-                            // Fetch existing patient data to preserve values if not provided
-                            $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :id");
-                            $stmt->execute(['id' => $pat_id]);
-                            $existingPatient = $stmt->fetch(PDO::FETCH_ASSOC);
-                            
-                            // Use POST values if provided, otherwise preserve existing values
-                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingPatient['pat_first_name'] ?? '');
-                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingPatient['pat_last_name'] ?? '');
-                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingPatient['pat_phone'] ?? '');
-                            if (!empty($phone)) {
-                                $phone = formatPhoneNumber($phone);
-                            }
-                            $date_of_birth = !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : ($existingPatient['pat_date_of_birth'] ?? null);
-                            $gender = !empty($_POST['gender']) ? sanitize($_POST['gender']) : ($existingPatient['pat_gender'] ?? '');
-                            $address = isset($_POST['address']) ? sanitize($_POST['address']) : ($existingPatient['pat_address'] ?? '');
-                            $emergency_contact = isset($_POST['emergency_contact']) ? sanitize($_POST['emergency_contact']) : ($existingPatient['pat_emergency_contact'] ?? '');
-                            $emergency_phone = !empty($_POST['emergency_phone']) ? sanitize($_POST['emergency_phone']) : ($existingPatient['pat_emergency_phone'] ?? '');
-                            if (!empty($emergency_phone)) {
-                                $emergency_phone = formatPhoneNumber($emergency_phone);
-                            }
-                            $medical_history = isset($_POST['medical_history']) ? sanitize($_POST['medical_history']) : ($existingPatient['pat_medical_history'] ?? '');
-                            $allergies = isset($_POST['allergies']) ? sanitize($_POST['allergies']) : ($existingPatient['pat_allergies'] ?? '');
-                            $insurance_provider = isset($_POST['insurance_provider']) ? sanitize($_POST['insurance_provider']) : ($existingPatient['pat_insurance_provider'] ?? '');
-                            $insurance_number = isset($_POST['insurance_number']) ? sanitize($_POST['insurance_number']) : ($existingPatient['pat_insurance_number'] ?? '');
-                            
-                            $stmt = $db->prepare("
-                                UPDATE patients 
-                                SET pat_first_name = :first_name, pat_last_name = :last_name, pat_email = :email, 
-                                    pat_phone = :phone, pat_date_of_birth = :date_of_birth, pat_gender = :gender, 
-                                    pat_address = :address, pat_emergency_contact = :emergency_contact,
-                                    pat_emergency_phone = :emergency_phone, pat_medical_history = :medical_history,
-                                    pat_allergies = :allergies, pat_insurance_provider = :insurance_provider,
-                                    pat_insurance_number = :insurance_number, updated_at = NOW()
-                                WHERE pat_id = :id
-                            ");
-                            $stmt->execute([
-                                'first_name' => $first_name,
-                                'last_name' => $last_name,
-                                'email' => $email,
-                                'phone' => $phone,
-                                'date_of_birth' => $date_of_birth,
-                                'gender' => $gender,
-                                'address' => $address,
-                                'emergency_contact' => $emergency_contact,
-                                'emergency_phone' => $emergency_phone,
-                                'medical_history' => $medical_history,
-                                'allergies' => $allergies,
-                                'insurance_provider' => $insurance_provider,
-                                'insurance_number' => $insurance_number,
-                                'id' => $pat_id
-                            ]);
+                                // Fetch existing patient data using Patient class
+                                $existingPatient = Patient::findById($pat_id);
+                                
+                                if (!$existingPatient) {
+                                    $error = 'Patient profile not found';
+                                } else {
+                                    // Check if email is being changed and if it already exists
+                                    if ($email !== $existingPatient['pat_email']) {
+                                        $existingEmail = $db->fetchOne(
+                                            "SELECT pat_id FROM patients WHERE pat_email = :email AND pat_id != :id",
+                                            ['email' => $email, 'id' => $pat_id]
+                                        );
+                                        if ($existingEmail) {
+                                            $error = 'Email already exists for another patient.';
+                                        }
+                                    }
+                                    
+                                    if (empty($error)) {
+                                        // Always use POST values if they exist (even if empty), otherwise preserve existing values
+                                        // This ensures that when user fills in fields, they are saved
+                                        $updateData = [
+                                            'pat_id' => $pat_id,
+                                            'pat_email' => $email,
+                                            'pat_first_name' => isset($_POST['pat_first_name']) ? sanitize($_POST['pat_first_name']) : $existingPatient['pat_first_name'],
+                                            'pat_last_name' => isset($_POST['pat_last_name']) ? sanitize($_POST['pat_last_name']) : $existingPatient['pat_last_name'],
+                                            'pat_phone' => isset($_POST['pat_phone']) ? sanitize($_POST['pat_phone']) : $existingPatient['pat_phone'],
+                                            'pat_date_of_birth' => isset($_POST['date_of_birth']) ? $_POST['date_of_birth'] : $existingPatient['pat_date_of_birth'],
+                                            'pat_gender' => isset($_POST['gender']) ? sanitize($_POST['gender']) : $existingPatient['pat_gender'],
+                                            'pat_address' => isset($_POST['address']) ? sanitize($_POST['address']) : $existingPatient['pat_address'],
+                                            'pat_emergency_contact' => isset($_POST['emergency_contact']) ? sanitize($_POST['emergency_contact']) : $existingPatient['pat_emergency_contact'],
+                                            'pat_emergency_phone' => isset($_POST['emergency_phone']) ? sanitize($_POST['emergency_phone']) : $existingPatient['pat_emergency_phone'],
+                                            'pat_medical_history' => isset($_POST['medical_history']) ? sanitize($_POST['medical_history']) : $existingPatient['pat_medical_history'],
+                                            'pat_allergies' => isset($_POST['allergies']) ? sanitize($_POST['allergies']) : $existingPatient['pat_allergies'],
+                                            'pat_insurance_provider' => isset($_POST['insurance_provider']) ? sanitize($_POST['insurance_provider']) : $existingPatient['pat_insurance_provider'],
+                                            'pat_insurance_number' => isset($_POST['insurance_number']) ? sanitize($_POST['insurance_number']) : $existingPatient['pat_insurance_number']
+                                        ];
+                                        
+                                        // Format phone numbers if they have values
+                                        if (!empty($updateData['pat_phone'])) {
+                                            $updateData['pat_phone'] = formatPhoneNumber($updateData['pat_phone']);
+                                        }
+                                        if (!empty($updateData['pat_emergency_phone'])) {
+                                            $updateData['pat_emergency_phone'] = formatPhoneNumber($updateData['pat_emergency_phone']);
+                                        }
+                                        
+                                        // Update using Patient class
+                                        $patient = new Patient();
+                                        $result = $patient->update($pat_id, $updateData);
+                                        if (!$result['success']) {
+                                            $error = implode(', ', $result['errors'] ?? ['Failed to update patient']);
+                                        }
+                                    }
+                                }
                             } elseif ($role === 'staff' && $staff_id) {
-                            // Fetch existing staff data to preserve values if not provided
-                            $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :id");
-                            $stmt->execute(['id' => $staff_id]);
-                            $existingStaff = $stmt->fetch(PDO::FETCH_ASSOC);
-                            
-                            // Use POST values if provided, otherwise preserve existing values
-                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingStaff['staff_first_name'] ?? '');
-                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingStaff['staff_last_name'] ?? '');
-                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingStaff['staff_phone'] ?? '');
-                            if (!empty($phone)) {
-                                $phone = formatPhoneNumber($phone);
-                            }
-                            $position = isset($_POST['position']) ? sanitize($_POST['position']) : ($existingStaff['staff_position'] ?? '');
-                            $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : ($existingStaff['staff_hire_date'] ?? null);
-                            $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : ($existingStaff['staff_salary'] ?? null);
-                            $status = !empty($_POST['status']) ? sanitize($_POST['status']) : ($existingStaff['staff_status'] ?? 'active');
-                            
-                            $stmt = $db->prepare("
-                                UPDATE staff 
-                                SET staff_first_name = :first_name, staff_last_name = :last_name, staff_email = :email, 
-                                    staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
-                                    staff_salary = :salary, staff_status = :status, updated_at = NOW()
-                                WHERE staff_id = :id
-                            ");
-                            $stmt->execute([
-                                'first_name' => $first_name,
-                                'last_name' => $last_name,
-                                'email' => $email,
-                                'phone' => $phone,
-                                'position' => $position,
-                                'hire_date' => $hire_date,
-                                'salary' => $salary,
-                                'status' => $status,
-                                'id' => $staff_id
-                            ]);
+                                // Fetch existing staff data using Staff class
+                                $existingStaff = Staff::findById($staff_id);
+                                
+                                if (!$existingStaff) {
+                                    $error = 'Staff profile not found';
+                                } else {
+                                    // Check if email is being changed and if it already exists
+                                    if ($email !== $existingStaff['staff_email']) {
+                                        $existingEmail = $db->fetchOne(
+                                            "SELECT staff_id FROM staff WHERE staff_email = :email AND staff_id != :id",
+                                            ['email' => $email, 'id' => $staff_id]
+                                        );
+                                        if ($existingEmail) {
+                                            $error = 'Email already exists for another staff member.';
+                                        }
+                                    }
+                                    
+                                    if (empty($error)) {
+                                        // Always use POST values if they exist (even if empty), otherwise preserve existing values
+                                        $updateData = [
+                                            'staff_id' => $staff_id,
+                                            'staff_email' => $email,
+                                            'staff_first_name' => isset($_POST['staff_first_name']) ? sanitize($_POST['staff_first_name']) : $existingStaff['staff_first_name'],
+                                            'staff_last_name' => isset($_POST['staff_last_name']) ? sanitize($_POST['staff_last_name']) : $existingStaff['staff_last_name'],
+                                            'staff_phone' => isset($_POST['staff_phone']) ? sanitize($_POST['staff_phone']) : $existingStaff['staff_phone'],
+                                            'staff_position' => isset($_POST['position']) ? sanitize($_POST['position']) : $existingStaff['staff_position'],
+                                            'staff_hire_date' => isset($_POST['hire_date']) ? $_POST['hire_date'] : $existingStaff['staff_hire_date'],
+                                            'staff_salary' => isset($_POST['salary']) && $_POST['salary'] !== '' ? floatval($_POST['salary']) : $existingStaff['staff_salary'],
+                                            'staff_status' => isset($_POST['status']) ? sanitize($_POST['status']) : $existingStaff['staff_status']
+                                        ];
+                                        
+                                        // Format phone number if it has a value
+                                        if (!empty($updateData['staff_phone'])) {
+                                            $updateData['staff_phone'] = formatPhoneNumber($updateData['staff_phone']);
+                                        }
+                                        
+                                        // Update using Staff class
+                                        $staff = new Staff();
+                                        $result = $staff->update($staff_id, $updateData);
+                                        if (!$result['success']) {
+                                            $error = implode(', ', $result['errors'] ?? ['Failed to update staff']);
+                                        }
+                                    }
+                                }
                             } elseif ($role === 'doctor' && $doc_id) {
-                            // Fetch existing doctor data to preserve values if not provided
-                            $stmt = $db->prepare("SELECT * FROM doctors WHERE doc_id = :id");
-                            $stmt->execute(['id' => $doc_id]);
-                            $existingDoctor = $stmt->fetch(PDO::FETCH_ASSOC);
-                            
-                            // Use POST values if provided, otherwise preserve existing values
-                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingDoctor['doc_first_name'] ?? '');
-                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingDoctor['doc_last_name'] ?? '');
-                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingDoctor['doc_phone'] ?? '');
-                            if (!empty($phone)) {
-                                $phone = formatPhoneNumber($phone);
-                            }
-                            $specialization_id = !empty($_POST['specialization_id']) ? (int)$_POST['specialization_id'] : ($existingDoctor['doc_specialization_id'] ?? null);
-                            $license_number = isset($_POST['license_number']) ? sanitize($_POST['license_number']) : ($existingDoctor['doc_license_number'] ?? '');
-                            $experience_years = !empty($_POST['experience_years']) ? (int)$_POST['experience_years'] : ($existingDoctor['doc_experience_years'] ?? null);
-                            $consultation_fee = !empty($_POST['consultation_fee']) ? floatval($_POST['consultation_fee']) : ($existingDoctor['doc_consultation_fee'] ?? null);
-                            $qualification = isset($_POST['qualification']) ? sanitize($_POST['qualification']) : ($existingDoctor['doc_qualification'] ?? '');
-                            $bio = isset($_POST['bio']) ? sanitize($_POST['bio']) : ($existingDoctor['doc_bio'] ?? '');
-                            $status = !empty($_POST['status']) ? sanitize($_POST['status']) : ($existingDoctor['doc_status'] ?? 'active');
-                            
-                            $stmt = $db->prepare("
-                                UPDATE doctors 
-                                SET doc_first_name = :first_name, doc_last_name = :last_name, doc_email = :email, 
-                                    doc_phone = :phone, doc_specialization_id = :specialization_id, doc_license_number = :license_number,
-                                    doc_experience_years = :experience_years, doc_consultation_fee = :consultation_fee,
-                                    doc_qualification = :qualification, doc_bio = :bio, doc_status = :status, updated_at = NOW()
-                                WHERE doc_id = :id
-                            ");
-                            $stmt->execute([
-                                'first_name' => $first_name,
-                                'last_name' => $last_name,
-                                'email' => $email,
-                                'phone' => $phone,
-                                'specialization_id' => $specialization_id,
-                                'license_number' => $license_number,
-                                'experience_years' => $experience_years,
-                                'consultation_fee' => $consultation_fee,
-                                'qualification' => $qualification,
-                                'bio' => $bio,
-                                'status' => $status,
-                                'id' => $doc_id
-                            ]);
+                                // Fetch existing doctor data using Doctor class
+                                $existingDoctor = Doctor::findById($doc_id);
+                                
+                                if (!$existingDoctor) {
+                                    $error = 'Doctor profile not found';
+                                } else {
+                                    // Check if email is being changed and if it already exists
+                                    if ($email !== $existingDoctor['doc_email']) {
+                                        $existingEmail = $db->fetchOne(
+                                            "SELECT doc_id FROM doctors WHERE doc_email = :email AND doc_id != :id",
+                                            ['email' => $email, 'id' => $doc_id]
+                                        );
+                                        if ($existingEmail) {
+                                            $error = 'Email already exists for another doctor.';
+                                        }
+                                    }
+                                    
+                                    if (empty($error)) {
+                                        // Always use POST values if they exist (even if empty), otherwise preserve existing values
+                                        $updateData = [
+                                            'doc_id' => $doc_id,
+                                            'doc_email' => $email,
+                                            'doc_first_name' => isset($_POST['doc_first_name']) ? sanitize($_POST['doc_first_name']) : $existingDoctor['doc_first_name'],
+                                            'doc_last_name' => isset($_POST['doc_last_name']) ? sanitize($_POST['doc_last_name']) : $existingDoctor['doc_last_name'],
+                                            'doc_phone' => isset($_POST['doc_phone']) ? sanitize($_POST['doc_phone']) : $existingDoctor['doc_phone'],
+                                            'doc_specialization_id' => isset($_POST['specialization_id']) && $_POST['specialization_id'] !== '' ? (int)$_POST['specialization_id'] : $existingDoctor['doc_specialization_id'],
+                                            'doc_license_number' => isset($_POST['license_number']) ? sanitize($_POST['license_number']) : $existingDoctor['doc_license_number'],
+                                            'doc_experience_years' => isset($_POST['experience_years']) && $_POST['experience_years'] !== '' ? (int)$_POST['experience_years'] : $existingDoctor['doc_experience_years'],
+                                            'doc_consultation_fee' => isset($_POST['consultation_fee']) && $_POST['consultation_fee'] !== '' ? floatval($_POST['consultation_fee']) : $existingDoctor['doc_consultation_fee'],
+                                            'doc_qualification' => isset($_POST['qualification']) ? sanitize($_POST['qualification']) : $existingDoctor['doc_qualification'],
+                                            'doc_bio' => isset($_POST['bio']) ? sanitize($_POST['bio']) : $existingDoctor['doc_bio'],
+                                            'doc_status' => isset($_POST['status']) ? sanitize($_POST['status']) : $existingDoctor['doc_status']
+                                        ];
+                                        
+                                        // Format phone number if it has a value
+                                        if (!empty($updateData['doc_phone'])) {
+                                            $updateData['doc_phone'] = formatPhoneNumber($updateData['doc_phone']);
+                                        }
+                                        
+                                        // Update using Doctor class
+                                        $doctor = new Doctor();
+                                        $result = $doctor->update($doc_id, $updateData);
+                                        if (!$result['success']) {
+                                            $error = implode(', ', $result['errors'] ?? ['Failed to update doctor']);
+                                        }
+                                    }
+                                }
                             }
                         
                             $success = 'User updated successfully';
                             } catch (PDOException $e) {
-                                $error = 'Database error: ' . $e->getMessage();
+                                // Check if it's a unique constraint violation
+                                if (strpos($e->getCode(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false || strpos($e->getMessage(), 'Unique violation') !== false) {
+                                    if (strpos($e->getMessage(), 'pat_email') !== false) {
+                                        $error = 'Email already exists for another patient.';
+                                    } elseif (strpos($e->getMessage(), 'staff_email') !== false) {
+                                        $error = 'Email already exists for another staff member.';
+                                    } elseif (strpos($e->getMessage(), 'doc_email') !== false) {
+                                        $error = 'Email already exists for another doctor.';
+                                    } elseif (strpos($e->getMessage(), 'user_email') !== false) {
+                                        $error = 'Email already exists for another user.';
+                                    } else {
+                                        $error = 'This email is already in use. Please use a different email address.';
+                                    }
+                                } else {
+                                    $error = 'Database error: ' . $e->getMessage();
+                                }
                             }
                         }
                     }
