@@ -209,7 +209,8 @@ class Appointment extends Entity {
     }
 
     // Update appointment (maintains backward compatibility)
-    public function update($data) {
+    // Note: Renamed from update() to avoid conflict with protected Entity::update()
+    public function updateAppointment($data) {
         if (isset($data['appointment_id'])) {
             $this->fromArray($data);
             return $this->save();
@@ -218,7 +219,7 @@ class Appointment extends Entity {
     }
 
     // Delete appointment (maintains backward compatibility)
-    public function delete($id = null) {
+    public function delete($id = null): array {
         if ($id !== null) {
             $this->appointment_id = $id;
         }
