@@ -99,16 +99,37 @@ abstract class Entity {
         // Filter to only include valid columns
         $insertData = array_intersect_key($insertData, array_flip($columns));
         
-        // Build SQL
-        $fields = array_keys($insertData);
-        $placeholders = array_map(function($field) {
-            return ':' . $field;
-        }, $fields);
+        // Automatically set created_at if column exists and not already set
+        if (in_array('created_at', $columns) && (!isset($insertData['created_at']) || $insertData['created_at'] === null)) {
+            $insertData['created_at'] = 'NOW()';
+        }
+        
+        // Automatically set updated_at if column exists and not already set
+        if (in_array('updated_at', $columns) && (!isset($insertData['updated_at']) || $insertData['updated_at'] === null)) {
+            $insertData['updated_at'] = 'NOW()';
+        }
+        
+        // Build SQL - handle NOW() function calls separately
+        $fields = [];
+        $placeholders = [];
+        $params = [];
+        
+        foreach ($insertData as $field => $value) {
+            $fields[] = $field;
+            if ($value === 'NOW()') {
+                // Use SQL NOW() function directly
+                $placeholders[] = 'NOW()';
+            } else {
+                // Use parameterized placeholder
+                $placeholders[] = ':' . $field;
+                $params[$field] = $value;
+            }
+        }
 
         $sql = "INSERT INTO {$tableName} (" . implode(', ', $fields) . ") 
                 VALUES (" . implode(', ', $placeholders) . ")";
 
-        $this->db->execute($sql, $insertData);
+        $this->db->execute($sql, $params);
         
         $id = $this->db->lastInsertId($tableName . '_' . $primaryKey . '_seq');
         if (!$id && isset($data[$primaryKey])) {
@@ -136,10 +157,24 @@ abstract class Entity {
         // Filter to only include valid columns
         $updateData = array_intersect_key($updateData, array_flip($columns));
 
-        // Build SQL
+        // Automatically set updated_at if column exists and not already set
+        if (in_array('updated_at', $columns) && (!isset($updateData['updated_at']) || $updateData['updated_at'] === null)) {
+            $updateData['updated_at'] = 'NOW()';
+        }
+
+        // Build SQL - handle NOW() function calls separately
         $setClause = [];
-        foreach (array_keys($updateData) as $field) {
-            $setClause[] = "{$field} = :{$field}";
+        $params = [];
+        
+        foreach ($updateData as $field => $value) {
+            if ($value === 'NOW()') {
+                // Use SQL NOW() function directly
+                $setClause[] = "{$field} = NOW()";
+            } else {
+                // Use parameterized placeholder
+                $setClause[] = "{$field} = :{$field}";
+                $params[$field] = $value;
+            }
         }
 
         if (empty($setClause)) {
@@ -149,8 +184,8 @@ abstract class Entity {
         $sql = "UPDATE {$tableName} SET " . implode(', ', $setClause) . " 
                 WHERE {$primaryKey} = :{$primaryKey}";
         
-        $updateData[$primaryKey] = $id;
-        $this->db->execute($sql, $updateData);
+        $params[$primaryKey] = $id;
+        $this->db->execute($sql, $params);
 
         return ['success' => true];
     }
