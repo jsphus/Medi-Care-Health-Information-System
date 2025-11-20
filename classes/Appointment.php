@@ -450,52 +450,56 @@ class Appointment extends Entity {
     }
 
     public function rescheduleForPatient(string $appointmentId, int $patientId, array $data): array {
-        $appointment = $this->db->fetchOne("
-            SELECT pat_id, status_id, service_id 
-            FROM appointments 
-            WHERE appointment_id = :appointment_id",
-            ['appointment_id' => $appointmentId]
-        );
+        try {
+            $appointment = $this->db->fetchOne("
+                SELECT pat_id, status_id, service_id 
+                FROM appointments 
+                WHERE appointment_id = :appointment_id",
+                ['appointment_id' => $appointmentId]
+            );
 
-        if (!$appointment) {
-            return ['success' => false, 'error' => 'Appointment not found'];
+            if (!$appointment) {
+                return ['success' => false, 'error' => 'Appointment not found'];
+            }
+
+            if ((int)$appointment['pat_id'] !== $patientId) {
+                return ['success' => false, 'error' => 'You do not have permission to reschedule this appointment'];
+            }
+
+            $status = $this->db->fetchOne("
+                SELECT status_name 
+                FROM appointment_statuses 
+                WHERE status_id = :status_id",
+                ['status_id' => $appointment['status_id']]
+            );
+
+            if ($status && in_array(strtolower($status['status_name']), ['cancelled', 'completed'])) {
+                return ['success' => false, 'error' => 'This appointment cannot be rescheduled'];
+            }
+
+            $duration = $this->resolveDuration($appointment['service_id'] ?? null);
+
+            $this->db->execute("
+                UPDATE appointments 
+                SET appointment_date = :appointment_date,
+                    appointment_time = :appointment_time,
+                    appointment_duration = :duration,
+                    appointment_notes = :notes,
+                    updated_at = NOW()
+                WHERE appointment_id = :appointment_id AND pat_id = :patient_id
+            ", [
+                'appointment_date' => $data['appointment_date'],
+                'appointment_time' => $data['appointment_time'],
+                'duration' => $duration,
+                'notes' => $data['appointment_notes'] ?? null,
+                'appointment_id' => $appointmentId,
+                'patient_id' => $patientId
+            ]);
+
+            return ['success' => true];
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Failed to reschedule appointment: ' . $e->getMessage()];
         }
-
-        if ((int)$appointment['pat_id'] !== $patientId) {
-            return ['success' => false, 'error' => 'You do not have permission to reschedule this appointment'];
-        }
-
-        $status = $this->db->fetchOne("
-            SELECT status_name 
-            FROM appointment_statuses 
-            WHERE status_id = :status_id",
-            ['status_id' => $appointment['status_id']]
-        );
-
-        if ($status && in_array(strtolower($status['status_name']), ['cancelled', 'completed'])) {
-            return ['success' => false, 'error' => 'This appointment cannot be rescheduled'];
-        }
-
-        $duration = $this->resolveDuration($appointment['service_id'] ?? null);
-
-        $this->db->execute("
-            UPDATE appointments 
-            SET appointment_date = :appointment_date,
-                appointment_time = :appointment_time,
-                appointment_duration = :duration,
-                appointment_notes = :notes,
-                updated_at = NOW()
-            WHERE appointment_id = :appointment_id AND pat_id = :patient_id
-        ", [
-            'appointment_date' => $data['appointment_date'],
-            'appointment_time' => $data['appointment_time'],
-            'duration' => $duration,
-            'notes' => $data['appointment_notes'] ?? null,
-            'appointment_id' => $appointmentId,
-            'patient_id' => $patientId
-        ]);
-
-        return ['success' => true];
     }
 
     public function getForPatientById(string $appointmentId, int $patientId) {
