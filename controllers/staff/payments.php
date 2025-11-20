@@ -2,6 +2,10 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Payment.php';
+require_once __DIR__ . '/../../classes/PaymentMethod.php';
+require_once __DIR__ . '/../../classes/PaymentStatus.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -11,7 +15,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,21 +33,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Appointment ID, amount, payment method, and status are required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO payments (appointment_id, payment_amount, payment_method_id, payment_status_id, 
-                                         payment_date, payment_notes, created_at) 
-                    VALUES (:appointment_id, :payment_amount, :payment_method_id, :payment_status_id, 
-                           :payment_date, :payment_notes, NOW())
-                ");
-                $stmt->execute([
+                $payment = new Payment();
+                $createData = [
                     'appointment_id' => $appointment_id,
                     'payment_amount' => $amount,
                     'payment_method_id' => $payment_method_id,
                     'payment_status_id' => $payment_status_id,
                     'payment_date' => $payment_date,
                     'payment_notes' => $notes
-                ]);
-                $success = 'Payment record created successfully';
+                ];
+                $result = $payment->create($createData);
+                if ($result['success']) {
+                    $success = 'Payment record created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -59,22 +63,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notes = sanitize($_POST['notes'] ?? '');
         
         try {
-            $stmt = $db->prepare("
-                UPDATE payments 
-                SET payment_amount = :payment_amount, payment_method_id = :payment_method_id, 
-                    payment_status_id = :payment_status_id, payment_date = :payment_date,
-                    payment_notes = :payment_notes, updated_at = NOW()
-                WHERE payment_id = :id
-            ");
-            $stmt->execute([
+            $payment = new Payment();
+            $updateData = [
+                'payment_id' => $id,
                 'payment_amount' => $amount,
                 'payment_method_id' => $payment_method_id,
                 'payment_status_id' => $payment_status_id,
                 'payment_date' => $payment_date,
-                'payment_notes' => $notes,
-                'id' => $id
-            ]);
-            $success = 'Payment record updated successfully';
+                'payment_notes' => $notes
+            ];
+            $result = $payment->update($updateData);
+            if ($result['success']) {
+                $success = 'Payment record updated successfully';
+            } else {
+                $error = $result['message'] ?? 'Database error';
+            }
         } catch (PDOException $e) {
             $error = 'Database error: ' . $e->getMessage();
         }
@@ -85,16 +88,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $payment_status_id = (int)$_POST['payment_status_id'];
         
         try {
-            $stmt = $db->prepare("
-                UPDATE payments 
-                SET payment_status_id = :payment_status_id, updated_at = NOW()
-                WHERE payment_id = :id
-            ");
-            $stmt->execute([
-                'payment_status_id' => $payment_status_id,
-                'id' => $id
-            ]);
-            $success = 'Payment status updated successfully';
+            $payment = new Payment();
+            $updateData = [
+                'payment_id' => $id,
+                'payment_status_id' => $payment_status_id
+            ];
+            $result = $payment->update($updateData);
+            if ($result['success']) {
+                $success = 'Payment status updated successfully';
+            } else {
+                $error = $result['message'] ?? 'Database error';
+            }
         } catch (PDOException $e) {
             $error = 'Database error: ' . $e->getMessage();
         }
@@ -149,7 +153,7 @@ try {
         $order_by = "p.$sort_column $sort_order";
     }
 
-    $stmt = $db->prepare("
+    $sql = "
         SELECT p.*, 
                a.appointment_id, a.appointment_date,
                pat.pat_first_name, pat.pat_last_name,
@@ -162,9 +166,8 @@ try {
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         $where_clause
         ORDER BY $order_by
-    ");
-    $stmt->execute($params);
-    $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ";
+    $payments = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch payments: ' . $e->getMessage();
     $payments = [];
@@ -174,16 +177,15 @@ try {
 $filter_methods = [];
 try {
     // Get unique payment methods from payments
-    $stmt = $db->query("SELECT DISTINCT pm.method_id, pm.method_name FROM payments p JOIN payment_methods pm ON p.payment_method_id = pm.method_id ORDER BY pm.method_name");
-    $filter_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $filter_methods = $db->fetchAll("SELECT DISTINCT pm.method_id, pm.method_name FROM payments p JOIN payment_methods pm ON p.payment_method_id = pm.method_id ORDER BY pm.method_name");
 } catch (PDOException $e) {
     $filter_methods = [];
 }
 
 // Fetch payment methods and statuses for dropdowns
 try {
-    $payment_methods = $db->query("SELECT * FROM payment_methods WHERE is_active = true ORDER BY method_name")->fetchAll(PDO::FETCH_ASSOC);
-    $payment_statuses = $db->query("SELECT * FROM payment_statuses ORDER BY status_name")->fetchAll(PDO::FETCH_ASSOC);
+    $payment_methods = (new PaymentMethod())->findAll(['is_active' => true], 'method_name ASC');
+    $payment_statuses = (new PaymentStatus())->findAll([], 'status_name ASC');
 } catch (PDOException $e) {
     $payment_methods = [];
     $payment_statuses = [];
@@ -199,30 +201,30 @@ $stats = [
 
 try {
     // Total payments this month
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payments WHERE DATE_TRUNC('month', payment_date) = DATE_TRUNC('month', CURRENT_DATE)");
-    $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payments WHERE DATE_TRUNC('month', payment_date) = DATE_TRUNC('month', CURRENT_DATE)");
+    $stats['total_this_month'] = $result['count'] ?? 0;
     
     // Paid payments
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COUNT(*) as count 
         FROM payments p
         JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         WHERE LOWER(ps.status_name) = 'paid'
     ");
-    $stats['paid'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stats['paid'] = $result['count'] ?? 0;
     
     // Pending payments
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COUNT(*) as count 
         FROM payments p
         JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         WHERE LOWER(ps.status_name) = 'pending'
     ");
-    $stats['pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stats['pending'] = $result['count'] ?? 0;
     
     // Total amount
-    $stmt = $db->query("SELECT COALESCE(SUM(payment_amount), 0) as total FROM payments");
-    $stats['total_amount'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $result = $db->fetchOne("SELECT COALESCE(SUM(payment_amount), 0) as total FROM payments");
+    $stats['total_amount'] = $result['total'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

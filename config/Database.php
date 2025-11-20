@@ -34,6 +34,104 @@ class Database {
         if (self::$instance === null) {
             self::$instance = new Database();
         }
-        return self::$instance->conn;
+        return self::$instance;
+    }
+
+    /**
+     * Get the PDO connection instance
+     * @return PDO
+     */
+    public function getConnection() {
+        return $this->conn;
+    }
+
+    /**
+     * Fetch all rows from a query
+     * @param string $sql SQL query with placeholders
+     * @param array $params Parameters for the query
+     * @return array Array of associative arrays
+     */
+    public function fetchAll($sql, $params = []) {
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new PDOException("Database query failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Fetch a single row from a query
+     * @param string $sql SQL query with placeholders
+     * @param array $params Parameters for the query
+     * @return array|null Associative array or null if not found
+     */
+    public function fetchOne($sql, $params = []) {
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (PDOException $e) {
+            throw new PDOException("Database query failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Execute a query (INSERT, UPDATE, DELETE)
+     * @param string $sql SQL query with placeholders
+     * @param array $params Parameters for the query
+     * @return bool True on success
+     */
+    public function execute($sql, $params = []) {
+        try {
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw new PDOException("Database execution failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get the last insert ID
+     * @param string|null $sequence PostgreSQL sequence name (optional, auto-detected if null)
+     * @return string Last insert ID
+     */
+    public function lastInsertId($sequence = null) {
+        return $this->conn->lastInsertId($sequence);
+    }
+
+    /**
+     * Prepare a statement
+     * @param string $sql SQL query
+     * @return PDOStatement
+     */
+    public function prepare($sql) {
+        return $this->conn->prepare($sql);
+    }
+
+    /**
+     * Begin a transaction
+     * @return bool
+     */
+    public function beginTransaction() {
+        return $this->conn->beginTransaction();
+    }
+
+    /**
+     * Commit a transaction
+     * @return bool
+     */
+    public function commit() {
+        return $this->conn->commit();
+    }
+
+    /**
+     * Rollback a transaction
+     * @return bool
+     */
+    public function rollBack() {
+        return $this->conn->rollBack();
     }
 }

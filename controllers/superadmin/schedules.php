@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Schedule.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -11,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,21 +31,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Date, start time, and end time are required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE schedules 
-                    SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time,
-                        max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
-                    WHERE schedule_id = :id
-                ");
-                $stmt->execute([
+                $schedule = new Schedule();
+                $updateData = [
+                    'schedule_id' => $id,
                     'schedule_date' => $schedule_date,
                     'start_time' => $start_time,
                     'end_time' => $end_time,
                     'max_appointments' => $max_appointments,
-                    'is_available' => $is_available,
-                    'id' => $id
-                ]);
-                $success = 'Schedule updated successfully';
+                    'is_available' => $is_available
+                ];
+                $result = $schedule->update($updateData);
+                if ($result['success']) {
+                    $success = 'Schedule updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -53,9 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete') {
         $id = (int)$_POST['id'];
         try {
-            $stmt = $db->prepare("DELETE FROM schedules WHERE schedule_id = :id");
-            $stmt->execute(['id' => $id]);
-            $success = 'Schedule deleted successfully';
+            $schedule = new Schedule();
+            $result = $schedule->delete($id);
+            if ($result['success']) {
+                $success = 'Schedule deleted successfully';
+            } else {
+                $error = $result['message'] ?? 'Database error';
+            }
         } catch (PDOException $e) {
             $error = 'Database error: ' . $e->getMessage();
         }
@@ -160,8 +166,7 @@ try {
 $filter_doctors = [];
 try {
     // Get unique doctors from schedules
-    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM schedules s JOIN doctors d ON s.doc_id = d.doc_id ORDER BY d.doc_first_name");
-    $filter_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $filter_doctors = $db->fetchAll("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM schedules s JOIN doctors d ON s.doc_id = d.doc_id ORDER BY d.doc_first_name");
 } catch (PDOException $e) {
     $filter_doctors = [];
 }
@@ -169,7 +174,7 @@ try {
 // Get today's schedules
 try {
     $today = date('Y-m-d');
-    $stmt = $db->prepare("
+    $today_schedules = $db->fetchAll("
         SELECT s.*, 
                d.doc_first_name, d.doc_last_name,
                sp.spec_name
@@ -178,9 +183,7 @@ try {
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
         WHERE s.schedule_date = :today
         ORDER BY s.start_time ASC
-    ");
-    $stmt->execute(['today' => $today]);
-    $today_schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ", ['today' => $today]);
 } catch (PDOException $e) {
     $today_schedules = [];
 }

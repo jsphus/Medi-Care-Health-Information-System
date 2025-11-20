@@ -5,29 +5,7 @@ function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)));
 }
 
-function generateAppointmentId($db) {
-    $year = date('Y');
-    $month = date('m');
-    $prefix = "$year-$month-";
-    
-    try {
-        // Get the last appointment ID for this month
-        $stmt = $db->prepare("SELECT appointment_id FROM appointments WHERE appointment_id LIKE :prefix ORDER BY appointment_id DESC LIMIT 1");
-        $stmt->execute(['prefix' => $prefix . '%']);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($result) {
-            $lastNum = (int)substr($result['appointment_id'], -7);
-            $newNum = $lastNum + 1;
-        } else {
-            $newNum = 1;
-        }
-        
-        return $prefix . str_pad($newNum, 7, '0', STR_PAD_LEFT);
-    } catch (PDOException $e) {
-        return $prefix . str_pad(rand(1, 9999999), 7, '0', STR_PAD_LEFT);
-    }
-}
+// generateAppointmentId() moved to Appointment::generateId()
 
 function isValidEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);
@@ -46,38 +24,7 @@ function formatPhoneNumber($phone) {
     return $digits;
 }
 
-/**
- * Get user profile picture URL or return default avatar
- * @param int $user_id User ID
- * @param object $db Database connection
- * @param string $name Name for default avatar
- * @param array $options Image transformation options
- * @return string Profile picture URL or default avatar HTML
- */
-function getUserProfilePicture($user_id, $db, $name = '', $options = []) {
-    try {
-        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($user && !empty($user['profile_picture_url'])) {
-            // If options provided, transform the image
-            if (!empty($options) && class_exists('CloudinaryUpload')) {
-                $cloudinary = new CloudinaryUpload();
-                $publicId = $cloudinary->extractPublicId($user['profile_picture_url']);
-                if ($publicId) {
-                    return $cloudinary->transformImage($publicId, $options);
-                }
-            }
-            return $user['profile_picture_url'];
-        }
-    } catch (PDOException $e) {
-        // Fall through to default avatar
-    }
-    
-    // Return null to indicate no profile picture (view will handle default)
-    return null;
-}
+// getUserProfilePicture() moved to User::getProfilePicture()
 
 /**
  * Generate default avatar HTML with first letter
@@ -94,28 +41,5 @@ function getDefaultAvatar($name, $size = 80) {
     return $firstLetter;
 }
 
-/**
- * Initialize profile picture URL for the current logged-in user
- * This function should be called in all controllers to ensure consistent profile picture display
- * @param Auth $auth Auth instance
- * @param PDO $db Database connection
- * @return string|null Profile picture URL or null
- */
-function initializeProfilePicture($auth, $db) {
-    try {
-        $user_id = $auth->getUserId();
-        if (!$user_id) {
-            return null;
-        }
-        
-        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        return $user['profile_picture_url'] ?? null;
-    } catch (PDOException $e) {
-        error_log("Error fetching profile picture: " . $e->getMessage());
-        return null;
-    }
-}
+// initializeProfilePicture() moved to User::initializeProfilePicture()
 

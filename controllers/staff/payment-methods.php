@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/PaymentMethod.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -11,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,16 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Payment method name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO payment_methods (method_name, method_description, is_active, created_at) 
-                    VALUES (:method_name, :method_description, :is_active, NOW())
-                ");
-                $stmt->execute([
+                $paymentMethod = new PaymentMethod();
+                $createData = [
                     'method_name' => $method_name,
                     'method_description' => $method_description,
                     'is_active' => $is_active
-                ]);
-                $success = 'Payment method created successfully';
+                ];
+                $result = $paymentMethod->create($createData);
+                if ($result['success']) {
+                    $success = 'Payment method created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -52,19 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Payment method name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE payment_methods 
-                    SET method_name = :method_name, method_description = :method_description, 
-                        is_active = :is_active, updated_at = NOW()
-                    WHERE method_id = :id
-                ");
-                $stmt->execute([
+                $paymentMethod = new PaymentMethod();
+                $updateData = [
+                    'method_id' => $id,
                     'method_name' => $method_name,
                     'method_description' => $method_description,
-                    'is_active' => $is_active,
-                    'id' => $id
-                ]);
-                $success = 'Payment method updated successfully';
+                    'is_active' => $is_active
+                ];
+                $result = $paymentMethod->update($updateData);
+                if ($result['success']) {
+                    $success = 'Payment method updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -98,16 +102,15 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    $stmt = $db->prepare("
+    $sql = "
         SELECT pm.*, COUNT(p.payment_id) as payment_count
         FROM payment_methods pm
         LEFT JOIN payments p ON pm.method_id = p.payment_method_id
         $where_clause
         GROUP BY pm.method_id
         ORDER BY pm.method_name ASC
-    ");
-    $stmt->execute($params);
-    $payment_methods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ";
+    $payment_methods = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch payment methods: ' . $e->getMessage();
     $payment_methods = [];
@@ -123,20 +126,20 @@ $stats = [
 
 try {
     // Total payment methods
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payment_methods");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_methods");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Active payment methods
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = true");
-    $stats['active'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = true");
+    $stats['active'] = $result['count'] ?? 0;
     
     // Inactive payment methods
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = false");
-    $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = false");
+    $stats['inactive'] = $result['count'] ?? 0;
     
     // Total payments using these methods
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payments");
-    $stats['total_payments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payments");
+    $stats['total_payments'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

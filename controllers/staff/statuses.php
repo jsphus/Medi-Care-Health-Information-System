@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/AppointmentStatus.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -11,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,16 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Status name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO appointment_statuses (status_name, status_description, status_color, created_at) 
-                    VALUES (:status_name, :status_description, :status_color, NOW())
-                ");
-                $stmt->execute([
+                $appointmentStatus = new AppointmentStatus();
+                $createData = [
                     'status_name' => $status_name,
                     'status_description' => $status_description,
                     'status_color' => $status_color
-                ]);
-                $success = 'Status created successfully';
+                ];
+                $result = $appointmentStatus->create($createData);
+                if ($result['success']) {
+                    $success = 'Status created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -52,19 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Status name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE appointment_statuses 
-                    SET status_name = :status_name, status_description = :status_description, 
-                        status_color = :status_color
-                    WHERE status_id = :id
-                ");
-                $stmt->execute([
+                $appointmentStatus = new AppointmentStatus();
+                $updateData = [
+                    'status_id' => $id,
                     'status_name' => $status_name,
                     'status_description' => $status_description,
-                    'status_color' => $status_color,
-                    'id' => $id
-                ]);
-                $success = 'Status updated successfully';
+                    'status_color' => $status_color
+                ];
+                $result = $appointmentStatus->update($updateData);
+                if ($result['success']) {
+                    $success = 'Status updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -74,14 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all statuses with appointment count
 try {
-    $stmt = $db->query("
+    $statuses = $db->fetchAll("
         SELECT s.*, COUNT(a.appointment_id) as appointment_count
         FROM appointment_statuses s
         LEFT JOIN appointments a ON s.status_id = a.status_id
         GROUP BY s.status_id
         ORDER BY s.status_id ASC
     ");
-    $statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch statuses: ' . $e->getMessage();
     $statuses = [];
@@ -95,12 +98,12 @@ $stats = [
 
 try {
     // Total appointment statuses
-    $stmt = $db->query("SELECT COUNT(*) as count FROM appointment_statuses");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM appointment_statuses");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Total appointments
-    $stmt = $db->query("SELECT COUNT(*) as count FROM appointments");
-    $stats['total_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM appointments");
+    $stats['total_appointments'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

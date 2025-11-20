@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../classes/Staff.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -13,20 +15,14 @@ $profile_picture_url = null;
 try {
     $staff_id = $auth->getStaffId();
     if ($staff_id) {
-        $stmt = $db->prepare("SELECT staff_first_name, staff_last_name FROM staff WHERE staff_id = :staff_id");
-        $stmt->execute(['staff_id' => $staff_id]);
-        $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+        $staff = (new Staff())->getById($staff_id);
         if ($staff) {
             $staff_name = htmlspecialchars(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? ''));
             $staff_name = trim($staff_name) ?: 'Staff';
         }
         
         // Get profile picture URL
-        $user_id = $auth->getUserId();
-        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-        $profile_picture_url = $user['profile_picture_url'] ?? null;
+        $profile_picture_url = User::getProfilePicture($auth);
     }
 } catch (PDOException $e) {
     // Use default name
@@ -35,29 +31,28 @@ try {
 // Get dashboard statistics
 try {
     // Count staff
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff");
-    $stats['total_staff'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff");
+    $stats['total_staff'] = $result['count'] ?? 0;
     
     // Count services
-    $stmt = $db->query("SELECT COUNT(*) as count FROM services");
-    $stats['total_services'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM services");
+    $stats['total_services'] = $result['count'] ?? 0;
     
     // Count specializations
-    $stmt = $db->query("SELECT COUNT(*) as count FROM specializations");
-    $stats['total_specializations'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM specializations");
+    $stats['total_specializations'] = $result['count'] ?? 0;
     
     // Count payment methods
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = true");
-    $stats['total_payment_methods'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = true");
+    $stats['total_payment_methods'] = $result['count'] ?? 0;
     
     // Recent services
-    $stmt = $db->query("
+    $recent_services = $db->fetchAll("
         SELECT service_id, service_name, service_price, service_category
         FROM services
         ORDER BY created_at DESC
         LIMIT 10
     ");
-    $recent_services = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Chart data for services
     $chart_data = [

@@ -1,17 +1,19 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
-require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
+require_once __DIR__ . '/../../classes/Patient.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requirePatient();
 
-$db = Database::getInstance();
 $patient_id = $auth->getPatientId();
 $user_id = $auth->getUserId();
 $error = '';
 $success = '';
+$patientModel = new Patient();
+$userModel = new User();
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -39,40 +41,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (!isValidEmail($email)) {
             $error = 'Invalid email format';
         } else {
-            try {
-                $stmt = $db->prepare("
-                    UPDATE patients 
-                    SET pat_first_name = :first_name, 
-                        pat_last_name = :last_name,
-                        pat_email = :email,
-                        pat_phone = :phone,
-                        pat_date_of_birth = :date_of_birth,
-                        pat_gender = :gender,
-                        pat_address = :address,
-                        pat_emergency_contact = :emergency_contact,
-                        pat_emergency_phone = :emergency_phone,
-                        updated_at = NOW()
-                    WHERE pat_id = :patient_id
-                ");
-                $stmt->execute([
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'date_of_birth' => $date_of_birth,
-                    'gender' => $gender ?: null,
-                    'address' => $address ?: null,
-                    'emergency_contact' => $emergency_contact ?: null,
-                    'emergency_phone' => $emergency_phone ?: null,
-                    'patient_id' => $patient_id
-                ]);
+            $updateResult = $patientModel->update($patient_id, [
+                'pat_first_name' => $first_name,
+                'pat_last_name' => $last_name,
+                'pat_email' => $email,
+                'pat_phone' => $phone,
+                'pat_date_of_birth' => $date_of_birth,
+                'pat_gender' => $gender ?: null,
+                'pat_address' => $address ?: null,
+                'pat_emergency_contact' => $emergency_contact ?: null,
+                'pat_emergency_phone' => $emergency_phone ?: null
+            ]);
+
+            if ($updateResult['success']) {
                 $success = 'Account information updated successfully';
-                // Refresh patient data
-                $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :patient_id");
-                $stmt->execute(['patient_id' => $patient_id]);
-                $patient = $stmt->fetch(PDO::FETCH_ASSOC);
-            } catch (PDOException $e) {
-                $error = 'Failed to update account: ' . $e->getMessage();
+                $patient = $patientModel->getById($patient_id);
+            } else {
+                $error = implode(', ', $updateResult['errors'] ?? ['Failed to update account.']);
             }
         }
     }
@@ -85,22 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($new_password !== $confirm_password) {
             $error = 'New passwords do not match';
         } else {
-            try {
-                // Get user info
-                $stmt = $db->prepare("SELECT u.user_password FROM users u JOIN patients p ON u.pat_id = p.pat_id WHERE p.pat_id = :patient_id");
-                $stmt->execute(['patient_id' => $patient_id]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                if ($user && password_verify($current_password, $user['user_password'])) {
-                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt = $db->prepare("UPDATE users SET user_password = :password WHERE pat_id = :patient_id");
-                    $stmt->execute(['password' => $hashed_password, 'patient_id' => $patient_id]);
-                    $success = 'Password changed successfully';
-                } else {
-                    $error = 'Current password is incorrect';
-                }
-            } catch (PDOException $e) {
-                $error = 'Failed to change password: ' . $e->getMessage();
+            $passwordResult = $userModel->updatePasswordForPatient($patient_id, $current_password, $new_password);
+            if ($passwordResult['success']) {
+                $success = 'Password changed successfully';
+            } else {
+                $error = $passwordResult['error'] ?? 'Failed to change password';
             }
         }
     }
@@ -117,14 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
                         // Get old profile picture URL before updating
-                        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                        $stmt->execute(['user_id' => $user_id]);
-                        $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
-                        $oldUrl = $oldUser['profile_picture_url'] ?? null;
+                        $oldUrl = $userModel->getProfilePictureByUserId($user_id);
                         
                         // Update user profile picture URL
-                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
-                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
+                        $userModel->setProfilePicture($user_id, $result['url']);
                         
                         // Delete old image from Cloudinary if exists
                         if ($oldUrl) {
@@ -163,10 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_profile_picture') {
         try {
             // Get current profile picture URL
-            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $user_id]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            $currentUrl = $user['profile_picture_url'] ?? null;
+                $currentUrl = $userModel->getProfilePictureByUserId($user_id);
             
             if ($currentUrl) {
                 $cloudinary = new CloudinaryUpload();
@@ -178,8 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 // Remove from database
-                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
-                $stmt->execute(['user_id' => $user_id]);
+                $userModel->setProfilePicture($user_id, null);
                 
                 $success = 'Profile picture removed successfully';
                 $profile_picture_url = null;
@@ -191,22 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Fetch patient data
-try {
-    $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :patient_id");
-    $stmt->execute(['patient_id' => $patient_id]);
-    $patient = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    // Get profile picture URL
-    $user_id = $auth->getUserId();
-    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-    $stmt->execute(['user_id' => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $profile_picture_url = $user['profile_picture_url'] ?? null;
-} catch (PDOException $e) {
-    $error = 'Failed to fetch account information: ' . $e->getMessage();
-    $patient = null;
-    $profile_picture_url = null;
-}
+$patient = $patient ?? $patientModel->getById($patient_id);
+$profile_picture_url = $userModel->getProfilePictureByUserId($user_id);
 
 require_once __DIR__ . '/../../views/patient/account.view.php';
 

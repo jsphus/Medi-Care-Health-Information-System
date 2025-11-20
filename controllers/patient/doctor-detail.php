@@ -1,16 +1,17 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
-require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Doctor.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requirePatient();
 
-$db = Database::getInstance();
 $error = '';
+$doctorModel = new Doctor();
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Get doctor ID from URL
 $doctor_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -20,24 +21,9 @@ if ($doctor_id === 0) {
     exit;
 }
 
-// Fetch doctor details
-try {
-    $stmt = $db->prepare("
-        SELECT d.*, s.spec_name, s.spec_description, u.profile_picture_url
-        FROM doctors d
-        LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
-        LEFT JOIN users u ON d.doc_id = u.doc_id
-        WHERE d.doc_id = :doctor_id AND d.doc_status = 'active'
-    ");
-    $stmt->execute(['doctor_id' => $doctor_id]);
-    $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$doctor) {
-        $error = 'Doctor not found or not available';
-        $doctor = null;
-    }
-} catch (PDOException $e) {
-    $error = 'Failed to fetch doctor details: ' . $e->getMessage();
+$doctor = $doctorModel->getDetailsById($doctor_id);
+if (!$doctor || $doctor['doc_status'] !== 'active') {
+    $error = 'Doctor not found or not available';
     $doctor = null;
 }
 

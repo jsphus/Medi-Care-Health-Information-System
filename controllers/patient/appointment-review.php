@@ -1,18 +1,21 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
-require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Doctor.php';
+require_once __DIR__ . '/../../classes/Service.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requirePatient();
 
-$db = Database::getInstance();
 $patient_id = $auth->getPatientId();
 $error = '';
 $success = '';
+$doctorModel = new Doctor();
+$serviceModel = new Service();
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Get appointment data from session or POST
 $appointment_data = null;
@@ -55,24 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Fetch doctor details
 $doctor = null;
 if ($appointment_data && isset($appointment_data['doctor_id'])) {
-    try {
-        $stmt = $db->prepare("
-            SELECT d.*, s.spec_name, u.profile_picture_url
-            FROM doctors d
-            LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
-            LEFT JOIN users u ON d.doc_id = u.doc_id
-            WHERE d.doc_id = :doctor_id AND d.doc_status = 'active'
-        ");
-        $stmt->execute(['doctor_id' => $appointment_data['doctor_id']]);
-        $doctor = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if (!$doctor) {
-            $error = 'Doctor not found';
-            unset($_SESSION['appointment_review']);
-        }
-    } catch (PDOException $e) {
-        $error = 'Failed to fetch doctor details: ' . $e->getMessage();
-        $doctor = null;
+    $doctor = $doctorModel->getDetailsById($appointment_data['doctor_id']);
+    if (!$doctor || $doctor['doc_status'] !== 'active') {
+        $error = 'Doctor not found';
+        unset($_SESSION['appointment_review']);
     }
 } else {
     $error = 'Invalid appointment data';
@@ -81,14 +70,8 @@ if ($appointment_data && isset($appointment_data['doctor_id'])) {
 
 // Fetch service details if selected
 $service = null;
-if ($appointment_data && isset($appointment_data['service_id']) && $appointment_data['service_id']) {
-    try {
-        $stmt = $db->prepare("SELECT * FROM services WHERE service_id = :service_id");
-        $stmt->execute(['service_id' => $appointment_data['service_id']]);
-        $service = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        // Service not found, continue without it
-    }
+if ($appointment_data && !empty($appointment_data['service_id'])) {
+    $service = $serviceModel->getById($appointment_data['service_id']);
 }
 
 // Calculate total amount

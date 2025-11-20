@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/PaymentStatus.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -11,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,15 +27,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Payment status name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO payment_statuses (status_name, status_description, created_at) 
-                    VALUES (:status_name, :status_description, NOW())
-                ");
-                $stmt->execute([
+                $paymentStatus = new PaymentStatus();
+                $createData = [
                     'status_name' => $status_name,
                     'status_description' => $status_description
-                ]);
-                $success = 'Payment status created successfully';
+                ];
+                $result = $paymentStatus->create($createData);
+                if ($result['success']) {
+                    $success = 'Payment status created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -49,17 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Payment status name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE payment_statuses 
-                    SET status_name = :status_name, status_description = :status_description, updated_at = NOW()
-                    WHERE payment_status_id = :id
-                ");
-                $stmt->execute([
+                $paymentStatus = new PaymentStatus();
+                $updateData = [
+                    'payment_status_id' => $id,
                     'status_name' => $status_name,
-                    'status_description' => $status_description,
-                    'id' => $id
-                ]);
-                $success = 'Payment status updated successfully';
+                    'status_description' => $status_description
+                ];
+                $result = $paymentStatus->update($updateData);
+                if ($result['success']) {
+                    $success = 'Payment status updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -69,14 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all payment statuses
 try {
-    $stmt = $db->query("
+    $payment_statuses = $db->fetchAll("
         SELECT ps.*, COUNT(p.payment_id) as payment_count
         FROM payment_statuses ps
         LEFT JOIN payments p ON ps.payment_status_id = p.payment_status_id
         GROUP BY ps.payment_status_id
         ORDER BY ps.status_name ASC
     ");
-    $payment_statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch payment statuses: ' . $e->getMessage();
     $payment_statuses = [];
@@ -90,12 +94,12 @@ $stats = [
 
 try {
     // Total payment statuses
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payment_statuses");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_statuses");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Total payments
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payments");
-    $stats['total_payments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM payments");
+    $stats['total_payments'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

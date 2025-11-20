@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Service.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -10,7 +12,7 @@ $db = Database::getInstance();
 $error = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Get service ID from query string
 $service_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -22,9 +24,7 @@ if ($service_id === 0) {
 
 // Fetch service details
 try {
-    $stmt = $db->prepare("SELECT * FROM services WHERE service_id = :service_id");
-    $stmt->execute(['service_id' => $service_id]);
-    $service = $stmt->fetch(PDO::FETCH_ASSOC);
+    $service = (new Service())->getById($service_id);
     
     if (!$service) {
         $error = 'Service not found';
@@ -56,7 +56,7 @@ if ($service) {
             $order_by = "a.$sort_column $sort_order";
         }
         
-        $stmt = $db->prepare("
+        $sql = "
             SELECT a.*, 
                    p.pat_first_name, p.pat_last_name, p.pat_phone,
                    d.doc_first_name, d.doc_last_name,
@@ -67,9 +67,8 @@ if ($service) {
             LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
             WHERE a.service_id = :service_id
             ORDER BY $order_by
-        ");
-        $stmt->execute(['service_id' => $service_id]);
-        $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ";
+        $appointments = $db->fetchAll($sql, ['service_id' => $service_id]);
     } catch (PDOException $e) {
         $error = 'Failed to fetch appointments: ' . $e->getMessage();
         $appointments = [];

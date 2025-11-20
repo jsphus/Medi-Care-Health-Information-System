@@ -3,6 +3,8 @@ require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
+require_once __DIR__ . '/../../classes/Staff.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -13,21 +15,15 @@ $user_id = $auth->getUserId();
 $error = '';
 $success = '';
 
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = User::initializeProfilePicture($auth);
+
 // Fetch staff data
 try {
-    $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :staff_id");
-    $stmt->execute(['staff_id' => $staff_id]);
-    $staff = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    // Fetch user data for profile picture
-    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-    $stmt->execute(['user_id' => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $profile_picture_url = $user['profile_picture_url'] ?? null;
+    $staff = (new Staff())->getById($staff_id);
 } catch (PDOException $e) {
     $error = 'Failed to fetch account information: ' . $e->getMessage();
     $staff = null;
-    $profile_picture_url = null;
 }
 
 // Handle form submissions
@@ -58,29 +54,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid email format';
         } else {
             try {
-            $stmt = $db->prepare("
-                UPDATE staff 
-                SET staff_first_name = :first_name, 
-                    staff_last_name = :last_name,
-                    staff_email = :email,
-                    staff_phone = :phone,
-                    staff_position = :position,
-                    updated_at = NOW()
-                WHERE staff_id = :staff_id
-            ");
-            $stmt->execute([
-                'first_name' => $first_name,
-                'last_name' => $last_name,
-                'email' => $email,
-                'phone' => $phone,
-                'position' => $position,
-                'staff_id' => $staff_id
-            ]);
-                $success = 'Account information updated successfully';
-                // Refresh staff data
-                $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :staff_id");
-                $stmt->execute(['staff_id' => $staff_id]);
-                $staff = $stmt->fetch(PDO::FETCH_ASSOC);
+                $staffObj = new Staff();
+                $updateData = [
+                    'staff_id' => $staff_id,
+                    'staff_first_name' => $first_name,
+                    'staff_last_name' => $last_name,
+                    'staff_email' => $email,
+                    'staff_phone' => $phone,
+                    'staff_position' => $position
+                ];
+                $result = $staffObj->update($updateData);
+                if ($result['success']) {
+                    $success = 'Account information updated successfully';
+                    // Refresh staff data
+                    $staff = $staffObj->getById($staff_id);
+                } else {
+                    $error = $result['message'] ?? 'Failed to update account';
+                }
             } catch (PDOException $e) {
                 $error = 'Failed to update account: ' . $e->getMessage();
             }
@@ -96,14 +86,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'New passwords do not match';
         } else {
             try {
-                $stmt = $db->prepare("SELECT u.user_password FROM users u JOIN staff s ON u.staff_id = s.staff_id WHERE s.staff_id = :staff_id");
-                $stmt->execute(['staff_id' => $staff_id]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                $user = $db->fetchOne("SELECT u.user_password FROM users u JOIN staff s ON u.staff_id = s.staff_id WHERE s.staff_id = :staff_id", ['staff_id' => $staff_id]);
                 
                 if ($user && password_verify($current_password, $user['user_password'])) {
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt = $db->prepare("UPDATE users SET user_password = :password WHERE staff_id = :staff_id");
-                    $stmt->execute(['password' => $hashed_password, 'staff_id' => $staff_id]);
+                    $db->execute("UPDATE users SET user_password = :password WHERE staff_id = :staff_id", ['password' => $hashed_password, 'staff_id' => $staff_id]);
                     $success = 'Password changed successfully';
                 } else {
                     $error = 'Current password is incorrect';
@@ -126,14 +113,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
                         // Get old profile picture URL before updating
-                        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                        $stmt->execute(['user_id' => $user_id]);
-                        $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $oldUser = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
                         $oldUrl = $oldUser['profile_picture_url'] ?? null;
                         
                         // Update user profile picture URL
-                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
-                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
+                        $db->execute("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id", ['url' => $result['url'], 'user_id' => $user_id]);
                         
                         // Delete old image from Cloudinary if exists
                         if ($oldUrl) {
@@ -172,9 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_profile_picture') {
         try {
             // Get current profile picture URL
-            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $user_id]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
             $currentUrl = $user['profile_picture_url'] ?? null;
             
             if ($currentUrl) {
@@ -187,8 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 // Remove from database
-                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
-                $stmt->execute(['user_id' => $user_id]);
+                $db->execute("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id", ['user_id' => $user_id]);
                 
                 $success = 'Profile picture removed successfully';
                 $profile_picture_url = null;

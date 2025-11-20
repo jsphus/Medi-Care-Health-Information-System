@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -13,9 +14,7 @@ $profile_picture_url = null;
 try {
     $user_id = $auth->getUserId();
     if ($user_id) {
-        $stmt = $db->prepare("SELECT user_email, profile_picture_url FROM users WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $db->fetchOne("SELECT user_email, profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
         if ($user) {
             $user_name = explode('@', $user['user_email'])[0];
             $user_name = ucfirst($user_name);
@@ -36,14 +35,13 @@ $last_month_end = date('Y-m-t', strtotime('-1 month'));
 // Get dashboard statistics with optimized queries
 try {
     // OPTIMIZATION 1: Get patients and users counts in one query
-    $stmt = $db->query("
+    $counts = $db->fetchOne("
         SELECT 
             (SELECT COUNT(*) FROM patients) as current_patients,
             (SELECT COUNT(*) FROM patients WHERE created_at < '$this_month_start') as last_month_patients,
             (SELECT COUNT(*) FROM users) as current_users,
             (SELECT COUNT(*) FROM users WHERE created_at < '$this_month_start') as last_month_users
     ");
-    $counts = $stmt->fetch(PDO::FETCH_ASSOC);
     $current_patients = (int)$counts['current_patients'];
     $last_month_patients = (int)$counts['last_month_patients'];
     $current_users = (int)$counts['current_users'];
@@ -53,15 +51,13 @@ try {
     $users_change = $last_month_users > 0 ? round((($current_users - $last_month_users) / $last_month_users) * 100, 1) : ($current_users > 0 ? 100 : 0);
     
     // OPTIMIZATION 2: Get appointments and records counts in one query
-    $stmt = $db->prepare("
+    $appt_counts = $db->fetchOne("
         SELECT 
             (SELECT COUNT(*) FROM appointments WHERE appointment_date >= :start_date AND appointment_date <= :end_date) as current_appointments,
             (SELECT COUNT(*) FROM appointments WHERE DATE_TRUNC('month', appointment_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) as last_month_appointments,
             (SELECT COUNT(*) FROM medical_records WHERE record_date >= :start_date AND record_date <= :end_date) as current_records,
             (SELECT COUNT(*) FROM medical_records WHERE DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) as last_month_records
-    ");
-    $stmt->execute(['start_date' => $start_date, 'end_date' => $end_date]);
-    $appt_counts = $stmt->fetch(PDO::FETCH_ASSOC);
+    ", ['start_date' => $start_date, 'end_date' => $end_date]);
     $current_appointments = (int)$appt_counts['current_appointments'];
     $last_month_appointments = (int)$appt_counts['last_month_appointments'];
     $current_records = (int)$appt_counts['current_records'];
@@ -71,7 +67,7 @@ try {
     $records_change = $last_month_records > 0 ? round((($current_records - $last_month_records) / $last_month_records) * 100, 1) : 0;
     
     // OPTIMIZATION 3: Get all 12 months of patient chart data in one query
-    $stmt = $db->query("
+    $monthly_data = $db->fetchAll("
         SELECT 
             DATE_TRUNC('month', appointment_date) as month,
             COUNT(*) as count
@@ -80,7 +76,6 @@ try {
         GROUP BY DATE_TRUNC('month', appointment_date)
         ORDER BY month ASC
     ");
-    $monthly_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Build array for last 12 months, filling missing months with 0
     $patient_chart_data = [];
@@ -100,7 +95,7 @@ try {
     }
     
     // OPTIMIZATION 4: Get users by role in one query with conditional aggregation
-    $stmt = $db->query("
+    $role_counts = $db->fetchOne("
         SELECT 
             SUM(CASE WHEN pat_id IS NOT NULL THEN 1 ELSE 0 END) as patient_count,
             SUM(CASE WHEN doc_id IS NOT NULL THEN 1 ELSE 0 END) as doctor_count,
@@ -108,7 +103,6 @@ try {
             SUM(CASE WHEN user_is_superadmin = true THEN 1 ELSE 0 END) as admin_count
         FROM users
     ");
-    $role_counts = $stmt->fetch(PDO::FETCH_ASSOC);
     $users_by_role = [
         'Patient' => (int)$role_counts['patient_count'],
         'Doctor' => (int)$role_counts['doctor_count'],
@@ -117,7 +111,7 @@ try {
     ];
     
     // Top Services (Most Booked) - already optimized
-    $stmt = $db->query("
+    $top_services = $db->fetchAll("
         SELECT s.service_name, COUNT(a.appointment_id) as appointment_count,
                COUNT(a.appointment_id) * 100.0 / (SELECT COUNT(*) FROM appointments WHERE service_id IS NOT NULL) as percentage
         FROM services s
@@ -126,11 +120,10 @@ try {
         ORDER BY appointment_count DESC
         LIMIT 5
     ");
-    $top_services = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $total_service_appointments = array_sum(array_column($top_services, 'appointment_count'));
     
     // OPTIMIZATION 5: Get staff list and count in one query
-    $stmt = $db->query("
+    $top_staff = $db->fetchAll("
         SELECT d.doc_id, d.doc_first_name, d.doc_last_name, sp.spec_name
         FROM doctors d
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
@@ -138,26 +131,24 @@ try {
         ORDER BY d.doc_first_name, d.doc_last_name
         LIMIT 3
     ");
-    $top_staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    $stmt = $db->query("SELECT COUNT(*) as count FROM doctors WHERE doc_status = 'active'");
-    $total_staff_count = (int)$stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM doctors WHERE doc_status = 'active'");
+    $total_staff_count = (int)($result['count'] ?? 0);
     
     // OPTIMIZATION 6: Get completion rate data in one query
-    $stmt = $db->query("
+    $completion_data = $db->fetchOne("
         SELECT 
             SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
             COUNT(*) as total
         FROM appointments a
         JOIN appointment_statuses s ON a.status_id = s.status_id
     ");
-    $completion_data = $stmt->fetch(PDO::FETCH_ASSOC);
     $completed = (int)$completion_data['completed'];
     $total_appts = (int)$completion_data['total'];
     $completion_rate = $total_appts > 0 ? round(($completed / $total_appts) * 100, 1) : 0;
     
     // OPTIMIZATION 7: Get all 12 months of completion chart data in one query
-    $stmt = $db->query("
+    $completion_monthly_data = $db->fetchAll("
         SELECT 
             DATE_TRUNC('month', a.appointment_date) as month,
             SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
@@ -168,7 +159,6 @@ try {
         GROUP BY DATE_TRUNC('month', a.appointment_date)
         ORDER BY month ASC
     ");
-    $completion_monthly_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Build completion chart data array and extract last month completion
     $completion_chart_data = [];
@@ -200,7 +190,7 @@ try {
     
     // Get last month completion rate if not found in the query results
     if ($last_month_completion === 0) {
-        $stmt = $db->query("
+        $last_month_data = $db->fetchOne("
             SELECT 
                 SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
                 COUNT(*) as total
@@ -209,7 +199,6 @@ try {
             WHERE a.appointment_date >= '$last_month_start' 
             AND a.appointment_date <= '$last_month_end'
         ");
-        $last_month_data = $stmt->fetch(PDO::FETCH_ASSOC);
         $last_month_completed = (int)$last_month_data['completed'];
         $last_month_total = (int)$last_month_data['total'];
         $last_month_completion = $last_month_total > 0 ? round(($last_month_completed / $last_month_total) * 100, 1) : 0;
@@ -218,7 +207,7 @@ try {
     $completion_change = $last_month_completion > 0 ? round($completion_rate - $last_month_completion, 1) : 0;
     
     // OPTIMIZATION 8: Get all payment statistics in one query
-    $stmt = $db->prepare("
+    $payment_data = $db->fetchOne("
         SELECT 
             COUNT(*) as payments_count,
             COALESCE(SUM(payment_amount), 0) as total_amount,
@@ -227,33 +216,31 @@ try {
         FROM payments p
         JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         WHERE DATE(p.payment_date) >= :start_date AND DATE(p.payment_date) <= :end_date
-    ");
-    $stmt->execute(['start_date' => $start_date, 'end_date' => $end_date]);
-    $payment_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    ", ['start_date' => $start_date, 'end_date' => $end_date]);
     $payments_this_month = (int)$payment_data['payments_count'];
     $total_amount_this_month = (float)$payment_data['total_amount'];
     $paid_this_month = (int)$payment_data['paid_count'];
     $pending_this_month = (int)$payment_data['pending_count'];
     
     // Get last month payments for comparison
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COUNT(*) as count 
         FROM payments p
         WHERE DATE_TRUNC('month', p.payment_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
     ");
-    $last_month_payments = (int)$stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $last_month_payments = (int)($result['count'] ?? 0);
     $payments_change = $last_month_payments > 0 ? round((($payments_this_month - $last_month_payments) / $last_month_payments) * 100, 1) : ($payments_this_month > 0 ? 100 : 0);
     
     // Patients Today (count of unique patients with appointments today)
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COUNT(DISTINCT a.pat_id) as count 
         FROM appointments a
         WHERE a.appointment_date = CURRENT_DATE
     ");
-    $patients_today = (int)$stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $patients_today = (int)($result['count'] ?? 0);
     
     // Today's Appointments
-    $stmt = $db->query("
+    $today_appointments = $db->fetchAll("
         SELECT a.*, 
                p.pat_first_name, p.pat_last_name, p.pat_date_of_birth,
                d.doc_first_name, d.doc_last_name,
@@ -268,7 +255,6 @@ try {
         ORDER BY a.appointment_time ASC
         LIMIT 10
     ");
-    $today_appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
 } catch (PDOException $e) {
     error_log("Dashboard error: " . $e->getMessage());

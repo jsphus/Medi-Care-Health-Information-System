@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -11,6 +12,9 @@ $db = Database::getInstance();
 $user_id = $auth->getUserId();
 $error = '';
 $success = '';
+
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,14 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid email format';
         } else {
             try {
-                $stmt = $db->prepare("UPDATE users SET user_email = :email, updated_at = NOW() WHERE user_id = :user_id");
-                $stmt->execute(['email' => $email, 'user_id' => $user_id]);
-                $_SESSION['user_email'] = $email;
-                $success = 'Account information updated successfully';
-                // Refresh user data
-                $stmt = $db->prepare("SELECT * FROM users WHERE user_id = :user_id");
-                $stmt->execute(['user_id' => $user_id]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                $userObj = new User();
+                $updateData = [
+                    'user_id' => $user_id,
+                    'user_email' => $email
+                ];
+                $result = $userObj->update($updateData);
+                if ($result['success']) {
+                    $_SESSION['user_email'] = $email;
+                    $success = 'Account information updated successfully';
+                    // Refresh user data
+                    $user = $userObj->getById($user_id);
+                } else {
+                    $error = $result['message'] ?? 'Failed to update account';
+                }
             } catch (PDOException $e) {
                 $error = 'Failed to update account: ' . $e->getMessage();
             }
@@ -48,14 +58,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'New passwords do not match';
         } else {
             try {
-                $stmt = $db->prepare("SELECT user_password FROM users WHERE user_id = :user_id");
-                $stmt->execute(['user_id' => $user_id]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                $user = $db->fetchOne("SELECT user_password FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
                 
                 if ($user && password_verify($current_password, $user['user_password'])) {
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                    $stmt = $db->prepare("UPDATE users SET user_password = :password WHERE user_id = :user_id");
-                    $stmt->execute(['password' => $hashed_password, 'user_id' => $user_id]);
+                    $db->execute("UPDATE users SET user_password = :password WHERE user_id = :user_id", ['password' => $hashed_password, 'user_id' => $user_id]);
                     $success = 'Password changed successfully';
                 } else {
                     $error = 'Current password is incorrect';
@@ -78,14 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
                         // Get old profile picture URL before updating
-                        $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                        $stmt->execute(['user_id' => $user_id]);
-                        $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $oldUser = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
                         $oldUrl = $oldUser['profile_picture_url'] ?? null;
                         
                         // Update user profile picture URL
-                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
-                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
+                        $db->execute("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id", ['url' => $result['url'], 'user_id' => $user_id]);
                         
                         // Delete old image from Cloudinary if exists
                         if ($oldUrl) {
@@ -124,9 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_profile_picture') {
         try {
             // Get current profile picture URL
-            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $user_id]);
-            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            $userData = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
             $currentUrl = $userData['profile_picture_url'] ?? null;
             
             if ($currentUrl) {
@@ -139,8 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 // Remove from database
-                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
-                $stmt->execute(['user_id' => $user_id]);
+                $db->execute("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id", ['user_id' => $user_id]);
                 
                 $success = 'Profile picture removed successfully';
                 $profile_picture_url = null;
@@ -153,10 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch user data
 try {
-    $stmt = $db->prepare("SELECT * FROM users WHERE user_id = :user_id");
-    $stmt->execute(['user_id' => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    $profile_picture_url = $user['profile_picture_url'] ?? null;
+    $user = (new User())->getById($user_id);
+    $profile_picture_url = User::getProfilePicture($auth);
 } catch (PDOException $e) {
     $error = 'Failed to fetch account information: ' . $e->getMessage();
     $user = null;

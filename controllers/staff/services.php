@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Service.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -11,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,20 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Service name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO services (service_name, service_description, service_price, 
-                                         service_duration_minutes, service_category, created_at) 
-                    VALUES (:service_name, :service_description, :service_price, 
-                           :service_duration, :service_category, NOW())
-                ");
-                $stmt->execute([
+                $service = new Service();
+                $createData = [
                     'service_name' => $service_name,
                     'service_description' => $service_description,
                     'service_price' => $service_price,
-                    'service_duration' => $service_duration,
+                    'service_duration_minutes' => $service_duration,
                     'service_category' => $service_category
-                ]);
-                $success = 'Service created successfully';
+                ];
+                $result = $service->create($createData);
+                if ($result['success']) {
+                    $success = 'Service created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -60,22 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Service name is required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE services 
-                    SET service_name = :service_name, service_description = :service_description, 
-                        service_price = :service_price, service_duration_minutes = :service_duration,
-                        service_category = :service_category, updated_at = NOW()
-                    WHERE service_id = :id
-                ");
-                $stmt->execute([
+                $service = new Service();
+                $updateData = [
+                    'service_id' => $id,
                     'service_name' => $service_name,
                     'service_description' => $service_description,
                     'service_price' => $service_price,
-                    'service_duration' => $service_duration,
-                    'service_category' => $service_category,
-                    'id' => $id
-                ]);
-                $success = 'Service updated successfully';
+                    'service_duration_minutes' => $service_duration,
+                    'service_category' => $service_category
+                ];
+                $result = $service->update($updateData);
+                if ($result['success']) {
+                    $success = 'Service updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -108,16 +109,15 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    $stmt = $db->prepare("
+    $sql = "
         SELECT s.*, COUNT(a.appointment_id) as appointment_count
         FROM services s
         LEFT JOIN appointments a ON s.service_id = a.service_id
         $where_clause
         GROUP BY s.service_id
         ORDER BY s.service_name ASC
-    ");
-    $stmt->execute($params);
-    $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ";
+    $services = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch services: ' . $e->getMessage();
     $services = [];
@@ -126,8 +126,8 @@ try {
 // Fetch filter data from database
 $filter_categories = [];
 try {
-    $stmt = $db->query("SELECT DISTINCT service_category FROM services WHERE service_category IS NOT NULL AND service_category != '' ORDER BY service_category");
-    $filter_categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $filter_categories = $db->fetchAll("SELECT DISTINCT service_category FROM services WHERE service_category IS NOT NULL AND service_category != '' ORDER BY service_category");
+    $filter_categories = array_column($filter_categories, 'service_category');
 } catch (PDOException $e) {
     $filter_categories = [];
 }
@@ -141,20 +141,20 @@ $stats = [
 
 try {
     // Total services
-    $stmt = $db->query("SELECT COUNT(*) as count FROM services");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM services");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Total appointments using services
-    $stmt = $db->query("SELECT COUNT(*) as count FROM appointments WHERE service_id IS NOT NULL");
-    $stats['total_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM appointments WHERE service_id IS NOT NULL");
+    $stats['total_appointments'] = $result['count'] ?? 0;
     
     // Total revenue from services
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COALESCE(SUM(s.service_price), 0) as total 
         FROM appointments a
         JOIN services s ON a.service_id = s.service_id
     ");
-    $stats['total_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $stats['total_revenue'] = $result['total'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

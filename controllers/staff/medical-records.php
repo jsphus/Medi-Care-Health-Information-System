@@ -1,12 +1,17 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
 
 $db = Database::getInstance();
 $error = '';
+
+// Initialize profile picture for consistent display across the system
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle search and filters
 $search_query = '';
@@ -51,7 +56,7 @@ try {
     
     $order_by = "mr.$sort_column $sort_order";
 
-    $stmt = $db->prepare("
+    $sql = "
         SELECT mr.*, 
                p.pat_first_name, p.pat_last_name,
                d.doc_first_name, d.doc_last_name,
@@ -66,9 +71,8 @@ try {
         LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY $order_by
-    ");
-    $stmt->execute($params);
-    $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    ";
+    $records = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch medical records: ' . $e->getMessage();
     $records = [];
@@ -79,12 +83,10 @@ $filter_doctors = [];
 $filter_patients = [];
 try {
     // Get unique doctors from medical records
-    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM medical_records mr JOIN doctors d ON mr.doc_id = d.doc_id ORDER BY d.doc_first_name");
-    $filter_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $filter_doctors = $db->fetchAll("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM medical_records mr JOIN doctors d ON mr.doc_id = d.doc_id ORDER BY d.doc_first_name");
 
     // Get unique patients from medical records
-    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM medical_records mr JOIN patients p ON mr.pat_id = p.pat_id ORDER BY p.pat_first_name");
-    $filter_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $filter_patients = $db->fetchAll("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM medical_records mr JOIN patients p ON mr.pat_id = p.pat_id ORDER BY p.pat_first_name");
 } catch (PDOException $e) {
     $filter_doctors = [];
     $filter_patients = [];
@@ -99,16 +101,16 @@ $stats = [
 
 try {
     // Total medical records
-    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM medical_records");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Records this month
-    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records WHERE DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE)");
-    $stats['this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM medical_records WHERE DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE)");
+    $stats['this_month'] = $result['count'] ?? 0;
     
     // Pending follow-up (records with follow-up date in the future)
-    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records WHERE follow_up_date IS NOT NULL AND follow_up_date >= CURRENT_DATE");
-    $stats['pending_followup'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM medical_records WHERE follow_up_date IS NOT NULL AND follow_up_date >= CURRENT_DATE");
+    $stats['pending_followup'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Specialization.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -10,7 +12,7 @@ $db = Database::getInstance();
 $error = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Get specialization ID from URL or query string
 $spec_id = 0;
@@ -32,9 +34,7 @@ if ($spec_id === 0) {
 
 // Fetch specialization details
 try {
-    $stmt = $db->prepare("SELECT * FROM specializations WHERE spec_id = :spec_id");
-    $stmt->execute(['spec_id' => $spec_id]);
-    $specialization = $stmt->fetch(PDO::FETCH_ASSOC);
+    $specialization = (new Specialization())->getById($spec_id);
     
     if (!$specialization) {
         $error = 'Specialization not found';
@@ -49,7 +49,7 @@ try {
 // Fetch doctors with this specialization
 if ($specialization) {
     try {
-        $stmt = $db->prepare("
+        $doctors = $db->fetchAll("
             SELECT d.*, 
                    COUNT(a.appointment_id) as total_appointments
             FROM doctors d
@@ -57,9 +57,7 @@ if ($specialization) {
             WHERE d.doc_specialization_id = :spec_id
             GROUP BY d.doc_id
             ORDER BY d.doc_first_name, d.doc_last_name
-        ");
-        $stmt->execute(['spec_id' => $spec_id]);
-        $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        ", ['spec_id' => $spec_id]);
     } catch (PDOException $e) {
         $error = 'Failed to fetch doctors: ' . $e->getMessage();
         $doctors = [];

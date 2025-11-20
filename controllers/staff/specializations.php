@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -10,18 +11,17 @@ $db = Database::getInstance();
 $error = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Fetch all specializations with doctor count
 try {
-    $stmt = $db->query("
+    $specializations = $db->fetchAll("
         SELECT s.*, COUNT(d.doc_id) as doctor_count
         FROM specializations s
         LEFT JOIN doctors d ON s.spec_id = d.doc_specialization_id
         GROUP BY s.spec_id
         ORDER BY s.spec_name ASC
     ");
-    $specializations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch specializations: ' . $e->getMessage();
     $specializations = [];
@@ -36,20 +36,20 @@ $stats = [
 
 try {
     // Total specializations
-    $stmt = $db->query("SELECT COUNT(*) as count FROM specializations");
-    $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM specializations");
+    $stats['total'] = $result['count'] ?? 0;
     
     // Specializations with doctors
-    $stmt = $db->query("
+    $result = $db->fetchOne("
         SELECT COUNT(DISTINCT s.spec_id) as count 
         FROM specializations s
         INNER JOIN doctors d ON s.spec_id = d.doc_specialization_id
     ");
-    $stats['with_doctors'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $stats['with_doctors'] = $result['count'] ?? 0;
     
     // Total doctors across all specializations
-    $stmt = $db->query("SELECT COUNT(*) as count FROM doctors WHERE doc_specialization_id IS NOT NULL");
-    $stats['total_doctors'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM doctors WHERE doc_specialization_id IS NOT NULL");
+    $stats['total_doctors'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }

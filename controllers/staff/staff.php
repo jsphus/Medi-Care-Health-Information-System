@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Staff.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireStaff();
@@ -12,7 +14,7 @@ $success = '';
 $search_query = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions (Staff can Add and Update, but NOT Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -37,22 +39,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid email format';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO staff (staff_first_name, staff_last_name, staff_email, staff_phone, 
-                                      staff_position, staff_hire_date, staff_salary, staff_status, created_at) 
-                    VALUES (:first_name, :last_name, :email, :phone, :position, :hire_date, :salary, :status, NOW())
-                ");
-                $stmt->execute([
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'position' => $position,
-                    'hire_date' => $hire_date,
-                    'salary' => $salary,
-                    'status' => $status
-                ]);
-                $success = 'Staff member created successfully';
+                $staff = new Staff();
+                $createData = [
+                    'staff_first_name' => $first_name,
+                    'staff_last_name' => $last_name,
+                    'staff_email' => $email,
+                    'staff_phone' => $phone,
+                    'staff_position' => $position,
+                    'staff_hire_date' => $hire_date,
+                    'staff_salary' => $salary,
+                    'staff_status' => $status
+                ];
+                $result = $staff->create($createData);
+                if ($result['success']) {
+                    $success = 'Staff member created successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -79,25 +82,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid email format';
         } else {
             try {
-                $stmt = $db->prepare("
-                    UPDATE staff 
-                    SET staff_first_name = :first_name, staff_last_name = :last_name, staff_email = :email, 
-                        staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
-                        staff_salary = :salary, staff_status = :status, updated_at = NOW()
-                    WHERE staff_id = :id
-                ");
-                $stmt->execute([
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'email' => $email,
-                    'phone' => $phone,
-                    'position' => $position,
-                    'hire_date' => $hire_date,
-                    'salary' => $salary,
-                    'status' => $status,
-                    'id' => $id
-                ]);
-                $success = 'Staff member updated successfully';
+                $staff = new Staff();
+                $updateData = [
+                    'staff_id' => $id,
+                    'staff_first_name' => $first_name,
+                    'staff_last_name' => $last_name,
+                    'staff_email' => $email,
+                    'staff_phone' => $phone,
+                    'staff_position' => $position,
+                    'staff_hire_date' => $hire_date,
+                    'staff_salary' => $salary,
+                    'staff_status' => $status
+                ];
+                $result = $staff->update($updateData);
+                if ($result['success']) {
+                    $success = 'Staff member updated successfully';
+                } else {
+                    $error = $result['message'] ?? 'Database error';
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -136,9 +138,8 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    $stmt = $db->prepare("SELECT * FROM staff $where_clause ORDER BY staff_first_name, staff_last_name");
-    $stmt->execute($params);
-    $staff_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $sql = "SELECT * FROM staff $where_clause ORDER BY staff_first_name, staff_last_name";
+    $staff_members = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch staff: ' . $e->getMessage();
     $staff_members = [];
@@ -147,8 +148,8 @@ try {
 // Fetch filter data from database
 $filter_positions = [];
 try {
-    $stmt = $db->query("SELECT DISTINCT staff_position FROM staff WHERE staff_position IS NOT NULL AND staff_position != '' ORDER BY staff_position");
-    $filter_positions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $filter_positions = $db->fetchAll("SELECT DISTINCT staff_position FROM staff WHERE staff_position IS NOT NULL AND staff_position != '' ORDER BY staff_position");
+    $filter_positions = array_column($filter_positions, 'staff_position');
 } catch (PDOException $e) {
     $filter_positions = [];
 }
@@ -162,16 +163,16 @@ $stats = [
 
 try {
     // Total staff this month
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)");
-    $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)");
+    $stats['total_this_month'] = $result['count'] ?? 0;
     
     // Active staff
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'active'");
-    $stats['active'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'active'");
+    $stats['active'] = $result['count'] ?? 0;
     
     // Inactive staff
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'inactive'");
-    $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'inactive'");
+    $stats['inactive'] = $result['count'] ?? 0;
 } catch (PDOException $e) {
     // Keep default values
 }
