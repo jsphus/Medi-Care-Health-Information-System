@@ -110,6 +110,16 @@
                     </div>
                     <?php endif; ?>
                     
+                    <?php if (isset($apt['service_name']) && $apt['service_name']): ?>
+                    <div class="detail-item">
+                        <span class="icon"><i class="fas fa-stethoscope"></i></span>
+                        <div>
+                            <div class="label">Service</div>
+                            <div class="value"><?= htmlspecialchars($apt['service_name']) ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <?php if (isset($apt['address']) && $apt['address']): ?>
                     <div class="detail-item">
                         <span class="icon"><i class="fas fa-map-marker-alt"></i></span>
@@ -129,39 +139,11 @@
                         </div>
                     </div>
                     <?php endif; ?>
-                    
-                    <div class="detail-item">
-                        <span class="icon"><i class="fas fa-file-alt"></i></span>
-                        <div>
-                            <div class="label">Description</div>
-                            <div class="value">
-                                <?php if ($apt['appointment_notes']): ?>
-                                    <a href="#" style="color: var(--primary-blue); text-decoration: none;">Visit Summary <i class="fas fa-eye"></i></a>
-                                <?php else: ?>
-                                    Not found.
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="icon"><i class="fas fa-pills"></i></span>
-                        <div>
-                            <div class="label">Prescription</div>
-                            <div class="value">
-                                <?php if (isset($apt['prescription']) && $apt['prescription']): ?>
-                                    <a href="#" style="color: var(--primary-blue); text-decoration: none;"><?= htmlspecialchars($apt['prescription']) ?></a>
-                                <?php else: ?>
-                                    Not found.
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <?php if (!$isCanceled && !$isCompleted): ?>
                 <div style="padding-top: 1rem; margin-top: 1rem; border-top: 1px solid #e5e7eb; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <a href="/patient/appointments/create?reschedule=<?= htmlspecialchars($apt['appointment_id']) ?>" class="btn-action btn-secondary" style="padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #f3f4f6; color: #374151; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <a href="/patient/reschedule-appointment?id=<?= htmlspecialchars($apt['appointment_id']) ?>" class="btn-action btn-secondary" style="padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #f3f4f6; color: #374151; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-calendar-alt"></i> Reschedule
                     </a>
                     <button type="button" onclick="cancelAppointment('<?= htmlspecialchars($apt['appointment_id']) ?>')" class="btn-action btn-danger" style="padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #fee2e2; color: #991b1b; display: inline-flex; align-items: center; gap: 0.5rem;">
@@ -232,6 +214,16 @@
                     </div>
                     <?php endif; ?>
                     
+                    <?php if (isset($apt['service_name']) && $apt['service_name']): ?>
+                    <div class="detail-item">
+                        <span class="icon"><i class="fas fa-stethoscope"></i></span>
+                        <div>
+                            <div class="label">Service</div>
+                            <div class="value"><?= htmlspecialchars($apt['service_name']) ?></div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <?php if (isset($apt['address']) && $apt['address']): ?>
                     <div class="detail-item">
                         <span class="icon"><i class="fas fa-map-marker-alt"></i></span>
@@ -251,34 +243,6 @@
                         </div>
                     </div>
                     <?php endif; ?>
-                    
-                    <div class="detail-item">
-                        <span class="icon"><i class="fas fa-file-alt"></i></span>
-                        <div>
-                            <div class="label">Description</div>
-                            <div class="value">
-                                <?php if ($apt['appointment_notes']): ?>
-                                    <a href="#" style="color: var(--primary-blue); text-decoration: none;">Visit Summary <i class="fas fa-eye"></i></a>
-                                <?php else: ?>
-                                    Not found.
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <span class="icon"><i class="fas fa-pills"></i></span>
-                        <div>
-                            <div class="label">Prescription</div>
-                            <div class="value">
-                                <?php if (isset($apt['prescription']) && $apt['prescription']): ?>
-                                    <a href="#" style="color: var(--primary-blue); text-decoration: none;"><?= htmlspecialchars($apt['prescription']) ?></a>
-                                <?php else: ?>
-                                    Not found.
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         <?php endforeach; ?>

@@ -120,7 +120,7 @@ class Service extends Entity {
     }
 
     // Delete service (maintains backward compatibility)
-    public function delete($id = null) {
+    public function delete($id = null): array {
         if ($id !== null) {
             $this->service_id = $id;
         }

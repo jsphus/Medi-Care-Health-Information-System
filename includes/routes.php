@@ -52,6 +52,7 @@ return [
     'patient/appointments' => 'controllers/patient/appointments.php',
     'patient/appointments/create' => 'controllers/patient/create-appointment.php',
     'patient/create-appointment' => 'controllers/patient/create-appointment.php',
+    'patient/reschedule-appointment' => 'controllers/patient/reschedule-appointment.php',
     'patient/appointment-review' => 'controllers/patient/appointment-review.php',
     'patient/book' => 'controllers/patient/book.php',
     'patient/doctor-detail' => 'controllers/patient/doctor-detail.php',
