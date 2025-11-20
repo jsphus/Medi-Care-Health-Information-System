@@ -115,9 +115,14 @@ class Database {
      * Execute a query and return a statement
      * @param string $sql SQL query
      * @return PDOStatement
+     * @throws PDOException
      */
     public function query($sql) {
-        return $this->conn->query($sql);
+        try {
+            return $this->conn->query($sql);
+        } catch (PDOException $e) {
+            throw new PDOException("Database query failed: " . $e->getMessage());
+        }
     }
 
     /**
@@ -142,5 +147,13 @@ class Database {
      */
     public function rollBack() {
         return $this->conn->rollBack();
+    }
+
+    /**
+     * Check if currently inside a transaction
+     * @return bool
+     */
+    public function inTransaction() {
+        return $this->conn->inTransaction();
     }
 }

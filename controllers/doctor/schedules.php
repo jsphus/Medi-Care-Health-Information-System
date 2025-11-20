@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireDoctor();
@@ -12,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -27,23 +28,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'Date, start time, and end time are required';
+        } elseif ($start_time >= $end_time) {
+            $error = 'End time must be after start time';
         } else {
             try {
+                // Check for exact duplicate (same doc_id, schedule_date, and start_time)
                 $stmt = $db->prepare("
-                    INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, max_appointments, is_available, created_at) 
-                    VALUES (:doc_id, :schedule_date, :start_time, :end_time, :max_appointments, :is_available, NOW())
+                    SELECT schedule_id FROM schedules 
+                    WHERE doc_id = :doc_id 
+                    AND schedule_date = :schedule_date 
+                    AND start_time = :start_time
                 ");
                 $stmt->execute([
                     'doc_id' => $doctor_id,
                     'schedule_date' => $schedule_date,
-                    'start_time' => $start_time,
-                    'end_time' => $end_time,
-                    'max_appointments' => $max_appointments,
-                    'is_available' => $is_available
+                    'start_time' => $start_time
                 ]);
-                $success = 'Schedule created successfully';
+                
+                if ($stmt->fetch()) {
+                    $error = 'A schedule with the same date and start time already exists. Please choose a different time.';
+                } else {
+                    // Check for overlapping schedules
+                    $stmt = $db->prepare("
+                        SELECT schedule_id FROM schedules 
+                        WHERE doc_id = :doc_id 
+                        AND schedule_date = :schedule_date 
+                        AND (
+                            (start_time <= :start_time AND end_time > :start_time) OR
+                            (start_time < :end_time AND end_time >= :end_time) OR
+                            (start_time >= :start_time AND end_time <= :end_time)
+                        )
+                    ");
+                    $stmt->execute([
+                        'doc_id' => $doctor_id,
+                        'schedule_date' => $schedule_date,
+                        'start_time' => $start_time,
+                        'end_time' => $end_time
+                    ]);
+                    
+                    if ($stmt->fetch()) {
+                        $error = 'This schedule overlaps with an existing schedule for this date. Please choose a different time.';
+                    } else {
+                        $stmt = $db->prepare("
+                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, max_appointments, is_available, created_at) 
+                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, :max_appointments, :is_available, NOW())
+                        ");
+                        $stmt->execute([
+                            'doc_id' => $doctor_id,
+                            'schedule_date' => $schedule_date,
+                            'start_time' => $start_time,
+                            'end_time' => $end_time,
+                            'max_appointments' => $max_appointments,
+                            'is_available' => $is_available
+                        ]);
+                        $success = 'Schedule created successfully';
+                    }
+                }
             } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
+                // Check if it's a unique constraint violation
+                if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
+                    $error = 'A schedule with the same date and start time already exists. Please choose a different time.';
+                } else {
+                    $error = 'Database error: ' . $e->getMessage();
+                }
             }
         }
     }
@@ -56,25 +103,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
         $is_available = isset($_POST['is_available']) ? 1 : 0;
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE schedules 
-                SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time,
-                    max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
-                WHERE schedule_id = :id AND doc_id = :doc_id
-            ");
-            $stmt->execute([
-                'schedule_date' => $schedule_date,
-                'start_time' => $start_time,
-                'end_time' => $end_time,
-                'max_appointments' => $max_appointments,
-                'is_available' => $is_available,
-                'id' => $id,
-                'doc_id' => $doctor_id
-            ]);
-            $success = 'Schedule updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
+        if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
+            $error = 'Date, start time, and end time are required';
+        } elseif ($start_time >= $end_time) {
+            $error = 'End time must be after start time';
+        } else {
+            try {
+                // Check for exact duplicate (excluding current schedule)
+                $stmt = $db->prepare("
+                    SELECT schedule_id FROM schedules 
+                    WHERE doc_id = :doc_id 
+                    AND schedule_date = :schedule_date 
+                    AND start_time = :start_time
+                    AND schedule_id != :id
+                ");
+                $stmt->execute([
+                    'doc_id' => $doctor_id,
+                    'schedule_date' => $schedule_date,
+                    'start_time' => $start_time,
+                    'id' => $id
+                ]);
+                
+                if ($stmt->fetch()) {
+                    $error = 'A schedule with the same date and start time already exists. Please choose a different time.';
+                } else {
+                    // Check for overlapping schedules (excluding current schedule)
+                    $stmt = $db->prepare("
+                        SELECT schedule_id FROM schedules 
+                        WHERE doc_id = :doc_id 
+                        AND schedule_date = :schedule_date 
+                        AND schedule_id != :id
+                        AND (
+                            (start_time <= :start_time AND end_time > :start_time) OR
+                            (start_time < :end_time AND end_time >= :end_time) OR
+                            (start_time >= :start_time AND end_time <= :end_time)
+                        )
+                    ");
+                    $stmt->execute([
+                        'doc_id' => $doctor_id,
+                        'schedule_date' => $schedule_date,
+                        'start_time' => $start_time,
+                        'end_time' => $end_time,
+                        'id' => $id
+                    ]);
+                    
+                    if ($stmt->fetch()) {
+                        $error = 'This schedule overlaps with an existing schedule for this date. Please choose a different time.';
+                    } else {
+                        $stmt = $db->prepare("
+                            UPDATE schedules 
+                            SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time,
+                                max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
+                            WHERE schedule_id = :id AND doc_id = :doc_id
+                        ");
+                        $stmt->execute([
+                            'schedule_date' => $schedule_date,
+                            'start_time' => $start_time,
+                            'end_time' => $end_time,
+                            'max_appointments' => $max_appointments,
+                            'is_available' => $is_available,
+                            'id' => $id,
+                            'doc_id' => $doctor_id
+                        ]);
+                        $success = 'Schedule updated successfully';
+                    }
+                }
+            } catch (PDOException $e) {
+                // Check if it's a unique constraint violation
+                if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
+                    $error = 'A schedule with the same date and start time already exists. Please choose a different time.';
+                } else {
+                    $error = 'Database error: ' . $e->getMessage();
+                }
+            }
         }
     }
     

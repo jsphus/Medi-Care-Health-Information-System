@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/CloudinaryUpload.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -12,7 +13,7 @@ $error = '';
 $success = '';
 
 // Initialize profile picture for consistent display across the system
-$profile_picture_url = initializeProfilePicture($auth, $db);
+$profile_picture_url = User::initializeProfilePicture($auth);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -329,19 +330,23 @@ $stats = [
 try {
     // Total staff this month
     $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)");
-    $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['total_this_month'] = $result ? (int)$result['count'] : 0;
     
     // Active staff
     $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'active'");
-    $stats['active'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['active'] = $result ? (int)$result['count'] : 0;
     
     // Inactive staff
     $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'inactive'");
-    $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['inactive'] = $result ? (int)$result['count'] : 0;
     
     // Pending (staff without user accounts - can be used as "pending" if needed)
     $stmt = $db->query("SELECT COUNT(*) as count FROM staff s LEFT JOIN users u ON s.staff_id = u.staff_id WHERE u.user_id IS NULL");
-    $stats['pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['pending'] = $result ? (int)$result['count'] : 0;
 } catch (PDOException $e) {
     // Keep default values
 }
