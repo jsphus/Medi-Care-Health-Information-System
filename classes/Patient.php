@@ -179,10 +179,11 @@ class Patient extends Entity {
     }
 
     // Update patient (maintains backward compatibility)
-    public function update($id, $data) {
+    public function update($id, array $data): array {
         $data['pat_id'] = $id;
         $this->fromArray($data);
-        return $this->save();
+        // Call parent's protected updateEntity method with correct parameter order
+        return parent::updateEntity($data, $id);
     }
 
     // Delete patient (maintains backward compatibility)

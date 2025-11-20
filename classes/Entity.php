@@ -73,7 +73,7 @@ abstract class Entity {
             if ($isNew) {
                 return $this->insert($data);
             } else {
-                return $this->update($data, $primaryKeyValue);
+                return $this->updateEntity($data, $primaryKeyValue);
             }
         } catch (Exception $e) {
             return ['success' => false, 'errors' => ['Database error: ' . $e->getMessage()]];
@@ -145,7 +145,7 @@ abstract class Entity {
      * @param mixed $id Primary key value
      * @return array
      */
-    protected function update(array $data, $id): array {
+    protected function updateEntity(array $data, $id): array {
         $tableName = $this->getTableName();
         $primaryKey = $this->getPrimaryKey();
         $columns = $this->getColumns();
@@ -240,7 +240,7 @@ abstract class Entity {
      * @param int|null $limit Limit number of results
      * @return array Array of associative arrays
      */
-    public static function findAll(array $conditions = [], string $orderBy = '', int $limit = null): array {
+    public static function findAll(array $conditions = [], string $orderBy = '', ?int $limit = null): array {
         $instance = new static();
         $tableName = $instance->getTableName();
         
