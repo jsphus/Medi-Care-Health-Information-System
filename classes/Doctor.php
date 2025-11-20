@@ -241,4 +241,42 @@ class Doctor extends Entity {
             ORDER BY d.doc_first_name, d.doc_last_name
         ", $params);
     }
+
+    /**
+     * Search doctors with full details including specialization description (optimized single query)
+     * @param array $options Search and filter options
+     * @return array Array of doctors with all details
+     */
+    public function searchDoctorsWithDetails(array $options = []): array {
+        $search = $options['search'] ?? '';
+        $specialization = $options['specialization'] ?? null;
+
+        $where = ["d.doc_status = 'active'"];
+        $params = [];
+
+        if (!empty($search)) {
+            $where[] = "(d.doc_first_name ILIKE :search OR d.doc_last_name ILIKE :search OR s.spec_name ILIKE :search)";
+            $params['search'] = '%' . $search . '%';
+        }
+
+        if (!empty($specialization)) {
+            $where[] = "d.doc_specialization_id = :specialization";
+            $params['specialization'] = $specialization;
+        }
+
+        $whereClause = 'WHERE ' . implode(' AND ', $where);
+
+        // Single query to get all doctor details including specialization description
+        return $this->db->fetchAll("
+            SELECT d.*, 
+                   s.spec_name, 
+                   s.spec_description,
+                   u.profile_picture_url
+            FROM doctors d
+            LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
+            LEFT JOIN users u ON d.doc_id = u.doc_id
+            $whereClause
+            ORDER BY d.doc_first_name, d.doc_last_name
+        ", $params);
+    }
 }

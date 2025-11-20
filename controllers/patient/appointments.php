@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../classes/Auth.php';
+require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/Appointment.php';
 require_once __DIR__ . '/../../classes/Patient.php';
@@ -9,6 +10,37 @@ $auth = new Auth();
 $auth->requirePatient();
 
 $patient_id = $auth->getPatientId();
+if (!$patient_id || !is_numeric($patient_id)) {
+    // If patient ID is not set, try to get it from the user record
+    $user_id = $auth->getUserId();
+    if ($user_id) {
+        try {
+            $db = Database::getInstance();
+            $stmt = $db->prepare("SELECT pat_id FROM users WHERE user_id = :user_id AND pat_id IS NOT NULL");
+            $stmt->execute(['user_id' => $user_id]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($user && $user['pat_id']) {
+                $patient_id = (int)$user['pat_id'];
+                $_SESSION['pat_id'] = $patient_id;
+            } else {
+                // No patient ID found, redirect to login
+                header('Location: /login');
+                exit;
+            }
+        } catch (Exception $e) {
+            // Database error, redirect to login
+            header('Location: /login');
+            exit;
+        }
+    } else {
+        // No user ID, redirect to login
+        header('Location: /login');
+        exit;
+    }
+}
+
+$patient_id = (int)$patient_id; // Ensure it's an integer
+
 $error = '';
 $success = '';
 $appointmentModel = new Appointment();

@@ -23,28 +23,11 @@ if (isset($_GET['search'])) {
 
 $filter_specialization = isset($_GET['specialization']) ? (int)$_GET['specialization'] : null;
 
-// Get basic doctor list
-$doctors = $doctorModel->searchDoctors([
+// Get doctors with all details in a single query (optimized)
+$doctors = $doctorModel->searchDoctorsWithDetails([
     'search' => $search_query,
     'specialization' => $filter_specialization
 ]);
-
-// Fetch full details for each doctor (for modal display)
-$doctorsWithDetails = [];
-foreach ($doctors as $doctor) {
-    $fullDetails = $doctorModel->getDetailsById($doctor['doc_id']);
-    if ($fullDetails) {
-        // Also get specialization description if available
-        if ($fullDetails['doc_specialization_id']) {
-            $spec = Specialization::findById($fullDetails['doc_specialization_id']);
-            if ($spec) {
-                $fullDetails['spec_description'] = $spec['spec_description'] ?? null;
-            }
-        }
-        $doctorsWithDetails[] = $fullDetails;
-    }
-}
-$doctors = $doctorsWithDetails;
 
 $specializations = $specializationModel->getAllSpecializations();
 
