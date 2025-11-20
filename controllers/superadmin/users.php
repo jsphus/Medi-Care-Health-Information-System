@@ -250,24 +250,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             
                             // Update profile based on role
                             if ($role === 'patient' && $pat_id) {
-                            $first_name = sanitize($_POST['first_name'] ?? '');
-                            $last_name = sanitize($_POST['last_name'] ?? '');
-                            $phone = sanitize($_POST['phone'] ?? '');
+                            // Fetch existing patient data to preserve values if not provided
+                            $stmt = $db->prepare("SELECT * FROM patients WHERE pat_id = :id");
+                            $stmt->execute(['id' => $pat_id]);
+                            $existingPatient = $stmt->fetch(PDO::FETCH_ASSOC);
+                            
+                            // Use POST values if provided, otherwise preserve existing values
+                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingPatient['pat_first_name'] ?? '');
+                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingPatient['pat_last_name'] ?? '');
+                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingPatient['pat_phone'] ?? '');
                             if (!empty($phone)) {
                                 $phone = formatPhoneNumber($phone);
                             }
-                            $date_of_birth = !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null;
-                            $gender = sanitize($_POST['gender'] ?? '');
-                            $address = sanitize($_POST['address'] ?? '');
-                            $emergency_contact = sanitize($_POST['emergency_contact'] ?? '');
-                            $emergency_phone = sanitize($_POST['emergency_phone'] ?? '');
+                            $date_of_birth = !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : ($existingPatient['pat_date_of_birth'] ?? null);
+                            $gender = !empty($_POST['gender']) ? sanitize($_POST['gender']) : ($existingPatient['pat_gender'] ?? '');
+                            $address = isset($_POST['address']) ? sanitize($_POST['address']) : ($existingPatient['pat_address'] ?? '');
+                            $emergency_contact = isset($_POST['emergency_contact']) ? sanitize($_POST['emergency_contact']) : ($existingPatient['pat_emergency_contact'] ?? '');
+                            $emergency_phone = !empty($_POST['emergency_phone']) ? sanitize($_POST['emergency_phone']) : ($existingPatient['pat_emergency_phone'] ?? '');
                             if (!empty($emergency_phone)) {
                                 $emergency_phone = formatPhoneNumber($emergency_phone);
                             }
-                            $medical_history = sanitize($_POST['medical_history'] ?? '');
-                            $allergies = sanitize($_POST['allergies'] ?? '');
-                            $insurance_provider = sanitize($_POST['insurance_provider'] ?? '');
-                            $insurance_number = sanitize($_POST['insurance_number'] ?? '');
+                            $medical_history = isset($_POST['medical_history']) ? sanitize($_POST['medical_history']) : ($existingPatient['pat_medical_history'] ?? '');
+                            $allergies = isset($_POST['allergies']) ? sanitize($_POST['allergies']) : ($existingPatient['pat_allergies'] ?? '');
+                            $insurance_provider = isset($_POST['insurance_provider']) ? sanitize($_POST['insurance_provider']) : ($existingPatient['pat_insurance_provider'] ?? '');
+                            $insurance_number = isset($_POST['insurance_number']) ? sanitize($_POST['insurance_number']) : ($existingPatient['pat_insurance_number'] ?? '');
                             
                             $stmt = $db->prepare("
                                 UPDATE patients 
@@ -296,16 +302,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'id' => $pat_id
                             ]);
                             } elseif ($role === 'staff' && $staff_id) {
-                            $first_name = sanitize($_POST['first_name'] ?? '');
-                            $last_name = sanitize($_POST['last_name'] ?? '');
-                            $phone = sanitize($_POST['phone'] ?? '');
+                            // Fetch existing staff data to preserve values if not provided
+                            $stmt = $db->prepare("SELECT * FROM staff WHERE staff_id = :id");
+                            $stmt->execute(['id' => $staff_id]);
+                            $existingStaff = $stmt->fetch(PDO::FETCH_ASSOC);
+                            
+                            // Use POST values if provided, otherwise preserve existing values
+                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingStaff['staff_first_name'] ?? '');
+                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingStaff['staff_last_name'] ?? '');
+                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingStaff['staff_phone'] ?? '');
                             if (!empty($phone)) {
                                 $phone = formatPhoneNumber($phone);
                             }
-                            $position = sanitize($_POST['position'] ?? '');
-                            $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : null;
-                            $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
-                            $status = sanitize($_POST['status'] ?? 'active');
+                            $position = isset($_POST['position']) ? sanitize($_POST['position']) : ($existingStaff['staff_position'] ?? '');
+                            $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : ($existingStaff['staff_hire_date'] ?? null);
+                            $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : ($existingStaff['staff_salary'] ?? null);
+                            $status = !empty($_POST['status']) ? sanitize($_POST['status']) : ($existingStaff['staff_status'] ?? 'active');
                             
                             $stmt = $db->prepare("
                                 UPDATE staff 
@@ -326,19 +338,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'id' => $staff_id
                             ]);
                             } elseif ($role === 'doctor' && $doc_id) {
-                            $first_name = sanitize($_POST['first_name'] ?? '');
-                            $last_name = sanitize($_POST['last_name'] ?? '');
-                            $phone = sanitize($_POST['phone'] ?? '');
+                            // Fetch existing doctor data to preserve values if not provided
+                            $stmt = $db->prepare("SELECT * FROM doctors WHERE doc_id = :id");
+                            $stmt->execute(['id' => $doc_id]);
+                            $existingDoctor = $stmt->fetch(PDO::FETCH_ASSOC);
+                            
+                            // Use POST values if provided, otherwise preserve existing values
+                            $first_name = !empty($_POST['first_name']) ? sanitize($_POST['first_name']) : ($existingDoctor['doc_first_name'] ?? '');
+                            $last_name = !empty($_POST['last_name']) ? sanitize($_POST['last_name']) : ($existingDoctor['doc_last_name'] ?? '');
+                            $phone = !empty($_POST['phone']) ? sanitize($_POST['phone']) : ($existingDoctor['doc_phone'] ?? '');
                             if (!empty($phone)) {
                                 $phone = formatPhoneNumber($phone);
                             }
-                            $specialization_id = !empty($_POST['specialization_id']) ? (int)$_POST['specialization_id'] : null;
-                            $license_number = sanitize($_POST['license_number'] ?? '');
-                            $experience_years = !empty($_POST['experience_years']) ? (int)$_POST['experience_years'] : null;
-                            $consultation_fee = !empty($_POST['consultation_fee']) ? floatval($_POST['consultation_fee']) : null;
-                            $qualification = sanitize($_POST['qualification'] ?? '');
-                            $bio = sanitize($_POST['bio'] ?? '');
-                            $status = sanitize($_POST['status'] ?? 'active');
+                            $specialization_id = !empty($_POST['specialization_id']) ? (int)$_POST['specialization_id'] : ($existingDoctor['doc_specialization_id'] ?? null);
+                            $license_number = isset($_POST['license_number']) ? sanitize($_POST['license_number']) : ($existingDoctor['doc_license_number'] ?? '');
+                            $experience_years = !empty($_POST['experience_years']) ? (int)$_POST['experience_years'] : ($existingDoctor['doc_experience_years'] ?? null);
+                            $consultation_fee = !empty($_POST['consultation_fee']) ? floatval($_POST['consultation_fee']) : ($existingDoctor['doc_consultation_fee'] ?? null);
+                            $qualification = isset($_POST['qualification']) ? sanitize($_POST['qualification']) : ($existingDoctor['doc_qualification'] ?? '');
+                            $bio = isset($_POST['bio']) ? sanitize($_POST['bio']) : ($existingDoctor['doc_bio'] ?? '');
+                            $status = !empty($_POST['status']) ? sanitize($_POST['status']) : ($existingDoctor['doc_status'] ?? 'active');
                             
                             $stmt = $db->prepare("
                                 UPDATE doctors 

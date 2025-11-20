@@ -187,7 +187,7 @@ class Patient extends Entity {
     }
 
     // Delete patient (maintains backward compatibility)
-    public function delete($id = null) {
+    public function delete($id = null): array {
         if ($id !== null) {
             $this->pat_id = $id;
         }
