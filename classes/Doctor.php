@@ -58,27 +58,45 @@ class Doctor extends Entity {
             $errors[] = 'Invalid email format.';
         }
 
-        // Check email uniqueness
-        if ($isNew || (isset($data['doc_id']) && isset($data['doc_email']))) {
-            $existing = $this->db->fetchOne(
-                "SELECT doc_id FROM doctors WHERE doc_email = :email" . 
-                ($isNew ? '' : " AND doc_id != :id"),
-                $isNew ? ['email' => $data['doc_email']] : ['email' => $data['doc_email'], 'id' => $data['doc_id']]
+        // Get existing record if updating to compare values
+        $existingRecord = null;
+        if (!$isNew && isset($data['doc_id'])) {
+            $existingRecord = $this->db->fetchOne(
+                "SELECT doc_email, doc_license_number FROM doctors WHERE doc_id = :id",
+                ['id' => $data['doc_id']]
             );
-            if ($existing) {
-                $errors[] = 'Email already exists.';
+        }
+
+        // Check email uniqueness - only if it's new or if email has changed
+        if ($isNew || (isset($data['doc_id']) && isset($data['doc_email']))) {
+            $emailChanged = $isNew || !$existingRecord || ($existingRecord['doc_email'] !== $data['doc_email']);
+            
+            if ($emailChanged) {
+                $existing = $this->db->fetchOne(
+                    "SELECT doc_id FROM doctors WHERE doc_email = :email" . 
+                    ($isNew ? '' : " AND doc_id != :id"),
+                    $isNew ? ['email' => $data['doc_email']] : ['email' => $data['doc_email'], 'id' => $data['doc_id']]
+                );
+                if ($existing) {
+                    $errors[] = 'Email already exists.';
+                }
             }
         }
 
-        // Check license number uniqueness if provided
+        // Check license number uniqueness if provided - only if it's new or if license has changed
         if (!empty($data['doc_license_number'])) {
-            $existing = $this->db->fetchOne(
-                "SELECT doc_id FROM doctors WHERE doc_license_number = :license" . 
-                ($isNew ? '' : " AND doc_id != :id"),
-                $isNew ? ['license' => $data['doc_license_number']] : ['license' => $data['doc_license_number'], 'id' => $data['doc_id']]
-            );
-            if ($existing) {
-                $errors[] = 'License number already exists.';
+            $licenseChanged = $isNew || !$existingRecord || 
+                (($existingRecord['doc_license_number'] ?? '') !== $data['doc_license_number']);
+            
+            if ($licenseChanged) {
+                $existing = $this->db->fetchOne(
+                    "SELECT doc_id FROM doctors WHERE doc_license_number = :license" . 
+                    ($isNew ? '' : " AND doc_id != :id"),
+                    $isNew ? ['license' => $data['doc_license_number']] : ['license' => $data['doc_license_number'], 'id' => $data['doc_id']]
+                );
+                if ($existing) {
+                    $errors[] = 'License number already exists.';
+                }
             }
         }
 

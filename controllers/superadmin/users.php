@@ -69,9 +69,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 // Get current user data to preserve existing role associations
-                $stmt = $db->prepare("SELECT user_is_superadmin, pat_id, staff_id, doc_id FROM users WHERE user_id = :id");
+                $stmt = $db->prepare("SELECT user_email, user_is_superadmin, pat_id, staff_id, doc_id FROM users WHERE user_id = :id");
                 $stmt->execute(['id' => $id]);
                 $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                // Check if email is being changed and if it already exists in users table
+                if ($email !== $currentUser['user_email']) {
+                    $existingUserEmail = $db->fetchOne(
+                        "SELECT user_id FROM users WHERE user_email = :email AND user_id != :id",
+                        ['email' => $email, 'id' => $id]
+                    );
+                    if ($existingUserEmail) {
+                        $error = 'Email already exists for another user.';
+                    }
+                }
                 
                 if (!$currentUser) {
                     $error = 'User not found';
@@ -260,7 +271,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (!$existingPatient) {
                                     $error = 'Patient profile not found';
                                 } else {
-                                    // Check if email is being changed and if it already exists
+                                    // Check if email is being changed and if it already exists in patients table
+                                    // Only check if the email is different from the current patient email
                                     if ($email !== $existingPatient['pat_email']) {
                                         $existingEmail = $db->fetchOne(
                                             "SELECT pat_id FROM patients WHERE pat_email = :email AND pat_id != :id",
@@ -270,6 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $error = 'Email already exists for another patient.';
                                         }
                                     }
+                                    // If email hasn't changed, no need to check
                                     
                                     if (empty($error)) {
                                         // Always use POST values if they exist (even if empty), otherwise preserve existing values
@@ -314,7 +327,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (!$existingStaff) {
                                     $error = 'Staff profile not found';
                                 } else {
-                                    // Check if email is being changed and if it already exists
+                                    // Check if email is being changed and if it already exists in staff table
+                                    // Only check if the email is different from the current staff email
                                     if ($email !== $existingStaff['staff_email']) {
                                         $existingEmail = $db->fetchOne(
                                             "SELECT staff_id FROM staff WHERE staff_email = :email AND staff_id != :id",
@@ -324,6 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $error = 'Email already exists for another staff member.';
                                         }
                                     }
+                                    // If email hasn't changed, no need to check
                                     
                                     if (empty($error)) {
                                         // Always use POST values if they exist (even if empty), otherwise preserve existing values
@@ -359,7 +374,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 if (!$existingDoctor) {
                                     $error = 'Doctor profile not found';
                                 } else {
-                                    // Check if email is being changed and if it already exists
+                                    // Check if email is being changed and if it already exists in doctors table
+                                    // Only check if the email is different from the current doctor email
                                     if ($email !== $existingDoctor['doc_email']) {
                                         $existingEmail = $db->fetchOne(
                                             "SELECT doc_id FROM doctors WHERE doc_email = :email AND doc_id != :id",
@@ -369,6 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             $error = 'Email already exists for another doctor.';
                                         }
                                     }
+                                    // If email hasn't changed, no need to check
                                     
                                     if (empty($error)) {
                                         // Always use POST values if they exist (even if empty), otherwise preserve existing values
