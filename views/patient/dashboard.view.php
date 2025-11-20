@@ -375,7 +375,7 @@
 <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
-        <div class="dashboard-header-left" style="display: flex; align-items: center; gap: 1rem;">
+        <div class="dashboard-header-left" style="display: flex; align-items: flex-start; gap: 1rem;">
             <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.5rem; overflow: hidden; flex-shrink: 0;">
                 <?php if (!empty($profile_picture_url)): ?>
                     <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
