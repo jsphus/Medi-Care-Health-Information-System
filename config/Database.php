@@ -112,6 +112,15 @@ class Database {
     }
 
     /**
+     * Execute a query and return a statement
+     * @param string $sql SQL query
+     * @return PDOStatement
+     */
+    public function query($sql) {
+        return $this->conn->query($sql);
+    }
+
+    /**
      * Begin a transaction
      * @return bool
      */
