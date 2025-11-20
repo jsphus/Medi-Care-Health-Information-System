@@ -273,10 +273,26 @@ abstract class Entity {
         // Add LIMIT
         if ($limit !== null) {
             $sql .= " LIMIT :limit";
-            $params['limit'] = $limit;
+            // Don't add limit to params array - will bind explicitly as integer
         }
 
-        return $instance->db->fetchAll($sql, $params);
+        // Prepare statement and bind parameters explicitly
+        // This is necessary for PostgreSQL to properly handle LIMIT as integer
+        $conn = $instance->db->getConnection();
+        $stmt = $conn->prepare($sql);
+        
+        // Bind all regular parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        
+        // Bind LIMIT parameter explicitly as integer if provided
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        }
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 
