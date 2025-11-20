@@ -5,6 +5,7 @@ class Doctor extends Entity {
     // Private properties - Encapsulation
     private $doc_id;
     private $doc_first_name;
+    private $doc_middle_initial;
     private $doc_last_name;
     private $doc_email;
     private $doc_phone;
@@ -36,7 +37,7 @@ class Doctor extends Entity {
 
     protected function getColumns(): array {
         return [
-            'doc_id', 'doc_first_name', 'doc_last_name', 'doc_email', 'doc_phone',
+            'doc_id', 'doc_first_name', 'doc_middle_initial', 'doc_last_name', 'doc_email', 'doc_phone',
             'doc_license_number', 'doc_specialization_id', 'doc_experience_years',
             'doc_consultation_fee', 'doc_qualification', 'doc_bio', 'doc_status',
             'created_at', 'updated_at'
@@ -107,6 +108,7 @@ class Doctor extends Entity {
         return [
             'doc_id' => $this->doc_id,
             'doc_first_name' => $this->doc_first_name,
+            'doc_middle_initial' => $this->doc_middle_initial,
             'doc_last_name' => $this->doc_last_name,
             'doc_email' => $this->doc_email,
             'doc_phone' => $this->doc_phone,
@@ -125,6 +127,7 @@ class Doctor extends Entity {
     public function fromArray(array $data): self {
         $this->doc_id = $data['doc_id'] ?? null;
         $this->doc_first_name = $data['doc_first_name'] ?? null;
+        $this->doc_middle_initial = $data['doc_middle_initial'] ?? null;
         $this->doc_last_name = $data['doc_last_name'] ?? null;
         $this->doc_email = $data['doc_email'] ?? null;
         $this->doc_phone = $data['doc_phone'] ?? null;
@@ -143,6 +146,7 @@ class Doctor extends Entity {
     // Getters - Encapsulation
     public function getDocId() { return $this->doc_id; }
     public function getDocFirstName() { return $this->doc_first_name; }
+    public function getDocMiddleInitial() { return $this->doc_middle_initial; }
     public function getDocLastName() { return $this->doc_last_name; }
     public function getDocEmail() { return $this->doc_email; }
     public function getDocPhone() { return $this->doc_phone; }
@@ -159,6 +163,7 @@ class Doctor extends Entity {
     // Setters - Encapsulation
     public function setDocId($value) { $this->doc_id = $value; return $this; }
     public function setDocFirstName($value) { $this->doc_first_name = $value; return $this; }
+    public function setDocMiddleInitial($value) { $this->doc_middle_initial = $value; return $this; }
     public function setDocLastName($value) { $this->doc_last_name = $value; return $this; }
     public function setDocEmail($value) { $this->doc_email = $value; return $this; }
     public function setDocPhone($value) { $this->doc_phone = $value; return $this; }
@@ -221,7 +226,7 @@ class Doctor extends Entity {
         $params = [];
 
         if (!empty($search)) {
-            $where[] = "(d.doc_first_name ILIKE :search OR d.doc_last_name ILIKE :search OR s.spec_name ILIKE :search)";
+            $where[] = "(d.doc_first_name ILIKE :search OR d.doc_middle_initial ILIKE :search OR d.doc_last_name ILIKE :search OR s.spec_name ILIKE :search)";
             $params['search'] = '%' . $search . '%';
         }
 
@@ -255,7 +260,7 @@ class Doctor extends Entity {
         $params = [];
 
         if (!empty($search)) {
-            $where[] = "(d.doc_first_name ILIKE :search OR d.doc_last_name ILIKE :search OR s.spec_name ILIKE :search)";
+            $where[] = "(d.doc_first_name ILIKE :search OR d.doc_middle_initial ILIKE :search OR d.doc_last_name ILIKE :search OR s.spec_name ILIKE :search)";
             $params['search'] = '%' . $search . '%';
         }
 

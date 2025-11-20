@@ -2,6 +2,9 @@
 // Helper functions
 
 function sanitize($data) {
+    if ($data === null) {
+        return '';
+    }
     return htmlspecialchars(strip_tags(trim($data)));
 }
 
@@ -42,4 +45,22 @@ function getDefaultAvatar($name, $size = 80) {
 }
 
 // initializeProfilePicture() moved to User::initializeProfilePicture()
+
+/**
+ * Format full name with middle initial
+ * @param string $first_name First name
+ * @param string|null $middle_initial Middle initial (optional)
+ * @param string $last_name Last name
+ * @return string Formatted full name
+ */
+function formatFullName($first_name, $middle_initial = null, $last_name = '') {
+    $name = trim($first_name ?? '');
+    if (!empty($middle_initial)) {
+        $name .= ' ' . strtoupper(substr($middle_initial, 0, 1)) . '.';
+    }
+    if (!empty($last_name)) {
+        $name .= ' ' . trim($last_name);
+    }
+    return trim($name);
+}
 

@@ -72,7 +72,7 @@ Medi-Care is a full-featured Health Information System (HIS) designed to manage 
 
 #### Patients
 - `pat_id` (Primary Key)
-- Personal info: `pat_first_name`, `pat_last_name`, `pat_email`, `pat_phone`
+- Personal info: `pat_first_name`, `pat_middle_initial`, `pat_last_name`, `pat_email`, `pat_phone`
 - Demographics: `pat_date_of_birth`, `pat_gender`, `pat_address`
 - Medical: `pat_medical_history`, `pat_allergies`
 - Insurance: `pat_insurance_provider`, `pat_insurance_number`
@@ -80,14 +80,14 @@ Medi-Care is a full-featured Health Information System (HIS) designed to manage 
 
 #### Doctors
 - `doc_id` (Primary Key)
-- Personal: `doc_first_name`, `doc_last_name`, `doc_email`, `doc_phone`
+- Personal: `doc_first_name`, `doc_middle_initial`, `doc_last_name`, `doc_email`, `doc_phone`
 - Professional: `doc_license_number` (Unique), `doc_specialization_id`
 - Experience: `doc_experience_years`, `doc_consultation_fee`
 - Details: `doc_qualification`, `doc_bio`, `doc_status`
 
 #### Staff
 - `staff_id` (Primary Key)
-- Personal: `staff_first_name`, `staff_last_name`, `staff_email`, `staff_phone`
+- Personal: `staff_first_name`, `staff_middle_initial`, `staff_last_name`, `staff_email`, `staff_phone`
 - Employment: `staff_position`, `staff_hire_date`, `staff_salary`, `staff_status`
 
 #### Appointments

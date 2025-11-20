@@ -460,7 +460,7 @@
                 <?php foreach ($doctors as $doctor): ?>
                     <?php
                     $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
-                    $doctorName = 'Dr. ' . htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+                    $doctorName = 'Dr. ' . htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? ''));
                     $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
                     $fee = $doctor['doc_consultation_fee'] ?? 0;
                     ?>
@@ -571,7 +571,7 @@ function openDoctorModal(doctor) {
     // Prepare doctor data
     const initials = (doctor.doc_first_name ? doctor.doc_first_name.charAt(0) : 'D') + 
                     (doctor.doc_last_name ? doctor.doc_last_name.charAt(0) : 'D');
-    const doctorName = 'Dr. ' + (doctor.doc_first_name || '') + ' ' + (doctor.doc_last_name || '');
+    const doctorName = 'Dr. ' + (doctor.doc_first_name || '') + (doctor.doc_middle_initial ? ' ' + doctor.doc_middle_initial.toUpperCase() + '.' : '') + ' ' + (doctor.doc_last_name || '');
     const specialization = doctor.spec_name || 'General Practice';
     const fee = parseFloat(doctor.doc_consultation_fee || 0);
     const profilePicture = doctor.profile_picture_url || '';

@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $password = $_POST['password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
         $first_name = sanitize($_POST['first_name'] ?? '');
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
         
@@ -63,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email' => $email,
                     'password' => $password,
                     'first_name' => $first_name,
+                    'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                     'last_name' => $last_name,
                     'phone' => $phone,
                     'date_of_birth' => !empty($_POST['date_of_birth']) ? sanitize($_POST['date_of_birth']) : null,
@@ -95,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'email' => $email,
                         'password' => $password,
                         'first_name' => $first_name,
+                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                         'last_name' => $last_name,
                         'phone' => $phone,
                         'license_number' => $license_number,
@@ -124,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email' => $email,
                     'password' => $password,
                     'first_name' => $first_name,
+                    'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                     'last_name' => $last_name,
                     'phone' => $phone,
                     'position' => !empty($_POST['position']) ? sanitize($_POST['position']) : null

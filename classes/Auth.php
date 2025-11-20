@@ -301,17 +301,18 @@ class Auth {
             // Insert into patients table
             $stmt = $this->db->prepare("
                 INSERT INTO patients (
-                    pat_first_name, pat_last_name, pat_email, pat_phone, 
+                    pat_first_name, pat_middle_initial, pat_last_name, pat_email, pat_phone, 
                     pat_date_of_birth, pat_gender, pat_address, 
                     pat_emergency_contact, pat_emergency_phone
                 ) VALUES (
-                    :first_name, :last_name, :email, :phone, 
+                    :first_name, :middle_initial, :last_name, :email, :phone, 
                     :date_of_birth, :gender, :address, 
                     :emergency_contact, :emergency_phone
                 ) RETURNING pat_id
             ");
             $stmt->execute([
                 'first_name' => $data['first_name'],
+                'middle_initial' => $data['middle_initial'] ?? null,
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
@@ -378,17 +379,18 @@ class Auth {
             // Insert into doctors table
             $stmt = $this->db->prepare("
                 INSERT INTO doctors (
-                    doc_first_name, doc_last_name, doc_email, doc_phone, 
+                    doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, 
                     doc_license_number, doc_specialization_id, doc_experience_years,
                     doc_consultation_fee, doc_qualification, doc_bio
                 ) VALUES (
-                    :first_name, :last_name, :email, :phone, 
+                    :first_name, :middle_initial, :last_name, :email, :phone, 
                     :license_number, :specialization_id, :experience_years,
                     :consultation_fee, :qualification, :bio
                 ) RETURNING doc_id
             ");
             $stmt->execute([
                 'first_name' => $data['first_name'],
+                'middle_initial' => $data['middle_initial'] ?? null,
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,
@@ -446,15 +448,16 @@ class Auth {
             // Insert into staff table
             $stmt = $this->db->prepare("
                 INSERT INTO staff (
-                    staff_first_name, staff_last_name, staff_email, staff_phone, 
+                    staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, 
                     staff_position
                 ) VALUES (
-                    :first_name, :last_name, :email, :phone, 
+                    :first_name, :middle_initial, :last_name, :email, :phone, 
                     :position
                 ) RETURNING staff_id
             ");
             $stmt->execute([
                 'first_name' => $data['first_name'],
+                'middle_initial' => $data['middle_initial'] ?? null,
                 'last_name' => $data['last_name'],
                 'email' => $data['email'],
                 'phone' => $data['phone'] ?? null,

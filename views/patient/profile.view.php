@@ -43,6 +43,11 @@
                     </div>
                     
                     <div class="form-group">
+                        <label>Middle Initial:</label>
+                        <input type="text" name="middle_initial" value="<?= htmlspecialchars($patient['pat_middle_initial'] ?? '') ?>" maxlength="1" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                         <input type="text" name="last_name" value="<?= htmlspecialchars($patient['pat_last_name']) ?>" required class="form-control">
                     </div>

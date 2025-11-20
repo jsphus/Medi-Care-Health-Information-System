@@ -290,6 +290,12 @@ if (session_status() === PHP_SESSION_NONE) {
                     <i class="fas fa-user form-icon"></i>
                 </div>
 
+                <!-- Middle Initial -->
+                <div class="form-icon-wrapper">
+                    <input type="text" name="middle_initial" placeholder="Middle Initial (Optional)" maxlength="1" value="<?= htmlspecialchars($_POST['middle_initial'] ?? '') ?>">
+                    <i class="fas fa-user form-icon"></i>
+                </div>
+
                 <!-- Last Name -->
                 <div class="form-icon-wrapper">
                     <input type="text" name="last_name" placeholder="Last Name" required value="<?= htmlspecialchars($_POST['last_name'] ?? '') ?>">

@@ -203,7 +203,7 @@
                                             <?= strtoupper(substr($member['staff_first_name'] ?? 'S', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars($member['staff_first_name'] . ' ' . $member['staff_last_name']) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($member['staff_first_name'] ?? '', $member['staff_middle_initial'] ?? null, $member['staff_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_email']) ?></td>
@@ -332,6 +332,10 @@
                     <input type="text" name="first_name" required class="form-control">
                 </div>
                 <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" maxlength="1" class="form-control">
+                </div>
+                <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="last_name" required class="form-control">
                 </div>
@@ -430,6 +434,10 @@
                 <div class="form-group">
                     <label>First Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="first_name" id="edit_first_name" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" id="edit_middle_initial" maxlength="1" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>
@@ -542,6 +550,7 @@ function formatPhoneInput(inputId) {
 function editStaff(staff) {
     document.getElementById('edit_id').value = staff.staff_id;
     document.getElementById('edit_first_name').value = staff.staff_first_name;
+    document.getElementById('edit_middle_initial').value = staff.staff_middle_initial || '';
     document.getElementById('edit_last_name').value = staff.staff_last_name;
     document.getElementById('edit_email').value = staff.staff_email;
     document.getElementById('edit_phone').value = staff.staff_phone ? formatPhoneNumber(staff.staff_phone) : '';
@@ -565,7 +574,7 @@ function viewStaffDetails(staff) {
     const profilePicture = staff.profile_picture_url || '';
     const firstName = staff.staff_first_name || 'S';
     const firstLetter = firstName.charAt(0).toUpperCase();
-    const fullName = `${staff.staff_first_name || ''} ${staff.staff_last_name || ''}`.trim();
+    const fullName = `${staff.staff_first_name || ''}${staff.staff_middle_initial ? ' ' + staff.staff_middle_initial.toUpperCase() + '.' : ''} ${staff.staff_last_name || ''}`.trim();
     
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">

@@ -37,7 +37,7 @@ try {
     $params = [];
 
     if (!empty($search_query)) {
-        $where_conditions[] = "(p.pat_first_name LIKE :search OR p.pat_last_name LIKE :search OR mr.diagnosis LIKE :search)";
+        $where_conditions[] = "(p.pat_first_name LIKE :search OR p.pat_middle_initial LIKE :search OR p.pat_last_name LIKE :search OR mr.diagnosis LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
 
@@ -70,14 +70,12 @@ try {
                p.pat_first_name, p.pat_last_name,
                d.doc_first_name, d.doc_last_name,
                a.appointment_date,
-               up.profile_picture_url as patient_profile_picture,
-               ud.profile_picture_url as doctor_profile_picture
+               (SELECT profile_picture_url FROM users WHERE pat_id = p.pat_id LIMIT 1) as patient_profile_picture,
+               (SELECT profile_picture_url FROM users WHERE doc_id = d.doc_id LIMIT 1) as doctor_profile_picture
         FROM medical_records mr
         LEFT JOIN patients p ON mr.pat_id = p.pat_id
         LEFT JOIN doctors d ON mr.doc_id = d.doc_id
         LEFT JOIN appointments a ON mr.appointment_id = a.appointment_id
-        LEFT JOIN users up ON up.pat_id = p.pat_id
-        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY $order_by
     ");

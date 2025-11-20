@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'update_profile') {
         $first_name = sanitize($_POST['first_name'] ?? '');
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
         $email = sanitize($_POST['email'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
@@ -53,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $updateResult = $patientModel->update($patient_id, [
                 'pat_first_name' => $first_name,
+                'pat_middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                 'pat_last_name' => $last_name,
                 'pat_email' => $email,
                 'pat_phone' => $phone,

@@ -54,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'update_profile') {
         $first_name = sanitize($_POST['first_name'] ?? '');
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
         $email = sanitize($_POST['email'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
@@ -71,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare("
                 UPDATE doctors 
                 SET doc_first_name = :first_name, 
+                    doc_middle_initial = :middle_initial,
                     doc_last_name = :last_name,
                     doc_email = :email,
                     doc_phone = :phone,
@@ -80,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([
                 'first_name' => $first_name,
+                'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                 'last_name' => $last_name,
                 'email' => $email,
                 'phone' => $phone,

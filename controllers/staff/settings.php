@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'update_profile') {
         $first_name = sanitize($_POST['first_name'] ?? '');
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name'] ?? '');
         $email = sanitize($_POST['email'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
@@ -58,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateData = [
                     'staff_id' => $staff_id,
                     'staff_first_name' => $first_name,
+                    'staff_middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                     'staff_last_name' => $last_name,
                     'staff_email' => $email,
                     'staff_phone' => $phone,

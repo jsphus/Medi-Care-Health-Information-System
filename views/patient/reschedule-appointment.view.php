@@ -371,7 +371,7 @@
                     <?php endif; ?>
                 </div>
                 <div class="doctor-details">
-                    <h3>Dr. <?= htmlspecialchars($appointment['doc_first_name'] . ' ' . $appointment['doc_last_name']) ?></h3>
+                    <h3>Dr. <?= htmlspecialchars(formatFullName($appointment['doc_first_name'] ?? '', $appointment['doc_middle_initial'] ?? null, $appointment['doc_last_name'] ?? '')) ?></h3>
                     <p><?= htmlspecialchars($appointment['spec_name'] ?? 'General Practice') ?></p>
                 </div>
             </div>

@@ -17,12 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'create') {
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
         $date_of_birth = !empty($_POST['date_of_birth']) ? $_POST['date_of_birth'] : null;
-        $gender = sanitize($_POST['gender']);
-        $address = sanitize($_POST['address']);
+        $gender = sanitize($_POST['gender'] ?? '');
+        $address = sanitize($_POST['address'] ?? '');
         $emergency_contact = sanitize($_POST['emergency_contact'] ?? '');
         $emergency_phone = sanitize($_POST['emergency_phone'] ?? '');
         $medical_history = sanitize($_POST['medical_history'] ?? '');
@@ -54,16 +55,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($error)) {
                     // Insert patient
                     $stmt = $db->prepare("
-                        INSERT INTO patients (pat_first_name, pat_last_name, pat_email, pat_phone, pat_date_of_birth, 
+                        INSERT INTO patients (pat_first_name, pat_middle_initial, pat_last_name, pat_email, pat_phone, pat_date_of_birth, 
                                              pat_gender, pat_address, pat_emergency_contact, pat_emergency_phone,
                                              pat_medical_history, pat_allergies, pat_insurance_provider, 
                                              pat_insurance_number, created_at) 
-                        VALUES (:first_name, :last_name, :email, :phone, :date_of_birth, :gender, :address,
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :date_of_birth, :gender, :address,
                                :emergency_contact, :emergency_phone, :medical_history, :allergies,
                                :insurance_provider, :insurance_number, NOW())
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
+                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                         'last_name' => $last_name,
                         'email' => $email,
                         'phone' => $phone,
@@ -106,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $id = (int)$_POST['id'];
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
@@ -199,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $stmt = $db->prepare("
                         UPDATE patients 
-                        SET pat_first_name = :first_name, pat_last_name = :last_name, pat_email = :email, 
+                        SET pat_first_name = :first_name, pat_middle_initial = :middle_initial, pat_last_name = :last_name, pat_email = :email, 
                             pat_phone = :phone, pat_date_of_birth = :date_of_birth, pat_gender = :gender, 
                             pat_address = :address, pat_emergency_contact = :emergency_contact,
                             pat_emergency_phone = :emergency_phone, pat_medical_history = :medical_history,
@@ -209,6 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
+                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                         'last_name' => $last_name,
                         'email' => $email,
                         'phone' => $phone,
@@ -307,7 +311,7 @@ try {
     $params = [];
     
     if (!empty($search_query)) {
-        $where_conditions[] = "(pat_first_name LIKE :search OR pat_last_name LIKE :search)";
+        $where_conditions[] = "(pat_first_name LIKE :search OR pat_middle_initial LIKE :search OR pat_last_name LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
     

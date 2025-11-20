@@ -131,9 +131,25 @@ abstract class Entity {
 
         $this->db->execute($sql, $params);
         
-        $id = $this->db->lastInsertId($tableName . '_' . $primaryKey . '_seq');
-        if (!$id && isset($data[$primaryKey])) {
-            $id = $data[$primaryKey];
+        // Get the inserted ID
+        // First, check if primary key was provided in the insert data (for non-auto-increment keys)
+        $id = null;
+        if (isset($insertData[$primaryKey]) && !empty($insertData[$primaryKey])) {
+            // Primary key was explicitly provided (e.g., VARCHAR appointment_id)
+            $id = $insertData[$primaryKey];
+        } else {
+            // Try to get from sequence (for SERIAL/auto-increment columns)
+            try {
+                $id = $this->db->lastInsertId($tableName . '_' . $primaryKey . '_seq');
+            } catch (Exception $e) {
+                // Sequence doesn't exist, try without sequence name (PostgreSQL auto-detection)
+                try {
+                    $id = $this->db->lastInsertId();
+                } catch (Exception $e2) {
+                    // If still fails, ID might not be auto-generated
+                    $id = null;
+                }
+            }
         }
 
         return ['success' => true, 'id' => $id];

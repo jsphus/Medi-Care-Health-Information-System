@@ -5,6 +5,7 @@ class Patient extends Entity {
     // Private properties - Encapsulation
     private $pat_id;
     private $pat_first_name;
+    private $pat_middle_initial;
     private $pat_last_name;
     private $pat_email;
     private $pat_phone;
@@ -38,7 +39,7 @@ class Patient extends Entity {
 
     protected function getColumns(): array {
         return [
-            'pat_id', 'pat_first_name', 'pat_last_name', 'pat_email', 'pat_phone',
+            'pat_id', 'pat_first_name', 'pat_middle_initial', 'pat_last_name', 'pat_email', 'pat_phone',
             'pat_date_of_birth', 'pat_gender', 'pat_address',
             'pat_emergency_contact', 'pat_emergency_phone',
             'pat_medical_history', 'pat_allergies',
@@ -81,6 +82,7 @@ class Patient extends Entity {
         return [
             'pat_id' => $this->pat_id,
             'pat_first_name' => $this->pat_first_name,
+            'pat_middle_initial' => $this->pat_middle_initial,
             'pat_last_name' => $this->pat_last_name,
             'pat_email' => $this->pat_email,
             'pat_phone' => $this->pat_phone,
@@ -101,6 +103,7 @@ class Patient extends Entity {
     public function fromArray(array $data): self {
         $this->pat_id = $data['pat_id'] ?? null;
         $this->pat_first_name = $data['pat_first_name'] ?? null;
+        $this->pat_middle_initial = $data['pat_middle_initial'] ?? null;
         $this->pat_last_name = $data['pat_last_name'] ?? null;
         $this->pat_email = $data['pat_email'] ?? null;
         $this->pat_phone = $data['pat_phone'] ?? null;
@@ -121,6 +124,7 @@ class Patient extends Entity {
     // Getters - Encapsulation
     public function getPatId() { return $this->pat_id; }
     public function getPatFirstName() { return $this->pat_first_name; }
+    public function getPatMiddleInitial() { return $this->pat_middle_initial; }
     public function getPatLastName() { return $this->pat_last_name; }
     public function getPatEmail() { return $this->pat_email; }
     public function getPatPhone() { return $this->pat_phone; }
@@ -139,6 +143,7 @@ class Patient extends Entity {
     // Setters - Encapsulation
     public function setPatId($value) { $this->pat_id = $value; return $this; }
     public function setPatFirstName($value) { $this->pat_first_name = $value; return $this; }
+    public function setPatMiddleInitial($value) { $this->pat_middle_initial = $value; return $this; }
     public function setPatLastName($value) { $this->pat_last_name = $value; return $this; }
     public function setPatEmail($value) { $this->pat_email = $value; return $this; }
     public function setPatPhone($value) { $this->pat_phone = $value; return $this; }
@@ -160,7 +165,7 @@ class Patient extends Entity {
         $params = [];
 
         if (!empty($search)) {
-            $whereClause = "WHERE pat_first_name ILIKE :search OR pat_last_name ILIKE :search OR pat_email ILIKE :search";
+            $whereClause = "WHERE pat_first_name ILIKE :search OR pat_middle_initial ILIKE :search OR pat_last_name ILIKE :search OR pat_email ILIKE :search";
             $params['search'] = "%$search%";
         }
 

@@ -61,7 +61,7 @@
             $statusClass = $isCompleted ? 'badge-success' : ($isCanceled ? 'badge-error' : 'badge-warning');
             
             $docInitial = strtoupper(substr($apt['doc_first_name'] ?? 'D', 0, 1));
-            $docName = 'Dr. ' . htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? ''));
+            $docName = 'Dr. ' . htmlspecialchars(formatFullName($apt['doc_first_name'] ?? '', $apt['doc_middle_initial'] ?? null, $apt['doc_last_name'] ?? ''));
             $specName = htmlspecialchars($apt['spec_name'] ?? 'General Practice');
             ?>
             <div class="reception-card">
@@ -165,7 +165,7 @@
             $statusClass = $isCompleted ? 'badge-success' : ($isCanceled ? 'badge-error' : 'badge-warning');
             
             $docInitial = strtoupper(substr($apt['doc_first_name'] ?? 'D', 0, 1));
-            $docName = 'Dr. ' . htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? ''));
+            $docName = 'Dr. ' . htmlspecialchars(formatFullName($apt['doc_first_name'] ?? '', $apt['doc_middle_initial'] ?? null, $apt['doc_last_name'] ?? ''));
             $specName = htmlspecialchars($apt['spec_name'] ?? 'General Practice');
             ?>
             <div class="reception-card">

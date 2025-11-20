@@ -189,7 +189,7 @@ try {
     
     $stmt = $db->query("
         SELECT s.*, 
-               CONCAT(d.doc_first_name, ' ', d.doc_last_name) as doctor_name,
+               CONCAT(d.doc_first_name, ' ', COALESCE(d.doc_middle_initial || '. ', ''), d.doc_last_name) as doctor_name,
                sp.spec_name
         FROM schedules s
         JOIN doctors d ON s.doc_id = d.doc_id
@@ -206,7 +206,7 @@ try {
 try {
     $stmt = $db->prepare("
         SELECT s.*, 
-               CONCAT(d.doc_first_name, ' ', d.doc_last_name) as doctor_name,
+               CONCAT(d.doc_first_name, ' ', COALESCE(d.doc_middle_initial || '. ', ''), d.doc_last_name) as doctor_name,
                sp.spec_name
         FROM schedules s
         JOIN doctors d ON s.doc_id = d.doc_id
@@ -223,7 +223,7 @@ try {
 // Fetch all doctors for dropdown
 try {
     $doctors = $db->query("
-        SELECT doc_id, CONCAT(doc_first_name, ' ', doc_last_name) as doctor_name 
+        SELECT doc_id, CONCAT(doc_first_name, ' ', COALESCE(doc_middle_initial || '. ', ''), doc_last_name) as doctor_name 
         FROM doctors 
         WHERE doc_status = 'active'
         ORDER BY doc_last_name, doc_first_name

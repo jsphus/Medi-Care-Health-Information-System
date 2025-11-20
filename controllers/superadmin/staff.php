@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'create') {
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
@@ -53,12 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($error)) {
                     // Insert staff
                     $stmt = $db->prepare("
-                        INSERT INTO staff (staff_first_name, staff_last_name, staff_email, staff_phone, staff_position,
+                        INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
                                           staff_hire_date, staff_salary, staff_status, created_at) 
-                        VALUES (:first_name, :last_name, :email, :phone, :position, :hire_date, :salary, :status, NOW())
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :hire_date, :salary, :status, NOW())
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
+                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                         'last_name' => $last_name,
                         'email' => $email,
                         'phone' => $phone,
@@ -96,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $id = (int)$_POST['id'];
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
@@ -184,13 +187,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $db->prepare("
                     UPDATE staff 
-                    SET staff_first_name = :first_name, staff_last_name = :last_name, staff_email = :email, 
+                    SET staff_first_name = :first_name, staff_middle_initial = :middle_initial, staff_last_name = :last_name, staff_email = :email, 
                         staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
                         staff_salary = :salary, staff_status = :status, updated_at = NOW()
                     WHERE staff_id = :id
                 ");
                 $stmt->execute([
                     'first_name' => $first_name,
+                    'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                     'last_name' => $last_name,
                     'email' => $email,
                     'phone' => $phone,
@@ -255,7 +259,7 @@ try {
     $params = [];
     
     if (!empty($search_query)) {
-        $where_conditions[] = "(staff_first_name LIKE :search OR staff_last_name LIKE :search)";
+        $where_conditions[] = "(staff_first_name LIKE :search OR staff_middle_initial LIKE :search OR staff_last_name LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
     

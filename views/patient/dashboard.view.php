@@ -450,7 +450,7 @@
                 <?php foreach ($upcoming_appointments as $apt): ?>
                     <?php
                     $docInitial = strtoupper(substr($apt['doc_first_name'] ?? 'D', 0, 1));
-                    $docName = htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? ''));
+                    $docName = htmlspecialchars(formatFullName($apt['doc_first_name'] ?? '', $apt['doc_middle_initial'] ?? null, $apt['doc_last_name'] ?? ''));
                     $specName = htmlspecialchars($apt['spec_name'] ?? 'General Practice');
                     $statusName = strtolower($apt['status_name'] ?? 'scheduled');
                     $statusColor = $apt['status_color'] ?? '#3b82f6';
@@ -508,7 +508,7 @@
                     <?php foreach ($recent_records as $record): ?>
                         <?php
                         $docInitial = strtoupper(substr($record['doc_first_name'] ?? 'D', 0, 1));
-                        $docName = htmlspecialchars(($record['doc_first_name'] ?? '') . ' ' . ($record['doc_last_name'] ?? ''));
+                        $docName = htmlspecialchars(formatFullName($record['doc_first_name'] ?? '', $record['doc_middle_initial'] ?? null, $record['doc_last_name'] ?? ''));
                         $recordDate = isset($record['record_date']) ? date('M j, Y', strtotime($record['record_date'])) : 'N/A';
                         ?>
                         <div class="record-item" onclick="window.location.href='/patient/medical-records?view=<?= $record['record_id'] ?>'" style="cursor: pointer;">

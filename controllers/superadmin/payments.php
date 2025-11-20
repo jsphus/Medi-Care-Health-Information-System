@@ -3,11 +3,13 @@ require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../../classes/User.php';
+require_once __DIR__ . '/../../classes/Appointment.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
 
 $db = Database::getInstance();
+$appointmentModel = new Appointment();
 $error = '';
 $success = '';
 
@@ -23,27 +25,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $amount = floatval($_POST['amount']);
         $payment_method_id = (int)$_POST['payment_method_id'];
         $payment_status_id = (int)$_POST['payment_status_id'];
-        $payment_date = $_POST['payment_date'];
+        $payment_date = !empty($_POST['payment_date']) ? $_POST['payment_date'] : date('Y-m-d H:i:s');
         $notes = sanitize($_POST['notes'] ?? '');
         
         if (empty($appointment_id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id)) {
             $error = 'Appointment ID, amount, payment method, and status are required';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO payments (appointment_id, payment_amount, payment_method_id, payment_status_id, 
-                                         payment_date, payment_notes, created_at) 
-                    VALUES (:appointment_id, :payment_amount, :payment_method_id, :payment_status_id, 
-                           :payment_date, :payment_notes, NOW())
-                ");
-                $stmt->execute([
-                    'appointment_id' => $appointment_id,
-                    'payment_amount' => $amount,
-                    'payment_method_id' => $payment_method_id,
-                    'payment_status_id' => $payment_status_id,
-                    'payment_date' => $payment_date,
-                    'payment_notes' => $notes
-                ]);
+                // Ensure payment_date is always set - use NOW() if not provided or empty
+                if (empty($payment_date)) {
+                    $stmt = $db->prepare("
+                        INSERT INTO payments (appointment_id, payment_amount, payment_method_id, payment_status_id, 
+                                             payment_date, payment_notes, created_at) 
+                        VALUES (:appointment_id, :payment_amount, :payment_method_id, :payment_status_id, 
+                               NOW(), :payment_notes, NOW())
+                    ");
+                    $stmt->execute([
+                        'appointment_id' => $appointment_id,
+                        'payment_amount' => $amount,
+                        'payment_method_id' => $payment_method_id,
+                        'payment_status_id' => $payment_status_id,
+                        'payment_notes' => $notes
+                    ]);
+                } else {
+                    $stmt = $db->prepare("
+                        INSERT INTO payments (appointment_id, payment_amount, payment_method_id, payment_status_id, 
+                                             payment_date, payment_notes, created_at) 
+                        VALUES (:appointment_id, :payment_amount, :payment_method_id, :payment_status_id, 
+                               :payment_date, :payment_notes, NOW())
+                    ");
+                    $stmt->execute([
+                        'appointment_id' => $appointment_id,
+                        'payment_amount' => $amount,
+                        'payment_method_id' => $payment_method_id,
+                        'payment_status_id' => $payment_status_id,
+                        'payment_date' => $payment_date,
+                        'payment_notes' => $notes
+                    ]);
+                }
                 $success = 'Payment record created successfully';
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
@@ -113,6 +132,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle AJAX request for appointment details
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_appointment_details') {
+    header('Content-Type: application/json');
+    $appointment_id = sanitize($_GET['appointment_id'] ?? '');
+    
+    if (empty($appointment_id)) {
+        echo json_encode(['success' => false, 'error' => 'Appointment ID is required']);
+        exit;
+    }
+    
+    try {
+        $appointment = $appointmentModel->getById($appointment_id);
+        if ($appointment) {
+            // Also fetch profile pictures
+            $patient_user = $db->fetchOne("SELECT profile_picture_url FROM users WHERE pat_id = :pat_id", ['pat_id' => $appointment['pat_id']]);
+            $doctor_user = $db->fetchOne("SELECT profile_picture_url FROM users WHERE doc_id = :doc_id", ['doc_id' => $appointment['doc_id']]);
+            
+            $appointment['patient_profile_picture'] = $patient_user['profile_picture_url'] ?? null;
+            $appointment['doctor_profile_picture'] = $doctor_user['profile_picture_url'] ?? null;
+            
+            echo json_encode(['success' => true, 'data' => $appointment]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Appointment not found']);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -126,7 +175,7 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
-    // Handle sorting
+    // Handle sorting - default to showing newest payments first
     $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'payment_date';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
@@ -136,23 +185,42 @@ try {
         $sort_column = 'payment_date';
     }
     
-    // Special handling for date sorting
+    // Special handling for date sorting - ensure NULL dates are handled and newest appear first
     if ($sort_column === 'payment_date') {
-        $order_by = "p.payment_date $sort_order, p.created_at $sort_order";
+        // Use COALESCE to fall back to created_at if payment_date is NULL
+        // Default order is DESC to show newest first
+        $order_by = "COALESCE(p.payment_date, p.created_at) $sort_order, p.created_at DESC";
     } else {
         $order_by = "p.$sort_column $sort_order";
+        // For non-date sorts, still add a secondary sort by created_at DESC to show newest first
+        if ($sort_column !== 'created_at') {
+            $order_by .= ", p.created_at DESC";
+        }
     }
     
-    // Fetch paginated results
+    // Fetch paginated results - ensure all payments are shown even if JOINs fail
+    // Include appointment details with doctor and patient profile pictures
     $stmt = $db->prepare("
         SELECT p.*, 
-               a.appointment_id, a.appointment_date,
+               a.appointment_id, a.appointment_date, a.appointment_time, a.appointment_notes,
                pat.pat_first_name, pat.pat_last_name,
+               d.doc_first_name, d.doc_last_name,
+               srv.service_name, srv.service_price,
+               sp.spec_name,
+               st.status_name as appointment_status_name, st.status_color as appointment_status_color,
+               up.profile_picture_url as patient_profile_picture,
+               ud.profile_picture_url as doctor_profile_picture,
                pm.method_name,
                ps.status_name
         FROM payments p
         LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN users up ON up.pat_id = pat.pat_id
+        LEFT JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
+        LEFT JOIN services srv ON a.service_id = srv.service_id
+        LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         ORDER BY $order_by
@@ -187,8 +255,13 @@ $stats = [
 ];
 
 try {
-    // Total payments this month
-    $stmt = $db->query("SELECT COUNT(*) as count FROM payments WHERE DATE_TRUNC('month', payment_date) = DATE_TRUNC('month', CURRENT_DATE)");
+    // Total payments this month - handle NULL payment_date by using COALESCE
+    $stmt = $db->query("
+        SELECT COUNT(*) as count 
+        FROM payments 
+        WHERE payment_date IS NOT NULL 
+        AND DATE_TRUNC('month', payment_date) = DATE_TRUNC('month', CURRENT_DATE)
+    ");
     $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
     // Paid payments
@@ -214,6 +287,7 @@ try {
     $stats['total_amount'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 } catch (PDOException $e) {
     // Keep default values
+    error_log("Payment statistics error: " . $e->getMessage());
 }
 
 require_once __DIR__ . '/../../views/superadmin/payments.view.php';

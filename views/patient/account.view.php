@@ -261,7 +261,7 @@
                     <?php endif; ?>
                 </div>
                 <div class="profile-info">
-                    <div class="profile-name"><?= htmlspecialchars(($patient['pat_first_name'] ?? '') . ' ' . ($patient['pat_last_name'] ?? '')) ?></div>
+                    <div class="profile-name"><?= htmlspecialchars(formatFullName($patient['pat_first_name'] ?? '', $patient['pat_middle_initial'] ?? null, $patient['pat_last_name'] ?? '')) ?></div>
                     <div class="profile-email"><?= htmlspecialchars($patient['pat_email'] ?? '') ?></div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap;">
                         <span class="profile-role">Patient</span>
@@ -309,6 +309,12 @@
                         First Name <span class="required">*</span>
                     </label>
                     <input type="text" name="first_name" value="<?= htmlspecialchars($patient['pat_first_name'] ?? '') ?>" required class="form-control-modern">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        Middle Initial
+                    </label>
+                    <input type="text" name="middle_initial" value="<?= htmlspecialchars($patient['pat_middle_initial'] ?? '') ?>" maxlength="1" class="form-control-modern">
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">

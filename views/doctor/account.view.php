@@ -315,6 +315,12 @@
                 </div>
                 <div class="form-group-modern">
                     <label class="form-label-modern">
+                        Middle Initial
+                    </label>
+                    <input type="text" name="middle_initial" value="<?= htmlspecialchars($doctor['doc_middle_initial'] ?? '') ?>" maxlength="1" class="form-control-modern">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
                         Last Name <span class="required">*</span>
                     </label>
                     <input type="text" name="last_name" value="<?= htmlspecialchars($doctor['doc_last_name'] ?? '') ?>" required class="form-control-modern">

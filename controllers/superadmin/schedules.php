@@ -89,7 +89,7 @@ try {
     $params = [];
 
     if (!empty($search_query)) {
-        $where_conditions[] = "(d.doc_first_name LIKE :search OR d.doc_last_name LIKE :search)";
+        $where_conditions[] = "(d.doc_first_name LIKE :search OR d.doc_middle_initial LIKE :search OR d.doc_last_name LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
 

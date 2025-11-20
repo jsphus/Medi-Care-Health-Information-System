@@ -53,7 +53,7 @@
         <?php foreach ($active_doctors as $doctor): ?>
             <?php
             $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
-            $doctorName = 'Dr. ' . htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? ''));
+            $doctorName = 'Dr. ' . htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? ''));
             $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
             ?>
             <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center; border: 1px solid var(--border-light); transition: all 0.2s;" 
@@ -245,7 +245,7 @@
                                             <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($doctor['doc_email']) ?></td>
@@ -383,6 +383,11 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" maxlength="1" class="form-control">
+                </div>
+                
+                <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="last_name" required class="form-control">
                 </div>
@@ -512,6 +517,11 @@
                 <div class="form-group">
                     <label>First Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="first_name" id="edit_first_name" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" id="edit_middle_initial" maxlength="1" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -666,6 +676,7 @@ function formatPhoneInput(inputId) {
 function editDoctor(doctor) {
     document.getElementById('edit_id').value = doctor.doc_id;
     document.getElementById('edit_first_name').value = doctor.doc_first_name;
+    document.getElementById('edit_middle_initial').value = doctor.doc_middle_initial || '';
     document.getElementById('edit_last_name').value = doctor.doc_last_name;
     document.getElementById('edit_email').value = doctor.doc_email;
     document.getElementById('edit_phone').value = doctor.doc_phone ? formatPhoneNumber(doctor.doc_phone) : '';
@@ -693,7 +704,7 @@ function viewDoctorDetails(doctor) {
     const firstName = doctor.doc_first_name || 'D';
     const lastName = doctor.doc_last_name || '';
     const firstLetter = firstName.charAt(0).toUpperCase();
-    const fullName = `${doctor.doc_first_name || ''} ${doctor.doc_last_name || ''}`.trim();
+    const fullName = `${doctor.doc_first_name || ''}${doctor.doc_middle_initial ? ' ' + doctor.doc_middle_initial.toUpperCase() + '.' : ''} ${doctor.doc_last_name || ''}`.trim();
     
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">

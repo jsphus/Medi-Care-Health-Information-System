@@ -330,6 +330,11 @@
                 </div>
                 
                 <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" maxlength="1" class="form-control">
+                </div>
+                
+                <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="last_name" required class="form-control">
                 </div>
@@ -472,6 +477,11 @@
                 <div class="form-group">
                     <label>First Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="first_name" id="edit_first_name" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" id="edit_middle_initial" maxlength="1" class="form-control">
                 </div>
                 
                 <div class="form-group">
@@ -623,6 +633,7 @@ function formatPhoneInput(inputId) {
 function editPatient(patient) {
     document.getElementById('edit_id').value = patient.pat_id;
     document.getElementById('edit_first_name').value = patient.pat_first_name;
+    document.getElementById('edit_middle_initial').value = patient.pat_middle_initial || '';
     document.getElementById('edit_last_name').value = patient.pat_last_name;
     document.getElementById('edit_email').value = patient.pat_email;
     document.getElementById('edit_phone').value = patient.pat_phone ? formatPhoneNumber(patient.pat_phone) : '';
@@ -651,7 +662,7 @@ function viewPatientDetails(patient) {
     const profilePicture = patient.profile_picture_url || '';
     const firstName = patient.pat_first_name || 'P';
     const firstLetter = firstName.charAt(0).toUpperCase();
-    const fullName = `${patient.pat_first_name || ''} ${patient.pat_last_name || ''}`.trim();
+    const fullName = `${patient.pat_first_name || ''}${patient.pat_middle_initial ? ' ' + patient.pat_middle_initial.toUpperCase() + '.' : ''} ${patient.pat_last_name || ''}`.trim();
     
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">

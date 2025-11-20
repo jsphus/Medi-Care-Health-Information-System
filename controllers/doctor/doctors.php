@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'create') {
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
@@ -58,14 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($error)) {
                     // Insert doctor
                     $stmt = $db->prepare("
-                        INSERT INTO doctors (doc_first_name, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
+                        INSERT INTO doctors (doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
                                             doc_license_number, doc_experience_years, doc_consultation_fee, 
                                             doc_qualification, doc_bio, doc_status, created_at) 
-                        VALUES (:first_name, :last_name, :email, :phone, :specialization_id, :license_number,
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :specialization_id, :license_number,
                                :experience_years, :consultation_fee, :qualification, :bio, :status, NOW())
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
+                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                         'last_name' => $last_name,
                         'email' => $email,
                         'phone' => $phone,
@@ -106,6 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'update') {
         $id = (int)$_POST['id'];
         $first_name = sanitize($_POST['first_name']);
+        $middle_initial = sanitize($_POST['middle_initial'] ?? '');
         $last_name = sanitize($_POST['last_name']);
         $email = sanitize($_POST['email']);
         $phone = sanitize($_POST['phone']);
@@ -128,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $db->prepare("
                     UPDATE doctors 
-                    SET doc_first_name = :first_name, doc_last_name = :last_name, doc_email = :email, 
+                    SET doc_first_name = :first_name, doc_middle_initial = :middle_initial, doc_last_name = :last_name, doc_email = :email, 
                         doc_phone = :phone, doc_specialization_id = :specialization_id, 
                         doc_license_number = :license_number, doc_experience_years = :experience_years,
                         doc_consultation_fee = :consultation_fee, doc_qualification = :qualification,
@@ -138,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([
                     'id' => $id,
                     'first_name' => $first_name,
+                    'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
                     'last_name' => $last_name,
                     'email' => $email,
                     'phone' => $phone,

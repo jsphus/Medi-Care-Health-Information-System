@@ -30,6 +30,7 @@ CREATE TABLE specializations (
 CREATE TABLE staff (
     staff_id SERIAL PRIMARY KEY,
     staff_first_name VARCHAR(50) NOT NULL,
+    staff_middle_initial VARCHAR(1),
     staff_last_name VARCHAR(50) NOT NULL,
     staff_email VARCHAR(255) UNIQUE NOT NULL,
     staff_phone VARCHAR(20),
@@ -45,6 +46,7 @@ CREATE TABLE staff (
 CREATE TABLE patients (
     pat_id SERIAL PRIMARY KEY,
     pat_first_name VARCHAR(50) NOT NULL,
+    pat_middle_initial VARCHAR(1),
     pat_last_name VARCHAR(50) NOT NULL,
     pat_email VARCHAR(255) UNIQUE NOT NULL,
     pat_phone VARCHAR(20),
@@ -65,6 +67,7 @@ CREATE TABLE patients (
 CREATE TABLE doctors (
     doc_id SERIAL PRIMARY KEY,
     doc_first_name VARCHAR(50) NOT NULL,
+    doc_middle_initial VARCHAR(1),
     doc_last_name VARCHAR(50) NOT NULL,
     doc_email VARCHAR(255) UNIQUE NOT NULL,
     doc_phone VARCHAR(20),

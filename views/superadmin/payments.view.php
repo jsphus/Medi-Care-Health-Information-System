@@ -196,14 +196,25 @@
                                 </form>
                             </td>
                             <td style="padding: 1rem;">
-                                <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this payment record?');">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
-                                    <button type="submit" class="btn btn-sm" title="Delete"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <?php if (!empty($payment['appointment_id'])): ?>
+                                        <button type="button" class="btn btn-sm view-appointment-btn" 
+                                                title="View Appointment Details"
+                                                data-appointment-id="<?= htmlspecialchars($payment['appointment_id']) ?>"
+                                                onclick="viewAppointmentDetails('<?= htmlspecialchars($payment['appointment_id']) ?>')"
+                                                style="padding: 0.5rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this payment record?');">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
+                                        <button type="submit" class="btn btn-sm" title="Delete"
+                                                style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -254,6 +265,24 @@
         </div>
         <?php endif; ?>
     <?php endif; ?>
+</div>
+
+<!-- View Appointment Details Modal -->
+<div id="viewAppointmentModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Appointment Details</h2>
+            <button type="button" class="modal-close" onclick="closeViewAppointmentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="appointmentDetailsContent" style="padding: 1.5rem;">
+            <div style="text-align: center; padding: 2rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-blue);"></i>
+                <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Add Payment Modal -->
@@ -475,6 +504,170 @@ function sortTable(column) {
     
     window.location.href = url.toString();
 }
+
+// View Appointment Details Functions
+function viewAppointmentDetails(appointmentId) {
+    const modal = document.getElementById('viewAppointmentModal');
+    const content = document.getElementById('appointmentDetailsContent');
+    
+    // Show loading state
+    content.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-blue);"></i>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
+        </div>
+    `;
+    modal.classList.add('active');
+    
+    // Fetch appointment details
+    fetch(`/superadmin/payments?action=get_appointment_details&appointment_id=${encodeURIComponent(appointmentId)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                displayAppointmentDetails(data.data);
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--status-error); margin-bottom: 1rem;"></i>
+                        <p style="color: var(--text-secondary);">${data.error || 'Failed to load appointment details'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching appointment details:', error);
+            content.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--status-error); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">Error loading appointment details. Please try again.</p>
+                </div>
+            `;
+        });
+}
+
+function displayAppointmentDetails(appointment) {
+    const content = document.getElementById('appointmentDetailsContent');
+    
+    // Format date and time
+    const appointmentDate = appointment.appointment_date ? new Date(appointment.appointment_date + 'T00:00:00').toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    }) : 'N/A';
+    
+    const appointmentTime = appointment.appointment_time ? (() => {
+        const time = appointment.appointment_time.split(':');
+        const hours = parseInt(time[0]);
+        const minutes = time[1];
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${minutes} ${ampm}`;
+    })() : 'N/A';
+    
+    // Get profile picture or initials
+    const getProfilePicture = (pictureUrl, firstName, lastName, defaultColor = 'var(--primary-blue)') => {
+        if (pictureUrl) {
+            return `<img src="${escapeHtml(pictureUrl)}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            const initial = (firstName ? firstName.charAt(0) : '') || (lastName ? lastName.charAt(0) : '') || '?';
+            return `<span style="font-size: 2rem; font-weight: 700;">${initial.toUpperCase()}</span>`;
+        }
+    };
+    
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+    
+    const patientName = `${appointment.pat_first_name || ''} ${appointment.pat_last_name || ''}`.trim() || 'N/A';
+    const doctorName = `Dr. ${appointment.doc_first_name || ''} ${appointment.doc_last_name || ''}`.trim() || 'N/A';
+    
+    content.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+            <!-- Patient Card -->
+            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    ${getProfilePicture(appointment.patient_profile_picture, appointment.pat_first_name, appointment.pat_last_name)}
+                </div>
+                <h3 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1.125rem;">Patient</h3>
+                <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(patientName)}</p>
+            </div>
+            
+            <!-- Doctor Card -->
+            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                <div style="width: 100px; height: 100px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    ${getProfilePicture(appointment.doctor_profile_picture, appointment.doc_first_name, appointment.doc_last_name, '#10b981')}
+                </div>
+                <h3 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1.125rem;">Doctor</h3>
+                <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(doctorName)}</p>
+                ${appointment.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(appointment.spec_name)}</p>` : ''}
+            </div>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-light);">
+            <h3 style="margin: 0 0 1.5rem; color: var(--text-primary); border-bottom: 2px solid var(--border-light); padding-bottom: 0.75rem;">Appointment Information</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Appointment ID:</strong><br>
+                    <span style="color: var(--text-secondary);">${escapeHtml(appointment.appointment_id || 'N/A')}</span></p>
+                    
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Date:</strong><br>
+                    <span style="color: var(--text-secondary);">${appointmentDate}</span></p>
+                    
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Time:</strong><br>
+                    <span style="color: var(--text-secondary);">${appointmentTime}</span></p>
+                </div>
+                <div>
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Status:</strong><br>
+                    <span class="badge" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; background: ${appointment.status_color || '#3B82F6'}; color: white; font-size: 0.875rem; font-weight: 500;">
+                        ${escapeHtml(appointment.status_name || 'N/A')}
+                    </span></p>
+                    
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Service:</strong><br>
+                    <span style="color: var(--text-secondary);">${escapeHtml(appointment.service_name || 'N/A')}</span></p>
+                    
+                    ${appointment.service_price ? `
+                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Service Price:</strong><br>
+                    <span style="color: var(--status-success); font-weight: 600;">₱${parseFloat(appointment.service_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
+                    ` : ''}
+                </div>
+            </div>
+            ${appointment.appointment_notes ? `
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+                <p style="margin: 0;"><strong style="color: var(--text-primary);">Notes:</strong><br>
+                <span style="color: var(--text-secondary);">${escapeHtml(appointment.appointment_notes)}</span></p>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function closeViewAppointmentModal() {
+    document.getElementById('viewAppointmentModal').classList.remove('active');
+}
+
+// Close modal on outside click
+document.addEventListener('DOMContentLoaded', function() {
+    const viewModal = document.getElementById('viewAppointmentModal');
+    if (viewModal) {
+        viewModal.addEventListener('click', function(e) {
+            if (e.target === viewModal) {
+                closeViewAppointmentModal();
+            }
+        });
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const activeModal = document.querySelector('.modal.active');
+            if (activeModal && activeModal.id === 'viewAppointmentModal') {
+                closeViewAppointmentModal();
+            }
+        }
+    });
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

@@ -135,6 +135,10 @@
                     <input type="text" name="first_name" required class="form-control">
                 </div>
                 <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" maxlength="1" class="form-control">
+                </div>
+                <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="last_name" required class="form-control">
                 </div>
@@ -196,6 +200,10 @@
                 <div class="form-group">
                     <label>First Name: <span style="color: var(--status-error);">*</span></label>
                     <input type="text" name="first_name" id="edit_first_name" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Middle Initial:</label>
+                    <input type="text" name="middle_initial" id="edit_middle_initial" maxlength="1" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Last Name: <span style="color: var(--status-error);">*</span></label>

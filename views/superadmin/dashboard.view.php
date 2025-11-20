@@ -477,8 +477,8 @@
                 <?php foreach ($today_appointments as $apt): ?>
                     <?php
                     $patInitial = strtoupper(substr($apt['pat_first_name'] ?? 'P', 0, 1));
-                    $patName = htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''));
-                    $docName = htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? ''));
+                    $patName = htmlspecialchars(formatFullName($apt['pat_first_name'] ?? '', $apt['pat_middle_initial'] ?? null, $apt['pat_last_name'] ?? ''));
+                    $docName = htmlspecialchars(formatFullName($apt['doc_first_name'] ?? '', $apt['doc_middle_initial'] ?? null, $apt['doc_last_name'] ?? ''));
                     $statusName = strtolower($apt['status_name'] ?? 'scheduled');
                     $statusColor = $apt['status_color'] ?? '#3b82f6';
                     $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';

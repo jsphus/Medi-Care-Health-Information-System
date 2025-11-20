@@ -415,6 +415,10 @@
                         <input type="text" name="pat_first_name" id="edit_pat_first_name" class="form-control">
                     </div>
                     <div class="form-group">
+                        <label>Middle Initial:</label>
+                        <input type="text" name="pat_middle_initial" id="edit_pat_middle_initial" maxlength="1" class="form-control">
+                    </div>
+                    <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                         <input type="text" name="pat_last_name" id="edit_pat_last_name" class="form-control">
                     </div>
@@ -479,6 +483,10 @@
                         <input type="text" name="staff_first_name" id="edit_staff_first_name" class="form-control">
                     </div>
                     <div class="form-group">
+                        <label>Middle Initial:</label>
+                        <input type="text" name="staff_middle_initial" id="edit_staff_middle_initial" maxlength="1" class="form-control">
+                    </div>
+                    <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
                         <input type="text" name="staff_last_name" id="edit_staff_last_name" class="form-control">
                     </div>
@@ -515,6 +523,10 @@
                     <div class="form-group">
                         <label>First Name: <span style="color: var(--status-error);">*</span></label>
                         <input type="text" name="doc_first_name" id="edit_doc_first_name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Middle Initial:</label>
+                        <input type="text" name="doc_middle_initial" id="edit_doc_middle_initial" maxlength="1" class="form-control">
                     </div>
                     <div class="form-group">
                         <label>Last Name: <span style="color: var(--status-error);">*</span></label>
@@ -767,6 +779,7 @@ function editUser(user) {
         
         // Populate staff fields
         document.getElementById('edit_staff_first_name').value = user.staff_first_name || '';
+        document.getElementById('edit_staff_middle_initial').value = user.staff_middle_initial || '';
         document.getElementById('edit_staff_last_name').value = user.staff_last_name || '';
         document.getElementById('edit_staff_phone').value = user.staff_phone ? formatPhoneNumber(user.staff_phone) : '';
         document.getElementById('edit_staff_position').value = user.staff_position || '';
@@ -779,6 +792,7 @@ function editUser(user) {
         
         // Populate doctor fields
         document.getElementById('edit_doc_first_name').value = user.doc_first_name || '';
+        document.getElementById('edit_doc_middle_initial').value = user.doc_middle_initial || '';
         document.getElementById('edit_doc_last_name').value = user.doc_last_name || '';
         document.getElementById('edit_doc_phone').value = user.doc_phone ? formatPhoneNumber(user.doc_phone) : '';
         document.getElementById('edit_doc_specialization_id').value = user.doc_specialization_id || '';
@@ -794,6 +808,7 @@ function editUser(user) {
         
         // Populate patient fields
         document.getElementById('edit_pat_first_name').value = user.pat_first_name || '';
+        document.getElementById('edit_pat_middle_initial').value = user.pat_middle_initial || '';
         document.getElementById('edit_pat_last_name').value = user.pat_last_name || '';
         document.getElementById('edit_pat_phone').value = user.pat_phone ? formatPhoneNumber(user.pat_phone) : '';
         document.getElementById('edit_pat_date_of_birth').value = user.pat_date_of_birth || '';
