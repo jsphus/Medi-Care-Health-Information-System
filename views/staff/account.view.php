@@ -1,4 +1,9 @@
-<?php require_once __DIR__ . '/../partials/header.php'; ?>
+<?php 
+// Make a local copy to prevent any modification
+$view_staff = isset($staff) && is_array($staff) ? $staff : [];
+
+require_once __DIR__ . '/../partials/header.php'; 
+?>
 
 <style>
 .account-container {
@@ -240,7 +245,14 @@
 
     <div class="account-grid">
         <!-- Profile & Account Information -->
-        <?php if (!empty($staff)): ?>
+        <?php 
+        // Use view_staff if available, otherwise fall back to staff
+        // Don't overwrite $display_staff if it's already set by controller
+        if (!isset($display_staff) || empty($display_staff)) {
+            $display_staff = !empty($view_staff) ? $view_staff : ($staff ?? []);
+        }
+        if (isset($display_staff) && is_array($display_staff) && !empty($display_staff)): 
+        ?>
         <div class="account-card">
             <div class="account-card-header">
                 <div class="account-card-icon">
@@ -257,19 +269,88 @@
                     <?php if (!empty($profile_picture_url)): ?>
                         <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
-                        <?= strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1)) ?>
+                        <?= strtoupper(substr($display_staff['staff_first_name'] ?? 'S', 0, 1)) ?>
                     <?php endif; ?>
                 </div>
                 <div class="profile-info">
-                    <div class="profile-name"><?= htmlspecialchars(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? '')) ?></div>
-                    <div class="profile-email"><?= htmlspecialchars($staff['staff_email'] ?? '') ?></div>
+                    <div class="profile-name"><?= htmlspecialchars(($display_staff['staff_first_name'] ?? '') . ' ' . ($display_staff['staff_last_name'] ?? '')) ?></div>
+                    <div class="profile-email"><?= htmlspecialchars($display_staff['staff_email'] ?? '') ?></div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
                         <span class="profile-role">Staff</span>
-                        <?php if (!empty($staff['staff_phone'])): ?>
-                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($staff['staff_phone']) ?></span>
+                        <?php if (!empty($display_staff['staff_phone'])): ?>
+                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($display_staff['staff_phone']) ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Account Details (Read-Only) -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">First Name</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $first_name = $display_staff['staff_first_name'] ?? null;
+                            echo htmlspecialchars($first_name !== null && $first_name !== '' ? $first_name : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Middle Initial</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $middle = $display_staff['staff_middle_initial'] ?? null;
+                            echo htmlspecialchars(($middle !== null && $middle !== '') ? $middle : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Last Name</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $last_name = $display_staff['staff_last_name'] ?? null;
+                            echo htmlspecialchars(($last_name !== null && $last_name !== '') ? $last_name : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Email Address</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $email = $display_staff['staff_email'] ?? null;
+                            echo htmlspecialchars(($email !== null && $email !== '') ? $email : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Phone Number</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $phone = $display_staff['staff_phone'] ?? null;
+                            echo htmlspecialchars(($phone !== null && $phone !== '') ? $phone : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Position</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                            <?php 
+                            $position = $display_staff['staff_position'] ?? null;
+                            echo htmlspecialchars(($position !== null && $position !== '') ? $position : 'N/A');
+                            ?>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Role</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">Staff</div>
+                    </div>
+                </div>
+                
+                <button type="button" onclick="openEditProfileModal()" class="btn-save" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Profile</span>
+                </button>
             </div>
             
             <!-- Profile Picture Upload Section -->
@@ -301,52 +382,36 @@
                     </div>
                 </form>
             </div>
-
-            <form method="POST">
-                <input type="hidden" name="action" value="update_profile">
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        First Name <span class="required">*</span>
-                    </label>
-                    <input type="text" name="first_name" value="<?= htmlspecialchars($staff['staff_first_name'] ?? '') ?>" required class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Middle Initial
-                    </label>
-                    <input type="text" name="middle_initial" value="<?= htmlspecialchars($staff['staff_middle_initial'] ?? '') ?>" maxlength="1" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Last Name <span class="required">*</span>
-                    </label>
-                    <input type="text" name="last_name" value="<?= htmlspecialchars($staff['staff_last_name'] ?? '') ?>" required class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Email Address <span class="required">*</span>
-                    </label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($staff['staff_email'] ?? '') ?>" required class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Phone Number</label>
-                    <input type="text" name="phone" id="phone" value="<?= htmlspecialchars($staff['staff_phone'] ?? '') ?>" class="form-control-modern" placeholder="XXXX-XXX-XXXX">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Position</label>
-                    <input type="text" name="position" value="<?= htmlspecialchars($staff['staff_position'] ?? '') ?>" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Role</label>
-                    <input type="text" value="Staff" disabled class="form-control-modern">
-                </div>
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i>
-                    <span>Save Changes</span>
-                </button>
-            </form>
         </div>
         <?php endif; ?>
+
+        <!-- Change Email Address -->
+        <div class="account-card">
+            <div class="account-card-header">
+                <div class="account-card-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                    <h2 class="account-card-title">Change Email Address</h2>
+                    <p class="account-card-description">Update your email address with OTP verification</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Email Address</div>
+                <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                    <?php 
+                    $email = $display_staff['staff_email'] ?? null;
+                    echo htmlspecialchars(($email !== null && $email !== '') ? $email : 'N/A');
+                    ?>
+                </div>
+            </div>
+
+            <button type="button" onclick="openChangeEmailModal()" class="btn-save" style="display: inline-flex;">
+                <i class="fas fa-envelope"></i>
+                <span>Change Email Address</span>
+            </button>
+        </div>
 
         <!-- Change Password -->
         <div class="account-card">
@@ -451,6 +516,395 @@ function deleteProfilePicture() {
     }
 }
 </script>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Profile</h2>
+            <button type="button" class="modal-close" onclick="closeEditProfileModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" id="editProfileForm">
+            <input type="hidden" name="action" value="update_profile">
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    First Name <span class="required">*</span>
+                </label>
+                <input type="text" name="first_name" id="edit_first_name" value="<?= htmlspecialchars($display_staff['staff_first_name'] ?? '') ?>" required class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    Middle Initial
+                </label>
+                <input type="text" name="middle_initial" id="edit_middle_initial" value="<?= htmlspecialchars(isset($display_staff['staff_middle_initial']) && $display_staff['staff_middle_initial'] !== null ? $display_staff['staff_middle_initial'] : '') ?>" maxlength="1" class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    Last Name <span class="required">*</span>
+                </label>
+                <input type="text" name="last_name" id="edit_last_name" value="<?= htmlspecialchars($display_staff['staff_last_name'] ?? '') ?>" required class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Phone Number</label>
+                <input type="text" name="phone" id="edit_phone" value="<?= htmlspecialchars($display_staff['staff_phone'] ?? '') ?>" class="form-control-modern" placeholder="XXXX-XXX-XXXX">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Position</label>
+                <input type="text" name="position" id="edit_position" value="<?= htmlspecialchars($display_staff['staff_position'] ?? '') ?>" class="form-control-modern">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i>
+                    <span>Save Changes</span>
+                </button>
+                <button type="button" onclick="closeEditProfileModal()" class="btn-save" style="background: #6b7280;">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
+function formatPhoneNumber(value) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length > 11) digits = digits.substring(0, 11);
+    if (digits.length >= 7) {
+        return digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7);
+    } else if (digits.length >= 4) {
+        return digits.substring(0, 4) + '-' + digits.substring(4);
+    }
+    return digits;
+}
+
+function formatPhoneInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (input && !input.hasAttribute('data-phone-formatted')) {
+        input.setAttribute('data-phone-formatted', 'true');
+        input.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            const oldValue = e.target.value;
+            const formatted = formatPhoneNumber(e.target.value);
+            if (oldValue !== formatted) {
+                e.target.value = formatted;
+                const newCursorPosition = cursorPosition + (formatted.length - oldValue.length);
+                setTimeout(() => e.target.setSelectionRange(newCursorPosition, newCursorPosition), 0);
+            }
+        });
+        input.addEventListener('blur', function(e) {
+            if (e.target.value) e.target.value = formatPhoneNumber(e.target.value);
+        });
+        if (input.value) input.value = formatPhoneNumber(input.value);
+    }
+}
+
+function openEditProfileModal() {
+    // Populate form fields from display_staff data
+    <?php if (isset($display_staff) && is_array($display_staff)): ?>
+    document.getElementById('edit_first_name').value = <?= json_encode($display_staff['staff_first_name'] ?? '') ?>;
+    document.getElementById('edit_middle_initial').value = <?= json_encode($display_staff['staff_middle_initial'] ?? '') ?>;
+    document.getElementById('edit_last_name').value = <?= json_encode($display_staff['staff_last_name'] ?? '') ?>;
+    document.getElementById('edit_phone').value = <?= json_encode($display_staff['staff_phone'] ?? '') ?>;
+    document.getElementById('edit_position').value = <?= json_encode($display_staff['staff_position'] ?? '') ?>;
+    <?php endif; ?>
+    document.getElementById('editProfileModal').classList.add('active');
+    formatPhoneInput('edit_phone');
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeEditProfileModal();
+            }
+        });
+    }
+    
+    // Format phone input on page load
+    formatPhoneInput('edit_phone');
+});
+
+// Change Email Modal Functions
+function openChangeEmailModal() {
+    const modal = document.getElementById('changeEmailModal');
+    if (modal) {
+        modal.classList.add('active');
+        resetChangeEmailModal();
+    } else {
+        console.error('Change email modal not found');
+    }
+}
+
+function closeChangeEmailModal() {
+    const modal = document.getElementById('changeEmailModal');
+    if (modal) {
+        modal.classList.remove('active');
+        resetChangeEmailModal();
+    }
+}
+
+function resetChangeEmailModal() {
+    const step1 = document.getElementById('changeEmailStep1');
+    const step2 = document.getElementById('changeEmailStep2');
+    const error = document.getElementById('changeEmailError');
+    const success = document.getElementById('changeEmailSuccess');
+    const form1 = document.getElementById('changeEmailForm1');
+    const form2 = document.getElementById('changeEmailForm2');
+    const title = document.getElementById('changeEmailModalTitle');
+    
+    if (step1) step1.style.display = 'block';
+    if (step2) step2.style.display = 'none';
+    if (error) error.style.display = 'none';
+    if (success) success.style.display = 'none';
+    if (form1) form1.reset();
+    if (form2) form2.reset();
+    if (title) title.textContent = 'Change Email Address';
+}
+
+// Handle change email form submission - wait for DOM
+document.addEventListener('DOMContentLoaded', function() {
+    const form1 = document.getElementById('changeEmailForm1');
+    const form2 = document.getElementById('changeEmailForm2');
+    const otpInput = document.getElementById('otpInput');
+    
+    if (!form1 || !form2) {
+        console.error('Change email forms not found');
+        return;
+    }
+    
+    form1.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/staff/account', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return response.json();
+            }
+            return response.text();
+        })
+        .then(data => {
+            if (typeof data === 'object') {
+                // JSON response
+                if (data.success) {
+                    // Success - move to step 2
+                    document.getElementById('otpDisplay').textContent = data.otp;
+                    document.getElementById('otpCurrentEmail').textContent = document.getElementById('currentEmailDisplay').value;
+                    document.getElementById('otpNewEmail').textContent = data.new_email;
+                    document.getElementById('changeEmailStep1').style.display = 'none';
+                    document.getElementById('changeEmailStep2').style.display = 'block';
+                    document.getElementById('changeEmailModalTitle').textContent = 'Verify OTP';
+                    document.getElementById('changeEmailError').style.display = 'none';
+                    document.getElementById('otpInput').focus();
+                } else {
+                    // Error
+                    document.getElementById('changeEmailErrorText').textContent = data.error || 'An error occurred';
+                    document.getElementById('changeEmailError').style.display = 'flex';
+                }
+            } else {
+                // HTML response - check for errors
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+                const errorDiv = doc.querySelector('.alert-modern.error');
+                
+                if (errorDiv) {
+                    document.getElementById('changeEmailErrorText').textContent = errorDiv.textContent.trim();
+                    document.getElementById('changeEmailError').style.display = 'flex';
+                }
+            }
+        })
+        .catch(error => {
+            document.getElementById('changeEmailErrorText').textContent = 'An error occurred. Please try again.';
+            document.getElementById('changeEmailError').style.display = 'flex';
+        });
+    });
+    
+    // Handle OTP verification
+    if (form2) {
+        form2.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/staff/account', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                }
+                return response.text();
+            })
+            .then(data => {
+                if (typeof data === 'object') {
+                    // JSON response
+                    if (data.success) {
+                        // Success - close modal and reload page
+                        closeChangeEmailModal();
+                        window.location.href = '/staff/account?email_changed=1';
+                    } else {
+                        // Error
+                        document.getElementById('changeEmailErrorText').textContent = data.error || 'An error occurred';
+                        document.getElementById('changeEmailError').style.display = 'flex';
+                        document.getElementById('changeEmailSuccess').style.display = 'none';
+                    }
+                } else {
+                    // HTML response - check for errors
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data, 'text/html');
+                    const errorDiv = doc.querySelector('.alert-modern.error');
+                    
+                    if (errorDiv) {
+                        document.getElementById('changeEmailErrorText').textContent = errorDiv.textContent.trim();
+                        document.getElementById('changeEmailError').style.display = 'flex';
+                        document.getElementById('changeEmailSuccess').style.display = 'none';
+                    } else {
+                        // Success - reload page
+                        closeChangeEmailModal();
+                        window.location.href = '/staff/account?email_changed=1';
+                    }
+                }
+            })
+            .catch(error => {
+                document.getElementById('changeEmailErrorText').textContent = 'An error occurred. Please try again.';
+                document.getElementById('changeEmailError').style.display = 'flex';
+            });
+        });
+    }
+    
+    // OTP input formatting
+    if (otpInput) {
+        otpInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+            if (e.target.value.length > 6) {
+                e.target.value = e.target.value.substring(0, 6);
+            }
+        });
+    }
+    
+    // Close modal when clicking outside
+    const modal = document.getElementById('changeEmailModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeChangeEmailModal();
+            }
+        });
+    }
+});
+</script>
+
+<!-- Change Email Modal -->
+<div id="changeEmailModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="changeEmailModalTitle">Change Email Address</h2>
+            <button type="button" class="modal-close" onclick="closeChangeEmailModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="changeEmailError" class="alert-modern error" style="display: none; margin-bottom: 1.5rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="changeEmailErrorText"></span>
+        </div>
+        
+        <div id="changeEmailSuccess" class="alert-modern success" style="display: none; margin-bottom: 1.5rem;">
+            <i class="fas fa-check-circle"></i>
+            <span id="changeEmailSuccessText"></span>
+        </div>
+
+        <!-- Step 1: Enter New Email -->
+        <div id="changeEmailStep1">
+            <form method="POST" id="changeEmailForm1">
+                <input type="hidden" name="action" value="request_email_change">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        Current Email Address
+                    </label>
+                    <input type="text" id="currentEmailDisplay" value="<?= htmlspecialchars($display_staff['staff_email'] ?? '') ?>" readonly class="form-control-modern" style="background: #f9fafb;">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        New Email Address <span class="required">*</span>
+                    </label>
+                    <input type="email" name="new_email" id="newEmailInput" required class="form-control-modern" placeholder="Enter your new email address">
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>You will receive an OTP code to verify your new email address. The OTP will be valid for 10 minutes.</span>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Continue</span>
+                    </button>
+                    <button type="button" onclick="closeChangeEmailModal()" class="btn-save" style="background: #6b7280;">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 2: OTP Verification -->
+        <div id="changeEmailStep2" style="display: none;">
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Email Address</div>
+                <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);" id="otpCurrentEmail"></div>
+            </div>
+            <div style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: #059669; margin-bottom: 0.5rem; font-weight: 500;">New Email Address</div>
+                <div style="font-size: 1rem; font-weight: 600; color: #065f46;" id="otpNewEmail"></div>
+            </div>
+            <form method="POST" id="changeEmailForm2">
+                <input type="hidden" name="action" value="verify_otp">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        Enter OTP Code <span class="required">*</span>
+                    </label>
+                    <input type="text" name="otp" id="otpInput" required class="form-control-modern" style="font-size: 1.5rem; text-align: center; letter-spacing: 0.5rem; font-weight: 600;" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="off">
+                    <div style="text-align: center; font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">Enter the 6-digit OTP code</div>
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>For testing purposes, your OTP is: <strong id="otpDisplay"></strong></span>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-check"></i>
+                        <span>Verify & Update Email</span>
+                    </button>
+                    <button type="button" onclick="resetChangeEmailModal()" class="btn-save" style="background: #6b7280;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
 

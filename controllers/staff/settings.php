@@ -114,12 +114,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
+                        // Ensure profile_picture_url column exists
+                        try {
+                            $db->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT");
+                        } catch (Exception $e) {
+                            // Column might already exist, ignore error
+                        }
+                        
                         // Get old profile picture URL before updating
                         $oldUser = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
                         $oldUrl = $oldUser['profile_picture_url'] ?? null;
                         
                         // Update user profile picture URL
-                        $db->execute("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id", ['url' => $result['url'], 'user_id' => $user_id]);
+                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
+                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
                         
                         // Delete old image from Cloudinary if exists
                         if ($oldUrl) {
@@ -171,7 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 // Remove from database
-                $db->execute("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id", ['user_id' => $user_id]);
+                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
                 
                 $success = 'Profile picture removed successfully';
                 $profile_picture_url = null;

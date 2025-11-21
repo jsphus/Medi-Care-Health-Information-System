@@ -658,6 +658,24 @@ function closeEditModal() {
 }
 
 function viewPatientDetails(patient) {
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
     // Get profile picture or generate initials
     const profilePicture = patient.profile_picture_url || '';
     const firstName = patient.pat_first_name || 'P';
@@ -694,6 +712,20 @@ function viewPatientDetails(patient) {
                 </div>
                 ${patient.pat_address ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Address:</strong> ${patient.pat_address}</p></div>` : ''}
                 ${patient.pat_medical_history ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Medical History:</strong> ${patient.pat_medical_history}</p></div>` : ''}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(patient.created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(patient.updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;

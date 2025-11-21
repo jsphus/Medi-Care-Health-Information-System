@@ -146,7 +146,48 @@ class Staff extends Entity {
 
     // Get staff by ID (maintains backward compatibility)
     public function getById($id) {
-        return $this->db->fetchOne("SELECT * FROM staff WHERE staff_id = :id", ['id' => $id]);
+        // Explicitly select all columns to ensure all fields are returned
+        $sql = "SELECT 
+            staff_id, 
+            staff_first_name, 
+            staff_middle_initial, 
+            staff_last_name, 
+            staff_email, 
+            staff_phone, 
+            staff_position, 
+            staff_hire_date, 
+            staff_salary, 
+            staff_status, 
+            created_at, 
+            updated_at 
+        FROM staff 
+        WHERE staff_id = :id";
+        
+        $result = $this->db->fetchOne($sql, ['id' => $id]);
+        
+        // If result is null or has fewer columns than expected, try alternative approach
+        if ($result === null || count($result) < 5) {
+            // Try using raw PDO connection with explicit column selection
+            try {
+                $conn = $this->db->getConnection();
+                $stmt = $conn->prepare($sql);
+                $stmt->execute(['id' => $id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                // If still not working, try without prepared statement
+                if ($result === false || count($result) < 5) {
+                    $raw_sql = "SELECT staff_id, staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position, staff_hire_date, staff_salary, staff_status, created_at, updated_at FROM staff WHERE staff_id = " . (int)$id;
+                    $raw_result = $conn->query($raw_sql);
+                    if ($raw_result) {
+                        $result = $raw_result->fetch(PDO::FETCH_ASSOC);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Staff::getById() alternative fetch error: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
     }
 
     // Create new staff (maintains backward compatibility)

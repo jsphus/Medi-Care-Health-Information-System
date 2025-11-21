@@ -153,20 +153,50 @@ try {
         $order_by = "p.$sort_column $sort_order";
     }
 
+    // Pagination
+    $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+    $items_per_page = $load_all ? 10000 : 10;
+    $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+    
+    // Get total count for pagination
+    $count_sql = "
+        SELECT COUNT(*) as count
+        FROM payments p
+        LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        $where_clause
+    ";
+    $count_result = $db->fetchOne($count_sql, $params);
+    $total_items = (int)($count_result['count'] ?? 0);
+    $total_pages = $items_per_page > 0 ? ceil($total_items / $items_per_page) : 1;
+
     $sql = "
         SELECT p.*, 
                a.appointment_id, a.appointment_date,
                pat.pat_first_name, pat.pat_last_name,
+               u.profile_picture_url as patient_profile_picture,
                pm.method_name,
-               ps.status_name
+               ps.status_name, ps.payment_status_id
         FROM payments p
         LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN users u ON pat.pat_id = u.pat_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         $where_clause
         ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
     ";
+    
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $payments = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch payments: ' . $e->getMessage();

@@ -202,7 +202,8 @@ try {
     // Include appointment details with doctor and patient profile pictures
     $stmt = $db->prepare("
         SELECT p.*, 
-               a.appointment_id, a.appointment_date, a.appointment_time, a.appointment_notes,
+               a.appointment_id, a.pat_id, a.doc_id, a.service_id, a.status_id,
+               a.appointment_date, a.appointment_time, a.appointment_notes,
                pat.pat_first_name, pat.pat_last_name,
                d.doc_first_name, d.doc_last_name,
                srv.service_name, srv.service_price,

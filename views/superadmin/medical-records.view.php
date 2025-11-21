@@ -285,68 +285,118 @@
 
 <script>
 function viewRecord(record) {
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
+    // Helper function to get profile picture or initials
+    const getProfilePicture = (profilePic, firstName, lastName) => {
+        if (profilePic) {
+            return `<img src="${profilePic}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        }
+        const initial = (firstName ? firstName.charAt(0) : '') || (lastName ? lastName.charAt(0) : '') || '?';
+        return `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--primary-blue); color: white; font-weight: bold; font-size: 1.2rem; border-radius: 50%;">${initial.toUpperCase()}</div>`;
+    };
+    
+    const patientPic = getProfilePicture(record.patient_profile_picture, record.pat_first_name, record.pat_last_name);
+    const doctorPic = getProfilePicture(record.doctor_profile_picture, record.doc_first_name, record.doc_last_name);
+    
     const content = `
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">Record Information</h3>
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-blue); font-size: 1.1rem;">Record Information</h3>
+            <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color);">
+                        ${patientPic}
+                    </div>
+                    <div>
+                        <p style="margin: 0.25rem 0; font-weight: 600;">Patient</p>
+                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">${record.pat_first_name} ${record.pat_last_name}</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color);">
+                        ${doctorPic}
+                    </div>
+                    <div>
+                        <p style="margin: 0.25rem 0; font-weight: 600;">Doctor</p>
+                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">Dr. ${record.doc_first_name} ${record.doc_last_name}</p>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="form-grid">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.record_id}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${record.record_date}</p>
+                </div>
+                <div>
+                    <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appointment_id || 'N/A'}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Appointment Date:</strong> ${record.appointment_date || 'N/A'}</p>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.record_id}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${record.record_date}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.created_at)}</p>
                     </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0.5rem 0;"><strong>Patient:</strong> ${record.pat_first_name} ${record.pat_last_name}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Doctor:</strong> Dr. ${record.doc_first_name} ${record.doc_last_name}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appointment_id || 'N/A'}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Appointment Date:</strong> ${record.appointment_date || 'N/A'}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.updated_at)}</p>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title" style="color: var(--primary-blue);">Diagnosis</h3>
-            </div>
-            <div class="card-body">
-                <p style="white-space: pre-wrap; margin: 0;">${record.diagnosis || 'N/A'}</p>
-            </div>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Diagnosis</h3>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.diagnosis || 'N/A'}</p>
         </div>
         
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title" style="color: var(--primary-blue);">Treatment</h3>
-            </div>
-            <div class="card-body">
-                <p style="white-space: pre-wrap; margin: 0;">${record.treatment || 'N/A'}</p>
-            </div>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Treatment</h3>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.treatment || 'N/A'}</p>
         </div>
         
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title" style="color: var(--primary-blue);">Prescription</h3>
-            </div>
-            <div class="card-body">
-                <p style="white-space: pre-wrap; margin: 0;">${record.prescription || 'None'}</p>
-            </div>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Prescription</h3>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.prescription || 'None'}</p>
         </div>
         
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title" style="color: var(--primary-blue);">Notes</h3>
-            </div>
-            <div class="card-body">
-                <p style="white-space: pre-wrap; margin: 0;">${record.notes || 'None'}</p>
-            </div>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+        
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Notes</h3>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.notes || 'None'}</p>
         </div>
         
-        <div class="info-box">
-            <i class="fas fa-calendar-check"></i>
-            <p><strong>Follow-up Date:</strong> ${record.follow_up_date || 'Not scheduled'}</p>
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+        
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0;">
+            <i class="fas fa-calendar-check" style="color: var(--primary-blue);"></i>
+            <p style="margin: 0;"><strong>Follow-up Date:</strong> ${record.follow_up_date || 'Not scheduled'}</p>
         </div>
     `;
     document.getElementById('viewContent').innerHTML = content;

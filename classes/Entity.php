@@ -172,6 +172,11 @@ abstract class Entity {
 
         // Filter to only include valid columns
         $updateData = array_intersect_key($updateData, array_flip($columns));
+        
+        // Exclude user_is_superadmin from updates (only editable in database)
+        if (isset($updateData['user_is_superadmin'])) {
+            unset($updateData['user_is_superadmin']);
+        }
 
         // Automatically set updated_at if column exists and not already set
         if (in_array('updated_at', $columns) && (!isset($updateData['updated_at']) || $updateData['updated_at'] === null)) {
@@ -189,7 +194,17 @@ abstract class Entity {
             } else {
                 // Use parameterized placeholder
                 $setClause[] = "{$field} = :{$field}";
-                $params[$field] = $value;
+                
+                // Handle boolean values for PostgreSQL - convert to proper boolean
+                if (is_bool($value)) {
+                    $params[$field] = $value;
+                } elseif ($value === '' || $value === null) {
+                    // Empty string or null - check if column is boolean type
+                    // For now, just pass null (PostgreSQL will handle it)
+                    $params[$field] = null;
+                } else {
+                    $params[$field] = $value;
+                }
             }
         }
 

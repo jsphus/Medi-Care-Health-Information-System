@@ -570,6 +570,24 @@ function closeEditModal() {
 }
 
 function viewStaffDetails(staff) {
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
     // Get profile picture or generate initials
     const profilePicture = staff.profile_picture_url || '';
     const firstName = staff.staff_first_name || 'S';
@@ -613,6 +631,20 @@ function viewStaffDetails(staff) {
                     </div>
                 </div>
                 ${staff.staff_address ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Address:</strong> ${staff.staff_address}</p></div>` : ''}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(staff.created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(staff.updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;

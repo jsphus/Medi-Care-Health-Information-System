@@ -125,74 +125,104 @@
             <p style="margin: 0;">No services found.</p>
         </div>
     <?php else: ?>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Service Name
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Category
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Price
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Duration
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Appointments
-                        </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="servicesTableBody">
-                    <?php foreach ($services as $service): ?>
-                        <tr class="service-row" 
-                            data-service-name="<?= htmlspecialchars(strtolower($service['service_name'])) ?>"
-                            data-description="<?= htmlspecialchars(strtolower($service['service_description'] ?? '')) ?>"
-                            data-price="<?= floatval($service['service_price'] ?? 0) ?>"
-                            data-duration="<?= intval($service['service_duration_minutes'] ?? 30) ?>"
-                            data-category="<?= htmlspecialchars($service['service_category'] ?? '') ?>"
-                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
-                            onmouseover="this.style.background='#f9fafb'" 
-                            onmouseout="this.style.background='white'">
-                            <td style="padding: 1rem;">
-                                <strong style="color: var(--text-primary);"><?= htmlspecialchars($service['service_name']) ?></strong>
-                            </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($service['service_category'] ?? 'N/A') ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary); font-weight: 600;">₱<?= number_format($service['service_price'] ?? 0, 2) ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($service['service_duration_minutes'] ?? 30) ?> min</td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $service['appointment_count'] ?? 0 ?> appointment(s)</td>
-                            <td style="padding: 1rem;">
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <button class="btn btn-sm edit-service-btn" 
-                                            data-service="<?= base64_encode(json_encode($service)) ?>" 
-                                            title="Edit"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm view-service-btn" 
-                                            data-service="<?= base64_encode(json_encode($service)) ?>" 
-                                            title="View"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this service?');">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= $service['service_id'] ?>">
-                                        <button type="submit" class="btn btn-sm" title="Delete"
-                                                style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+        <div id="servicesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
+            <?php foreach ($services as $service): ?>
+                <div class="service-card" 
+                     data-service-name="<?= htmlspecialchars(strtolower($service['service_name'])) ?>"
+                     data-description="<?= htmlspecialchars(strtolower($service['service_description'] ?? '')) ?>"
+                     data-price="<?= floatval($service['service_price'] ?? 0) ?>"
+                     data-duration="<?= intval($service['service_duration_minutes'] ?? 30) ?>"
+                     data-category="<?= htmlspecialchars($service['service_category'] ?? '') ?>"
+                     style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #f3f4f6; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column;">
+                    <!-- Card Header -->
+                    <div style="padding: 1.5rem; border-bottom: 2px solid #f3f4f6;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></div>
+                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
+                                <?= htmlspecialchars($service['service_name']) ?>
+                            </h3>
+                        </div>
+                        <?php if (!empty($service['service_category'])): ?>
+                            <span style="display: inline-block; padding: 0.375rem 0.75rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">
+                                <?= htmlspecialchars($service['service_category']) ?>
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div style="padding: 1.5rem; flex: 1; display: flex; flex-direction: column;">
+                        <!-- Service Details -->
+                        <div style="flex: 1;">
+                            <?php if (!empty($service['service_description'])): ?>
+                                <p style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.5;">
+                                    <?= htmlspecialchars($service['service_description']) ?>
+                                </p>
+                            <?php endif; ?>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Price</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">
+                                        ₱<?= number_format($service['service_price'] ?? 0, 2) ?>
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Duration</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">
+                                        <?= htmlspecialchars($service['service_duration_minutes'] ?? 30) ?> min
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="padding: 0.75rem; background: var(--bg-light); border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-calendar-check" style="color: var(--primary-blue);"></i>
+                                    <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                                        <strong style="color: var(--text-primary);"><?= $service['appointment_count'] ?? 0 ?></strong> appointment(s)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Card Actions -->
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: auto;">
+                            <button type="button" 
+                                    class="btn btn-primary show-appointments-btn" 
+                                    data-service-id="<?= $service['service_id'] ?>"
+                                    data-service-name="<?= htmlspecialchars($service['service_name']) ?>"
+                                    style="width: 100%; padding: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 8px; font-weight: 500;">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Show Appointments</span>
+                            </button>
+                            
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm edit-service-btn" 
+                                        data-service="<?= base64_encode(json_encode($service)) ?>" 
+                                        title="Edit"
+                                        style="flex: 1; padding: 0.625rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; color: var(--primary-blue); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                    <i class="fas fa-edit"></i>
+                                    <span style="font-size: 0.875rem;">Edit</span>
+                                </button>
+                                <form method="POST" style="flex: 1; display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this service?');">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?= $service['service_id'] ?>">
+                                    <button type="submit" class="btn btn-sm" title="Delete"
+                                            style="width: 100%; padding: 0.625rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; color: var(--status-error); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                        <i class="fas fa-trash"></i>
+                                        <span style="font-size: 0.875rem;">Delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <!-- No Results Message (hidden by default) -->
+        <div id="noResultsMessage" style="display: none; padding: 3rem; text-align: center; color: var(--text-secondary);">
+            <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+            <p style="margin: 0;">No services match the current filters.</p>
         </div>
     <?php endif; ?>
 </div>
@@ -292,8 +322,52 @@
     </div>
 </div>
 
+<!-- Appointments Modal -->
+<div id="appointmentsModal" class="modal">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="appointmentsModalTitle">Service Appointments</h2>
+            <button type="button" class="modal-close" onclick="closeAppointmentsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="appointmentsModalBody" style="padding: 1.5rem;">
+            <div style="text-align: center; padding: 2rem;">
+                <div class="spinner" style="border: 3px solid var(--border-light); border-top: 3px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                <p style="color: var(--text-secondary);">Loading appointments...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+}
+
+.appointment-item {
+    padding: 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    background: var(--bg-light);
+    transition: background 0.2s;
+}
+
+.appointment-item:hover {
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+</style>
+
 <script>
-// Dynamic Filtering System for Services Table
+// Dynamic Filtering System for Services Cards
 function filterServices() {
     const serviceNameFilter = document.getElementById('filterServiceName').value.toLowerCase().trim();
     const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase().trim();
@@ -303,15 +377,17 @@ function filterServices() {
     const durationMax = parseInt(document.getElementById('filterDurationMax').value) || Infinity;
     const categoryFilter = document.getElementById('filterCategory').value;
     
-    const rows = document.querySelectorAll('.service-row');
+    const cards = document.querySelectorAll('.service-card');
+    const grid = document.getElementById('servicesGrid');
+    const noResultsMsg = document.getElementById('noResultsMessage');
     let visibleCount = 0;
     
-    rows.forEach(row => {
-        const serviceName = row.getAttribute('data-service-name') || '';
-        const description = row.getAttribute('data-description') || '';
-        const price = parseFloat(row.getAttribute('data-price')) || 0;
-        const duration = parseInt(row.getAttribute('data-duration')) || 0;
-        const category = row.getAttribute('data-category') || '';
+    cards.forEach(card => {
+        const serviceName = card.getAttribute('data-service-name') || '';
+        const description = card.getAttribute('data-description') || '';
+        const price = parseFloat(card.getAttribute('data-price')) || 0;
+        const duration = parseInt(card.getAttribute('data-duration')) || 0;
+        const category = card.getAttribute('data-category') || '';
         
         // Apply filters
         const matchesServiceName = !serviceNameFilter || serviceName.includes(serviceNameFilter);
@@ -320,12 +396,12 @@ function filterServices() {
         const matchesDuration = duration >= durationMin && duration <= durationMax;
         const matchesCategory = !categoryFilter || category === categoryFilter;
         
-        // Show row if all filters match
+        // Show card if all filters match
         if (matchesServiceName && matchesDescription && matchesPrice && matchesDuration && matchesCategory) {
-            row.style.display = '';
+            card.style.display = 'flex';
             visibleCount++;
         } else {
-            row.style.display = 'none';
+            card.style.display = 'none';
         }
     });
     
@@ -337,18 +413,12 @@ function filterServices() {
                              document.getElementById('filterDurationMax').value ||
                              categoryFilter;
     
-    const tableBody = document.getElementById('servicesTableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
-    
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            msg.innerHTML = '<td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No services match the current filters.</p></td>';
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
+    if (visibleCount === 0 && cards.length > 0 && hasActiveFilters) {
+        if (grid) grid.style.display = 'none';
+        if (noResultsMsg) noResultsMsg.style.display = 'block';
+    } else {
+        if (grid) grid.style.display = 'grid';
+        if (noResultsMsg) noResultsMsg.style.display = 'none';
     }
 }
 
@@ -425,6 +495,167 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
+// Appointments Modal Functions
+function openAppointmentsModal(serviceId, serviceName) {
+    const modal = document.getElementById('appointmentsModal');
+    const modalTitle = document.getElementById('appointmentsModalTitle');
+    const modalBody = document.getElementById('appointmentsModalBody');
+    
+    modalTitle.textContent = serviceName + ' - Appointments';
+    modalBody.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <div class="spinner" style="border: 3px solid var(--border-light); border-top: 3px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+            <p style="color: var(--text-secondary);">Loading appointments...</p>
+        </div>
+    `;
+    modal.classList.add('active');
+    
+    // Fetch appointments
+    fetch(`/staff/services?action=get_appointments&service_id=${serviceId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayAppointments(data.appointments, serviceName);
+            } else {
+                modalBody.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: var(--status-error);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <p>${data.message || 'Failed to load appointments'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalBody.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: var(--status-error);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <p>An error occurred while loading appointments.</p>
+                </div>
+            `;
+        });
+}
+
+function displayAppointments(appointments, serviceName) {
+    const modalBody = document.getElementById('appointmentsModalBody');
+    
+    if (!appointments || appointments.length === 0) {
+        modalBody.innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; color: var(--text-secondary);"></i>
+                <p style="color: var(--text-secondary); margin: 0;">No appointments found for this service.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-light); border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong style="color: var(--text-primary);">Total Appointments:</strong>
+                    <span style="color: var(--text-secondary); margin-left: 0.5rem;">${appointments.length}</span>
+                </div>
+            </div>
+        </div>
+        <div style="max-height: 60vh; overflow-y: auto;">
+    `;
+    
+    appointments.forEach(apt => {
+        let appointmentDate = 'N/A';
+        let appointmentTime = 'N/A';
+        
+        if (apt.appointment_date) {
+            try {
+                const date = new Date(apt.appointment_date);
+                appointmentDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } catch (e) {
+                appointmentDate = apt.appointment_date;
+            }
+        }
+        
+        if (apt.appointment_time) {
+            try {
+                // Handle time format (HH:MM:SS or HH:MM)
+                const timeStr = apt.appointment_time.length === 5 ? apt.appointment_time + ':00' : apt.appointment_time;
+                const time = new Date('1970-01-01T' + timeStr);
+                appointmentTime = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            } catch (e) {
+                appointmentTime = apt.appointment_time;
+            }
+        }
+        const patientName = (apt.pat_first_name || '') + ' ' + (apt.pat_last_name || '');
+        const doctorName = 'Dr. ' + (apt.doc_first_name || '') + ' ' + (apt.doc_last_name || '');
+        const statusColor = apt.status_color || '#3B82F6';
+        const statusName = apt.status_name || 'N/A';
+        
+        html += `
+            <div class="appointment-item">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Appointment ID</div>
+                        <div style="font-weight: 600; color: var(--text-primary);">#${apt.appointment_id || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Status</div>
+                        <span class="badge" style="background: ${statusColor}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; color: white;">
+                            ${statusName}
+                        </span>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Date & Time</div>
+                        <div style="color: var(--text-primary);">
+                            <i class="fas fa-calendar" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>${appointmentDate}
+                            <br>
+                            <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>${appointmentTime}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Duration</div>
+                        <div style="color: var(--text-primary);">
+                            <i class="fas fa-hourglass-half" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>${apt.appointment_duration || 30} min
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Patient</div>
+                        <div style="color: var(--text-primary);">
+                            <i class="fas fa-user" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>${patientName.trim() || 'N/A'}
+                        </div>
+                        ${apt.pat_phone ? `<div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            <i class="fas fa-phone" style="margin-right: 0.5rem;"></i><a href="tel:${apt.pat_phone}" style="color: var(--primary-blue); text-decoration: none;">${apt.pat_phone}</a>
+                        </div>` : ''}
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Doctor</div>
+                        <div style="color: var(--text-primary);">
+                            <i class="fas fa-user-md" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>${doctorName.trim() || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+                ${apt.appointment_notes ? `
+                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Notes</div>
+                        <div style="color: var(--text-primary); font-size: 0.875rem; font-style: italic;">
+                            ${apt.appointment_notes}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    modalBody.innerHTML = html;
+}
+
+function closeAppointmentsModal() {
+    document.getElementById('appointmentsModal').classList.remove('active');
+}
+
 // Category tab functionality
 document.addEventListener('DOMContentLoaded', function() {
     const categoryTabs = document.querySelectorAll('.category-tab');
@@ -449,6 +680,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error parsing service data:', e);
                 alert('Error loading service data. Please check the console for details.');
             }
+        });
+    });
+    
+    // Add event listeners for show appointments buttons
+    document.querySelectorAll('.show-appointments-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const serviceId = this.getAttribute('data-service-id');
+            const serviceName = this.getAttribute('data-service-name');
+            openAppointmentsModal(serviceId, serviceName);
         });
     });
 });

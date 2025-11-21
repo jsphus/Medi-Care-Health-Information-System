@@ -1,4 +1,9 @@
 <?php
+// Set headers to prevent caching - must be before any output
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -12,6 +17,7 @@ $db = Database::getInstance();
 $user_id = $auth->getUserId();
 $error = '';
 $success = '';
+$user = null; // Initialize user variable
 
 // Initialize profile picture for consistent display across the system
 $profile_picture_url = User::initializeProfilePicture($auth);
@@ -29,27 +35,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Invalid email format';
         } else {
             try {
-                $userObj = new User();
-                $updateData = [
-                    'user_id' => $user_id,
-                    'user_email' => $email
-                ];
-                $result = $userObj->update($updateData);
-                if ($result['success']) {
-                    $_SESSION['user_email'] = $email;
-                    $success = 'Account information updated successfully';
-                    // Refresh user data
-                    $user = $userObj->getById($user_id);
-                } else {
-                    $error = $result['message'] ?? 'Failed to update account';
+                require_once __DIR__ . '/../../classes/User.php';
+                
+                // Use User class update method
+                $userModel = new User();
+                $result = $userModel->update(['user_id' => $user_id, 'user_email' => $email]);
+                
+                if (!$result['success']) {
+                    throw new Exception($result['message'] ?? 'Failed to update user');
                 }
-            } catch (PDOException $e) {
+                
+                $_SESSION['user_email'] = $email;
+                
+                // Redirect to account page with success message
+                header('Location: /superadmin/account?success=updated');
+                exit;
+            } catch (Exception $e) {
                 $error = 'Failed to update account: ' . $e->getMessage();
+                error_log("Superadmin Account Update Error: " . $e->getMessage());
             }
         }
-    }
-    
-    if ($action === 'change_password') {
+    } elseif ($action === 'change_password') {
         $current_password = $_POST['current_password'] ?? '';
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
@@ -84,12 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
+                        // Ensure profile_picture_url column exists
+                        try {
+                            $db->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT");
+                        } catch (Exception $e) {
+                            // Column might already exist, ignore error
+                        }
+                        
                         // Get old profile picture URL before updating
                         $oldUser = $db->fetchOne("SELECT profile_picture_url FROM users WHERE user_id = :user_id", ['user_id' => $user_id]);
                         $oldUrl = $oldUser['profile_picture_url'] ?? null;
                         
                         // Update user profile picture URL
-                        $db->execute("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id", ['url' => $result['url'], 'user_id' => $user_id]);
+                        $stmt = $db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
+                        $stmt->execute(['url' => $result['url'], 'user_id' => $user_id]);
                         
                         // Delete old image from Cloudinary if exists
                         if ($oldUrl) {
@@ -141,7 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 // Remove from database
-                $db->execute("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id", ['user_id' => $user_id]);
+                $stmt = $db->prepare("UPDATE users SET profile_picture_url = NULL WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
                 
                 $success = 'Profile picture removed successfully';
                 $profile_picture_url = null;
@@ -152,13 +167,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch user data
+// Check for success message from redirect (for profile picture/password updates)
+if (isset($_GET['success']) && $_GET['success'] === 'updated') {
+    $success = 'Account information updated successfully';
+}
+
+// Fetch user data - use direct query to ensure fresh data
 try {
-    $user = (new User())->getById($user_id);
-    $profile_picture_url = User::getProfilePicture($auth);
-} catch (PDOException $e) {
+    $conn = $db->getConnection();
+    $stmt = $conn->prepare("SELECT user_id, user_email, profile_picture_url FROM users WHERE user_id = :user_id");
+    $stmt->execute(['user_id' => $user_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$user || empty($user)) {
+        throw new Exception('User data not found');
+    }
+    
+    // Ensure email is always available (fallback to session if not in user data)
+    if (empty($user['user_email']) && isset($_SESSION['user_email'])) {
+        $user['user_email'] = $_SESSION['user_email'];
+    }
+    
+    $profile_picture_url = $user['profile_picture_url'] ?? User::getProfilePicture($user_id);
+    
+    // CRITICAL: Make a protected copy to prevent modification
+    $user_data = $user;
+    $required_keys = ['user_id', 'user_email', 'profile_picture_url'];
+    foreach ($required_keys as $key) {
+        if (!isset($user_data[$key])) {
+            $user_data[$key] = null;
+        }
+    }
+    $user = $user_data;
+} catch (Exception $e) {
+    error_log("Superadmin Account Fetch Error: " . $e->getMessage());
     $error = 'Failed to fetch account information: ' . $e->getMessage();
-    $user = null;
+    // Fallback: create user array with email from session
+    $user = [
+        'user_id' => $user_id,
+        'user_email' => $_SESSION['user_email'] ?? '',
+        'profile_picture_url' => null
+    ];
     $profile_picture_url = null;
 }
 

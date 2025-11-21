@@ -674,6 +674,24 @@ function redirectToRoleCreation(event) {
 }
 
 function viewUserProfile(user) {
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
     // Determine role and profile link
     let role = 'None';
     let profileLink = '';
@@ -726,7 +744,10 @@ function viewUserProfile(user) {
                         <strong>Phone:</strong> ${user.phone_number || 'N/A'}
                     </div>
                     <div>
-                        <strong>Date Created:</strong> ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                        <strong>Date Created:</strong> ${formatDate(user.created_at)}
+                    </div>
+                    <div>
+                        <strong>Date Updated:</strong> ${formatDate(user.updated_at)}
                     </div>
                 </div>
             </div>

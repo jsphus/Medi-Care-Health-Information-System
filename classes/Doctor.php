@@ -184,7 +184,41 @@ class Doctor extends Entity {
 
     // Get doctor by ID (maintains backward compatibility)
     public function getById($id) {
-        return $this->db->fetchOne("SELECT * FROM doctors WHERE doc_id = :id", ['id' => $id]);
+        // Explicitly select all columns to ensure all fields are returned
+        $sql = "SELECT 
+            doc_id, 
+            doc_first_name, 
+            doc_middle_initial, 
+            doc_last_name, 
+            doc_email, 
+            doc_phone, 
+            doc_license_number, 
+            doc_specialization_id, 
+            doc_experience_years, 
+            doc_consultation_fee, 
+            doc_qualification, 
+            doc_bio, 
+            doc_status, 
+            created_at, 
+            updated_at 
+        FROM doctors 
+        WHERE doc_id = :id";
+        
+        $result = $this->db->fetchOne($sql, ['id' => $id]);
+        
+        // If result has fewer columns than expected, try alternative approach
+        if ($result !== null && count($result) < 5) {
+            try {
+                $conn = $this->db->getConnection();
+                $stmt = $conn->prepare($sql);
+                $stmt->execute(['id' => $id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                error_log("Doctor::getById() alternative fetch error: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
     }
 
     // Create new doctor (maintains backward compatibility)

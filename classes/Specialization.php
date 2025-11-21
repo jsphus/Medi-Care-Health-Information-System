@@ -89,4 +89,9 @@ class Specialization extends Entity {
     public function getAllSpecializations(): array {
         return $this->db->fetchAll("SELECT * FROM specializations ORDER BY spec_name");
     }
+
+    // Get specialization by ID (maintains backward compatibility)
+    public function getById($id) {
+        return $this->db->fetchOne("SELECT * FROM specializations WHERE spec_id = :id", ['id' => $id]);
+    }
 }

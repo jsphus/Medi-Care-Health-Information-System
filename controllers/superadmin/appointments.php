@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../classes/Auth.php';
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../../classes/Appointment.php';
 
 $auth = new Auth();
 $auth->requireSuperAdmin();
@@ -27,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Patient, doctor, and date are required';
         } else {
             try {
-                $appointment_id = generateAppointmentId($db);
+                $appointment_id = Appointment::generateId($db);
                 
                 $stmt = $db->prepare("
                     INSERT INTO appointments (appointment_id, pat_id, doc_id, service_id, status_id, 

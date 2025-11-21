@@ -159,10 +159,10 @@ $menus = [
     ],
     'staff' => [
         ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/staff/dashboard'],
+        ['icon' => '🔬', 'label' => 'Services', 'url' => '/staff/services'],
         ['icon' => '👔', 'label' => 'Staff', 'url' => '/staff/staff'],
         ['icon' => '🎓', 'label' => 'Specializations', 'url' => '/staff/specializations'],
         ['icon' => '📋', 'label' => 'Statuses', 'url' => '/staff/statuses'],
-        ['icon' => '🔬', 'label' => 'Services', 'url' => '/staff/services'],
         ['icon' => '💳', 'label' => 'Payment Methods', 'url' => '/staff/payment-methods'],
         ['icon' => '💰', 'label' => 'Payment Statuses', 'url' => '/staff/payment-statuses'],
         ['icon' => '💵', 'label' => 'Payments', 'url' => '/staff/payments'],

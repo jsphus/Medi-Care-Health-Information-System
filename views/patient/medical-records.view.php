@@ -341,6 +341,20 @@
                             </div>
                         </div>
                         <?php endif; ?>
+                        
+                        <div class="record-section">
+                            <div class="record-section-title">Record Metadata</div>
+                            <div class="record-section-content" style="display: flex; gap: 2rem; flex-wrap: wrap; padding: 0.75rem 1rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> <?= $record['created_at'] ? date('F j, Y g:i A', strtotime($record['created_at'])) : 'N/A' ?></span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> <?= $record['updated_at'] ? date('F j, Y g:i A', strtotime($record['updated_at'])) : 'N/A' ?></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="record-actions">

@@ -123,6 +123,65 @@ class User extends Entity {
         return $this->db->fetchOne("SELECT * FROM users WHERE pat_id = :patient_id", ['patient_id' => $patientId]);
     }
 
+    // Get user by ID (maintains backward compatibility)
+    public function getById($id) {
+        // Explicitly select all columns to ensure all fields are returned
+        $sql = "SELECT 
+            user_id, 
+            user_email, 
+            user_password, 
+            user_is_superadmin, 
+            pat_id, 
+            staff_id, 
+            doc_id, 
+            profile_picture_url, 
+            created_at, 
+            updated_at 
+        FROM users 
+        WHERE user_id = :id";
+        
+        $result = $this->db->fetchOne($sql, ['id' => $id]);
+        
+        // If result has fewer columns than expected, try alternative approach
+        if ($result !== null && count($result) < 3) {
+            try {
+                $conn = $this->db->getConnection();
+                $stmt = $conn->prepare($sql);
+                $stmt->execute(['id' => $id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                error_log("User::getById() alternative fetch error: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
+    }
+
+    // Update user (maintains backward compatibility)
+    public function update($data) {
+        // If data contains user_id, use it; otherwise it's an update of current instance
+        if (isset($data['user_id'])) {
+            $this->fromArray($data);
+            $result = $this->save();
+            // Convert errors array to message string for backward compatibility
+            if (!$result['success'] && isset($result['errors']) && !empty($result['errors'])) {
+                $result['message'] = implode(', ', $result['errors']);
+            }
+            return $result;
+        } else {
+            // Merge with existing data
+            $currentData = $this->toArray();
+            $mergedData = array_merge($currentData, $data);
+            $this->fromArray($mergedData);
+            $result = $this->save();
+            // Convert errors array to message string for backward compatibility
+            if (!$result['success'] && isset($result['errors']) && !empty($result['errors'])) {
+                $result['message'] = implode(', ', $result['errors']);
+            }
+            return $result;
+        }
+    }
+
     public function updatePasswordForPatient(int $patientId, string $currentPassword, string $newPassword): array {
         $user = $this->getByPatientId($patientId);
         if (!$user) {
@@ -143,7 +202,15 @@ class User extends Entity {
     }
 
     public function setProfilePicture(int $userId, ?string $url): bool {
-        return $this->db->execute("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id", [
+        // Ensure profile_picture_url column exists
+        try {
+            $this->db->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT");
+        } catch (Exception $e) {
+            // Column might already exist, ignore error
+        }
+        
+        $stmt = $this->db->prepare("UPDATE users SET profile_picture_url = :url WHERE user_id = :user_id");
+        return $stmt->execute([
             'url' => $url,
             'user_id' => $userId
         ]);

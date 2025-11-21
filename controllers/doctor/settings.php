@@ -147,6 +147,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Check if result is an array (success) or string (error message)
                     if (is_array($result) && isset($result['url'])) {
+                        // Ensure profile_picture_url column exists
+                        try {
+                            $db->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_picture_url TEXT");
+                        } catch (Exception $e) {
+                            // Column might already exist, ignore error
+                        }
+                        
                         // Get old profile picture URL before updating
                         $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
                         $stmt->execute(['user_id' => $user_id]);

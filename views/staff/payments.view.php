@@ -106,6 +106,12 @@
                 </label>
                 <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Status
+                </label>
+                <input type="text" id="filterStatus" class="filter-input" placeholder="Search status..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
         </div>
     </div>
 
@@ -125,7 +131,7 @@
                         ?>
                         <th class="sortable <?= $current_sort === 'payment_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('payment_date')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
                             Date
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
@@ -140,7 +146,7 @@
                         </th>
                         <th class="sortable <?= $current_sort === 'payment_amount' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('payment_amount')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
                             Amount
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
@@ -171,8 +177,12 @@
                             <td style="padding: 1rem; color: var(--text-secondary);">#<?= htmlspecialchars($payment['appointment_id']) ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= strtoupper(substr($payment['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
+                                        <?php if (!empty($payment['patient_profile_picture'])): ?>
+                                            <img src="<?= htmlspecialchars($payment['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <?= strtoupper(substr($payment['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                        <?php endif; ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars(($payment['pat_first_name'] ?? '') . ' ' . ($payment['pat_last_name'] ?? '')) ?></strong>
                                 </div>
@@ -213,7 +223,7 @@
 
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
             <div style="color: var(--text-secondary); font-size: 0.875rem;">
                 Showing <?= ($offset ?? 0) + 1 ?>-<?= min(($offset ?? 0) + ($items_per_page ?? 10), $total_items ?? count($payments)) ?> of <?= $total_items ?? count($payments) ?> entries
             </div>
@@ -387,7 +397,193 @@ function clearAllFilters() {
     const methodSearch = document.getElementById('methodSearch');
     if (methodSearch) methodSearch.value = '';
 }
+
+// Table Sorting Function
+function sortTable(column) {
+    const url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order') || 'DESC';
+    
+    // Toggle order if clicking the same column, otherwise default to ASC
+    if (currentSort === column) {
+        url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
+    } else {
+        url.searchParams.set('order', 'ASC');
+    }
+    
+    url.searchParams.set('sort', column);
+    url.searchParams.delete('page'); // Reset to page 1 when sorting
+    
+    window.location.href = url.toString();
+}
+
+// Filtering Functions
+function filterTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('.table-row');
+    const filterPatient = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
+    const filterAmountMin = document.getElementById('filterAmountMin')?.value ? parseFloat(document.getElementById('filterAmountMin').value) : null;
+    const filterAmountMax = document.getElementById('filterAmountMax')?.value ? parseFloat(document.getElementById('filterAmountMax').value) : null;
+    const filterMethod = document.getElementById('filterMethod')?.value.toLowerCase().trim() || '';
+    const filterDate = document.getElementById('filterDate')?.value || '';
+    const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
+    
+    let visibleCount = 0;
+    let hasActiveFilters = filterPatient || filterAmountMin !== null || filterAmountMax !== null || filterMethod || filterDate || filterStatus;
+    
+    rows.forEach(row => {
+        const patient = row.getAttribute('data-patient') || '';
+        const amount = parseFloat(row.getAttribute('data-amount') || 0);
+        const method = row.getAttribute('data-method') || '';
+        const date = row.getAttribute('data-date') || '';
+        const status = row.getAttribute('data-status') || '';
+        
+        const matchesPatient = !filterPatient || patient.includes(filterPatient);
+        const matchesAmountMin = filterAmountMin === null || amount >= filterAmountMin;
+        const matchesAmountMax = filterAmountMax === null || amount <= filterAmountMax;
+        const matchesMethod = !filterMethod || method.includes(filterMethod);
+        const matchesDate = !filterDate || date === filterDate;
+        const matchesStatus = !filterStatus || status === filterStatus;
+        
+        if (matchesPatient && matchesAmountMin && matchesAmountMax && matchesMethod && matchesDate && matchesStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide pagination and filter message
+    const paginationContainer = document.getElementById('paginationContainer');
+    let filterActiveMessage = document.getElementById('filterActiveMessage');
+    
+    if (hasActiveFilters) {
+        if (paginationContainer) paginationContainer.style.display = 'none';
+        
+        if (!filterActiveMessage) {
+            filterActiveMessage = document.createElement('div');
+            filterActiveMessage.id = 'filterActiveMessage';
+            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
+            tbody.parentElement.parentElement.parentElement.appendChild(filterActiveMessage);
+        }
+        
+        if (visibleCount === 0) {
+            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No payments match the applied filters.';
+        } else {
+            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} payment(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
+        }
+        filterActiveMessage.style.display = 'block';
+    } else {
+        if (paginationContainer) paginationContainer.style.display = '';
+        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
+    }
+}
+
+function resetTableFilters() {
+    document.getElementById('filterPatient').value = '';
+    document.getElementById('filterAmountMin').value = '';
+    document.getElementById('filterAmountMax').value = '';
+    document.getElementById('filterMethod').value = '';
+    document.getElementById('filterDate').value = '';
+    
+    filterTable();
+    resetToPaginatedView();
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none' || !filterBar.style.display) {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.style.background = 'var(--primary-blue)';
+        toggleBtn.style.color = 'white';
+        loadAllResults();
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.style.background = 'var(--bg-light)';
+        toggleBtn.style.color = 'var(--text-secondary)';
+        resetTableFilters();
+        resetToPaginatedView();
+    }
+}
+
+function loadAllResults() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('all_results', '1');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('all_results');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+// Initialize filter event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDate'];
+    filterInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('input', filterTable);
+            input.addEventListener('change', filterTable);
+        }
+    });
+    
+    // Check if filters are active on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('all_results') === '1') {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        }
+    }
+});
 </script>
+
+<style>
+.sortable {
+    position: relative;
+    user-select: none;
+}
+
+.sortable:hover {
+    background: #f3f4f6 !important;
+}
+
+.sort-indicator {
+    display: inline-flex;
+    flex-direction: column;
+    margin-left: 0.5rem;
+    font-size: 0.625rem;
+    opacity: 0.5;
+}
+
+.sort-indicator i {
+    line-height: 0.5;
+}
+
+.sortable.sort-asc .sort-indicator i.fa-arrow-up {
+    opacity: 1;
+    color: var(--primary-blue);
+}
+
+.sortable.sort-desc .sort-indicator i.fa-arrow-down {
+    opacity: 1;
+    color: var(--primary-blue);
+}
+</style>
 
 <!-- Filter Sidebar -->
 <div class="filter-sidebar" id="filterSidebar">

@@ -68,16 +68,30 @@ return [
     
     // Doctor Routes - Additional
     'doctor/account' => 'controllers/doctor/account.php',
+    'doctor/edit-profile' => 'controllers/doctor/edit-profile.php',
     'doctor/settings' => 'controllers/doctor/settings.php',
     'doctor/privacy' => 'controllers/doctor/privacy.php',
     
     // Staff Routes - Additional
     'staff/account' => 'controllers/staff/account.php',
+    'staff/edit-profile' => 'controllers/staff/edit-profile.php',
+    'staff/change-email' => 'controllers/staff/change-email.php',
+    'staff/change-email-success' => 'controllers/staff/change-email-success.php',
     'staff/settings' => 'controllers/staff/settings.php',
     'staff/privacy' => 'controllers/staff/privacy.php',
     
     // Super Admin Routes - Additional
     'superadmin/account' => 'controllers/superadmin/account.php',
+    'superadmin/edit-profile' => 'controllers/superadmin/edit-profile.php',
     'superadmin/settings' => 'controllers/superadmin/settings.php',
     'superadmin/privacy' => 'controllers/superadmin/privacy.php',
+    
+    // Patient Routes - Additional
+    'patient/edit-profile' => 'controllers/patient/edit-profile.php',
+    'patient/change-email' => 'controllers/patient/change-email.php',
+    'patient/change-email-success' => 'controllers/patient/change-email-success.php',
+    
+    // Doctor Routes - Additional (change-email)
+    'doctor/change-email' => 'controllers/doctor/change-email.php',
+    'doctor/change-email-success' => 'controllers/doctor/change-email-success.php',
 ];

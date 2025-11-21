@@ -174,7 +174,43 @@ class Patient extends Entity {
 
     // Get patient by ID (maintains backward compatibility)
     public function getById($id) {
-        return $this->db->fetchOne("SELECT * FROM patients WHERE pat_id = :id", ['id' => $id]);
+        // Explicitly select all columns to ensure all fields are returned
+        $sql = "SELECT 
+            pat_id, 
+            pat_first_name, 
+            pat_middle_initial, 
+            pat_last_name, 
+            pat_email, 
+            pat_phone, 
+            pat_date_of_birth, 
+            pat_gender, 
+            pat_address, 
+            pat_emergency_contact, 
+            pat_emergency_phone, 
+            pat_medical_history, 
+            pat_allergies, 
+            pat_insurance_provider, 
+            pat_insurance_number, 
+            created_at, 
+            updated_at 
+        FROM patients 
+        WHERE pat_id = :id";
+        
+        $result = $this->db->fetchOne($sql, ['id' => $id]);
+        
+        // If result has fewer columns than expected, try alternative approach
+        if ($result !== null && count($result) < 5) {
+            try {
+                $conn = $this->db->getConnection();
+                $stmt = $conn->prepare($sql);
+                $stmt->execute(['id' => $id]);
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                error_log("Patient::getById() alternative fetch error: " . $e->getMessage());
+            }
+        }
+        
+        return $result;
     }
 
     // Create new patient (maintains backward compatibility)

@@ -171,8 +171,12 @@
                             <td style="padding: 1rem; color: var(--text-secondary);">#<?= htmlspecialchars($payment['appointment_id']) ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                                        <?= strtoupper(substr($payment['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
+                                        <?php if (!empty($payment['patient_profile_picture'])): ?>
+                                            <img src="<?= htmlspecialchars($payment['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <?= strtoupper(substr($payment['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                        <?php endif; ?>
                                     </div>
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars(($payment['pat_first_name'] ?? '') . ' ' . ($payment['pat_last_name'] ?? '')) ?></strong>
                                 </div>
@@ -197,11 +201,41 @@
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <?php if (!empty($payment['appointment_id'])): ?>
+                                    <?php if (!empty($payment['appointment_id'])): 
+                                        // Prepare appointment and payment data for embedding
+                                        $appointmentData = [
+                                            // Appointment data
+                                            'appointment_id' => $payment['appointment_id'] ?? null,
+                                            'appointment_date' => $payment['appointment_date'] ?? null,
+                                            'appointment_time' => $payment['appointment_time'] ?? null,
+                                            'appointment_notes' => $payment['appointment_notes'] ?? null,
+                                            'pat_id' => $payment['pat_id'] ?? null,
+                                            'pat_first_name' => $payment['pat_first_name'] ?? null,
+                                            'pat_last_name' => $payment['pat_last_name'] ?? null,
+                                            'doc_id' => $payment['doc_id'] ?? null,
+                                            'doc_first_name' => $payment['doc_first_name'] ?? null,
+                                            'doc_last_name' => $payment['doc_last_name'] ?? null,
+                                            'service_id' => $payment['service_id'] ?? null,
+                                            'service_name' => $payment['service_name'] ?? null,
+                                            'service_price' => $payment['service_price'] ?? null,
+                                            'spec_name' => $payment['spec_name'] ?? null,
+                                            'status_id' => $payment['status_id'] ?? null,
+                                            'status_name' => $payment['appointment_status_name'] ?? null,
+                                            'status_color' => $payment['appointment_status_color'] ?? null,
+                                            'patient_profile_picture' => $payment['patient_profile_picture'] ?? null,
+                                            'doctor_profile_picture' => $payment['doctor_profile_picture'] ?? null,
+                                            // Payment data
+                                            'payment_id' => $payment['payment_id'] ?? null,
+                                            'payment_amount' => $payment['payment_amount'] ?? null,
+                                            'payment_date' => $payment['payment_date'] ?? null,
+                                            'payment_method' => $payment['method_name'] ?? null,
+                                            'payment_status' => $payment['status_name'] ?? null,
+                                            'payment_notes' => $payment['payment_notes'] ?? null
+                                        ];
+                                    ?>
                                         <button type="button" class="btn btn-sm view-appointment-btn" 
                                                 title="View Appointment Details"
-                                                data-appointment-id="<?= htmlspecialchars($payment['appointment_id']) ?>"
-                                                onclick="viewAppointmentDetails('<?= htmlspecialchars($payment['appointment_id']) ?>')"
+                                                data-appointment="<?= base64_encode(json_encode($appointmentData)) ?>"
                                                 style="padding: 0.5rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -267,20 +301,21 @@
     <?php endif; ?>
 </div>
 
-<!-- View Appointment Details Modal -->
+<!-- View Appointment & Payment Details Modal -->
 <div id="viewAppointmentModal" class="modal">
-    <div class="modal-content" style="max-width: 800px;">
+    <div class="modal-content" style="max-width: 900px;">
         <div class="modal-header">
-            <h2 class="modal-title">Appointment Details</h2>
+            <h2 class="modal-title">Appointment & Payment Details</h2>
             <button type="button" class="modal-close" onclick="closeViewAppointmentModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="appointmentDetailsContent" style="padding: 1.5rem;">
-            <div style="text-align: center; padding: 2rem;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-blue);"></i>
-                <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
-            </div>
+        <div id="appointmentDetailsContent"></div>
+        <div class="action-buttons" style="margin-top: 1.5rem;">
+            <button type="button" onclick="closeViewAppointmentModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                <span>Close</span>
+            </button>
         </div>
     </div>
 </div>
@@ -365,6 +400,21 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
             const category = this.dataset.category;
             filterByCategory(category);
+        });
+    });
+    
+    // Add event listeners for view appointment buttons
+    document.querySelectorAll('.view-appointment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-appointment');
+                const decodedJson = atob(encodedData);
+                const appointmentData = JSON.parse(decodedJson);
+                viewAppointmentDetails(appointmentData);
+            } catch (e) {
+                console.error('Error parsing appointment data:', e);
+                alert('Error loading appointment data. Please check the console for details.');
+            }
         });
     });
     
@@ -505,169 +555,161 @@ function sortTable(column) {
     window.location.href = url.toString();
 }
 
-// View Appointment Details Functions
-function viewAppointmentDetails(appointmentId) {
-    const modal = document.getElementById('viewAppointmentModal');
-    const content = document.getElementById('appointmentDetailsContent');
+// View Appointment & Payment Details Functions
+function viewAppointmentDetails(data) {
+    const appointmentDate = data.appointment_date ? new Date(data.appointment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    const appointmentTime = data.appointment_time ? new Date('1970-01-01T' + data.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A';
+    const paymentDate = data.payment_date ? new Date(data.payment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
     
-    // Show loading state
-    content.innerHTML = `
-        <div style="text-align: center; padding: 2rem;">
-            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-blue);"></i>
-            <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
-        </div>
-    `;
-    modal.classList.add('active');
-    
-    // Fetch appointment details
-    fetch(`/superadmin/payments?action=get_appointment_details&appointment_id=${encodeURIComponent(appointmentId)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.data) {
-                displayAppointmentDetails(data.data);
-            } else {
-                content.innerHTML = `
-                    <div style="text-align: center; padding: 2rem;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--status-error); margin-bottom: 1rem;"></i>
-                        <p style="color: var(--text-secondary);">${data.error || 'Failed to load appointment details'}</p>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching appointment details:', error);
-            content.innerHTML = `
-                <div style="text-align: center; padding: 2rem;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--status-error); margin-bottom: 1rem;"></i>
-                    <p style="color: var(--text-secondary);">Error loading appointment details. Please try again.</p>
-                </div>
-            `;
-        });
-}
-
-function displayAppointmentDetails(appointment) {
-    const content = document.getElementById('appointmentDetailsContent');
-    
-    // Format date and time
-    const appointmentDate = appointment.appointment_date ? new Date(appointment.appointment_date + 'T00:00:00').toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    }) : 'N/A';
-    
-    const appointmentTime = appointment.appointment_time ? (() => {
-        const time = appointment.appointment_time.split(':');
-        const hours = parseInt(time[0]);
-        const minutes = time[1];
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const displayHours = hours % 12 || 12;
-        return `${displayHours}:${minutes} ${ampm}`;
-    })() : 'N/A';
-    
-    // Get profile picture or initials
-    const getProfilePicture = (pictureUrl, firstName, lastName, defaultColor = 'var(--primary-blue)') => {
-        if (pictureUrl) {
-            return `<img src="${escapeHtml(pictureUrl)}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">`;
-        } else {
-            const initial = (firstName ? firstName.charAt(0) : '') || (lastName ? lastName.charAt(0) : '') || '?';
-            return `<span style="font-size: 2rem; font-weight: 700;">${initial.toUpperCase()}</span>`;
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
         }
     };
     
+    // Helper function to escape HTML
     const escapeHtml = (text) => {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     };
     
-    const patientName = `${appointment.pat_first_name || ''} ${appointment.pat_last_name || ''}`.trim() || 'N/A';
-    const doctorName = `Dr. ${appointment.doc_first_name || ''} ${appointment.doc_last_name || ''}`.trim() || 'N/A';
+    // Format currency
+    const formatCurrency = (amount) => {
+        if (!amount) return '₱0.00';
+        return '₱' + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
     
-    content.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-            <!-- Patient Card -->
-            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
-                <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    ${getProfilePicture(appointment.patient_profile_picture, appointment.pat_first_name, appointment.pat_last_name)}
-                </div>
-                <h3 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1.125rem;">Patient</h3>
-                <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(patientName)}</p>
-            </div>
-            
-            <!-- Doctor Card -->
-            <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
-                <div style="width: 100px; height: 100px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                    ${getProfilePicture(appointment.doctor_profile_picture, appointment.doc_first_name, appointment.doc_last_name, '#10b981')}
-                </div>
-                <h3 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1.125rem;">Doctor</h3>
-                <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(doctorName)}</p>
-                ${appointment.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(appointment.spec_name)}</p>` : ''}
-            </div>
-        </div>
-        
-        <div style="background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-light);">
-            <h3 style="margin: 0 0 1.5rem; color: var(--text-primary); border-bottom: 2px solid var(--border-light); padding-bottom: 0.75rem;">Appointment Information</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div>
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Appointment ID:</strong><br>
-                    <span style="color: var(--text-secondary);">${escapeHtml(appointment.appointment_id || 'N/A')}</span></p>
+    // Patient profile picture or initial
+    const patientInitial = (data.pat_first_name ? data.pat_first_name.charAt(0) : '') || (data.pat_last_name ? data.pat_last_name.charAt(0) : '') || 'P';
+    const patientProfilePic = data.patient_profile_picture 
+        ? `<img src="${escapeHtml(data.patient_profile_picture)}" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${patientInitial.toUpperCase()}</span>`;
+    
+    // Doctor profile picture or initial
+    const doctorInitial = (data.doc_first_name ? data.doc_first_name.charAt(0) : '') || (data.doc_last_name ? data.doc_last_name.charAt(0) : '') || 'D';
+    const doctorProfilePic = data.doctor_profile_picture 
+        ? `<img src="${escapeHtml(data.doctor_profile_picture)}" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${doctorInitial.toUpperCase()}</span>`;
+    
+    const content = `
+        <div class="card">
+            <div class="card-body">
+                <!-- Appointment Information Section -->
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Appointment Information</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem;">
+                    <!-- Patient Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${patientProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Patient</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml((data.pat_first_name || '') + ' ' + (data.pat_last_name || ''))}</p>
+                    </div>
                     
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Date:</strong><br>
-                    <span style="color: var(--text-secondary);">${appointmentDate}</span></p>
-                    
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Time:</strong><br>
-                    <span style="color: var(--text-secondary);">${appointmentTime}</span></p>
+                    <!-- Doctor Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${doctorProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Doctor</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml((data.doc_first_name || '') + ' ' + (data.doc_last_name || ''))}</p>
+                        ${data.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(data.spec_name)}</p>` : ''}
+                    </div>
                 </div>
-                <div>
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Status:</strong><br>
-                    <span class="badge" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; background: ${appointment.status_color || '#3B82F6'}; color: white; font-size: 0.875rem; font-weight: 500;">
-                        ${escapeHtml(appointment.status_name || 'N/A')}
-                    </span></p>
-                    
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Service:</strong><br>
-                    <span style="color: var(--text-secondary);">${escapeHtml(appointment.service_name || 'N/A')}</span></p>
-                    
-                    ${appointment.service_price ? `
-                    <p style="margin: 0.75rem 0;"><strong style="color: var(--text-primary);">Service Price:</strong><br>
-                    <span style="color: var(--status-success); font-weight: 600;">₱${parseFloat(appointment.service_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></p>
-                    ` : ''}
+                <div class="form-grid">
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${data.appointment_id || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${appointmentDate}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Time:</strong> ${appointmentTime}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Status:</strong> 
+                            <span class="badge" style="background: ${data.status_color || '#3B82F6'}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                                ${data.status_name || 'N/A'}
+                            </span>
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Service:</strong> ${data.service_name || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Specialization:</strong> ${data.spec_name || 'N/A'}</p>
+                        ${data.service_price ? `<p style="margin: 0.5rem 0;"><strong>Service Price:</strong> <span style="color: var(--status-success); font-weight: 600;">${formatCurrency(data.service_price)}</span></p>` : ''}
+                    </div>
                 </div>
+                ${data.appointment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Notes:</strong> ${escapeHtml(data.appointment_notes)}</p></div>` : ''}
+                
+                <!-- Divider Line -->
+                <div style="margin: 2rem 0; border-top: 2px solid var(--border-light);"></div>
+                
+                <!-- Payment Information Section -->
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Payment Information</h3>
+                <div class="form-grid">
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Payment ID:</strong> ${data.payment_id || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Amount Paid:</strong> <span style="color: var(--status-success); font-weight: 700; font-size: 1.125rem;">${formatCurrency(data.payment_amount)}</span></p>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Date:</strong> ${paymentDate}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Method:</strong> ${data.payment_method || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Status:</strong> 
+                            <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                                ${data.payment_status || 'N/A'}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                ${data.payment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Payment Notes:</strong> ${escapeHtml(data.payment_notes)}</p></div>` : ''}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Payment Created:</strong> ${formatDate(data.payment_created_at || data.created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Payment Updated:</strong> ${formatDate(data.payment_updated_at || data.updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
+                ${data.appointment_created_at || data.appointment_updated_at ? `
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Appointment Created:</strong> ${formatDate(data.appointment_created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Appointment Updated:</strong> ${formatDate(data.appointment_updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
             </div>
-            ${appointment.appointment_notes ? `
-            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
-                <p style="margin: 0;"><strong style="color: var(--text-primary);">Notes:</strong><br>
-                <span style="color: var(--text-secondary);">${escapeHtml(appointment.appointment_notes)}</span></p>
-            </div>
-            ` : ''}
         </div>
     `;
+    document.getElementById('appointmentDetailsContent').innerHTML = content;
+    document.getElementById('viewAppointmentModal').classList.add('active');
 }
 
 function closeViewAppointmentModal() {
     document.getElementById('viewAppointmentModal').classList.remove('active');
 }
-
-// Close modal on outside click
-document.addEventListener('DOMContentLoaded', function() {
-    const viewModal = document.getElementById('viewAppointmentModal');
-    if (viewModal) {
-        viewModal.addEventListener('click', function(e) {
-            if (e.target === viewModal) {
-                closeViewAppointmentModal();
-            }
-        });
-    }
-    
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const activeModal = document.querySelector('.modal.active');
-            if (activeModal && activeModal.id === 'viewAppointmentModal') {
-                closeViewAppointmentModal();
-            }
-        }
-    });
-});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

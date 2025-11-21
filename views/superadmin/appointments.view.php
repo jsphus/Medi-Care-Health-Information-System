@@ -488,10 +488,68 @@ function viewAppointmentDetails(appointment) {
     const appointmentDate = appointment.appointment_date ? new Date(appointment.appointment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
     const appointmentTime = appointment.appointment_time ? new Date('1970-01-01T' + appointment.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A';
     
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
+    // Helper function to escape HTML
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+    
+    // Patient profile picture or initial
+    const patientInitial = (appointment.pat_first_name ? appointment.pat_first_name.charAt(0) : '') || (appointment.pat_last_name ? appointment.pat_last_name.charAt(0) : '') || 'P';
+    const patientProfilePic = appointment.patient_profile_picture 
+        ? `<img src="${escapeHtml(appointment.patient_profile_picture)}" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${patientInitial.toUpperCase()}</span>`;
+    
+    // Doctor profile picture or initial
+    const doctorInitial = (appointment.doc_first_name ? appointment.doc_first_name.charAt(0) : '') || (appointment.doc_last_name ? appointment.doc_last_name.charAt(0) : '') || 'D';
+    const doctorProfilePic = appointment.doctor_profile_picture 
+        ? `<img src="${escapeHtml(appointment.doctor_profile_picture)}" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${doctorInitial.toUpperCase()}</span>`;
+    
     const content = `
         <div class="card" style="margin-bottom: 1.5rem;">
             <div class="card-body">
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Appointment Information</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem;">
+                    <!-- Patient Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${patientProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Patient</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml((appointment.pat_first_name || '') + ' ' + (appointment.pat_last_name || ''))}</p>
+                    </div>
+                    
+                    <!-- Doctor Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${doctorProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Doctor</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml((appointment.doc_first_name || '') + ' ' + (appointment.doc_last_name || ''))}</p>
+                        ${appointment.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(appointment.spec_name)}</p>` : ''}
+                    </div>
+                </div>
                 <div class="form-grid">
                     <div>
                         <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${appointment.appointment_id || 'N/A'}</p>
@@ -504,13 +562,25 @@ function viewAppointmentDetails(appointment) {
                         </p>
                     </div>
                     <div>
-                        <p style="margin: 0.5rem 0;"><strong>Patient:</strong> ${(appointment.pat_first_name || '')} ${(appointment.pat_last_name || '')}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Doctor:</strong> Dr. ${(appointment.doc_first_name || '')} ${(appointment.doc_last_name || '')}</p>
                         <p style="margin: 0.5rem 0;"><strong>Service:</strong> ${appointment.service_name || 'N/A'}</p>
                         <p style="margin: 0.5rem 0;"><strong>Specialization:</strong> ${appointment.spec_name || 'N/A'}</p>
                     </div>
                 </div>
-                ${appointment.appointment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Notes:</strong> ${appointment.appointment_notes}</p></div>` : ''}
+                ${appointment.appointment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Notes:</strong> ${escapeHtml(appointment.appointment_notes)}</p></div>` : ''}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(appointment.created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(appointment.updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;

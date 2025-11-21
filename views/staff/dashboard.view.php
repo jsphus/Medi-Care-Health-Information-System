@@ -102,11 +102,11 @@
             <div class="chart-legend">
                 <div class="legend-item">
                     <div class="legend-dot blue"></div>
-                    <span>2024 Services</span>
+                    <span><?= date('Y') ?> (Most Booked)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-dot light-blue"></div>
-                    <span>Active Services</span>
+                    <span><?= date('Y') - 1 ?> (Most Booked)</span>
                 </div>
             </div>
         </div>
@@ -122,8 +122,13 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 1rem;">
             <div>
-                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Total Specializations</div>
-                <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total_specializations'] ?></div>
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Most Booked Service</div>
+                <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+                    <?= htmlspecialchars($most_booked_service['service_name'] ?? 'N/A') ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    <?= number_format($most_booked_service['booking_count'] ?? 0) ?> bookings
+                </div>
             </div>
             <div>
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Payment Methods</div>
@@ -133,10 +138,11 @@
     </div>
 </div>
 
-<!-- Recent Services Table -->
+<!-- Recently Added Services Table -->
 <div class="card">
-    <div class="card-header">
-        <h2 class="card-title">Recent Services</h2>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="card-title">Recently Added Services</h2>
+        <a href="/staff/services" style="font-size: 0.875rem; color: #3b82f6; text-decoration: none; font-weight: 500;">Show All</a>
     </div>
     <?php if (empty($recent_services)): ?>
         <div class="empty-state">
@@ -150,6 +156,7 @@
                     <th>Service Name</th>
                     <th>Category</th>
                     <th>Price</th>
+                    <th>Date Created</th>
                 </tr>
             </thead>
             <tbody>
@@ -158,6 +165,13 @@
                         <td><?= htmlspecialchars($service['service_name']) ?></td>
                         <td><?= htmlspecialchars($service['service_category'] ?? 'N/A') ?></td>
                         <td>₱<?= number_format($service['service_price'] ?? 0, 2) ?></td>
+                        <td>
+                            <?php if (!empty($service['created_at'])): ?>
+                                <?= date('M d, Y', strtotime($service['created_at'])) ?>
+                            <?php else: ?>
+                                N/A
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -172,17 +186,17 @@ const ctx = document.getElementById('servicesChart').getContext('2d');
 const servicesChart = new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+        labels: <?= json_encode($chart_data['labels'] ?? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul']) ?>,
         datasets: [
             {
-                label: '2024 Services',
-                data: [<?= isset($chart_data['services']) ? implode(',', $chart_data['services']) : '5,8,12,10,15,18,16' ?>],
+                label: '<?= date('Y') ?> (Most Booked)',
+                data: <?= json_encode($chart_data['current_year'] ?? [0, 0, 0, 0, 0, 0, 0]) ?>,
                 backgroundColor: '#3b82f6',
                 borderRadius: 4
             },
             {
-                label: 'Active Services',
-                data: [<?= isset($chart_data['active']) ? implode(',', $chart_data['active']) : '4,7,11,9,14,17,15' ?>],
+                label: '<?= date('Y') - 1 ?> (Most Booked)',
+                data: <?= json_encode($chart_data['last_year'] ?? [0, 0, 0, 0, 0, 0, 0]) ?>,
                 backgroundColor: '#60a5fa',
                 borderRadius: 4
             }
@@ -194,24 +208,39 @@ const servicesChart = new Chart(ctx, {
         plugins: {
             legend: {
                 display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.parsed.y + ' bookings';
+                    }
+                }
             }
         },
         scales: {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    stepSize: 5,
+                    stepSize: 1,
                     callback: function(value) {
                         return value;
                     }
                 },
                 grid: {
                     color: '#e5e7eb'
+                },
+                title: {
+                    display: true,
+                    text: 'Bookings'
                 }
             },
             x: {
                 grid: {
                     display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Month'
                 }
             }
         }

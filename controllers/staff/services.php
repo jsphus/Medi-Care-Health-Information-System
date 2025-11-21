@@ -15,7 +15,40 @@ $success = '';
 // Initialize profile picture for consistent display across the system
 $profile_picture_url = User::initializeProfilePicture($auth);
 
-// Handle form submissions (Staff can Add and Update, but NOT Delete)
+// Handle API requests for appointments
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_appointments') {
+    header('Content-Type: application/json');
+    
+    $service_id = isset($_GET['service_id']) ? (int)$_GET['service_id'] : 0;
+    
+    if ($service_id === 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid service ID']);
+        exit;
+    }
+    
+    try {
+        $sql = "
+            SELECT a.*, 
+                   p.pat_first_name, p.pat_last_name, p.pat_phone,
+                   d.doc_first_name, d.doc_last_name,
+                   st.status_name, st.status_color
+            FROM appointments a
+            LEFT JOIN patients p ON a.pat_id = p.pat_id
+            LEFT JOIN doctors d ON a.doc_id = d.doc_id
+            LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
+            WHERE a.service_id = :service_id
+            ORDER BY a.appointment_date DESC, a.appointment_time DESC
+        ";
+        $appointments = $db->fetchAll($sql, ['service_id' => $service_id]);
+        
+        echo json_encode(['success' => true, 'appointments' => $appointments]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Failed to fetch appointments: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+// Handle form submissions (Staff can Add, Update, and Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
@@ -64,18 +97,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $service = new Service();
                 $updateData = [
-                    'service_id' => $id,
                     'service_name' => $service_name,
                     'service_description' => $service_description,
                     'service_price' => $service_price,
                     'service_duration_minutes' => $service_duration,
                     'service_category' => $service_category
                 ];
-                $result = $service->update($updateData);
+                $result = $service->update($id, $updateData);
                 if ($result['success']) {
                     $success = 'Service updated successfully';
                 } else {
                     $error = $result['message'] ?? 'Database error';
+                }
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
+        }
+    }
+    
+    if ($action === 'delete') {
+        $id = (int)$_POST['id'];
+        
+        if (empty($id)) {
+            $error = 'Invalid service ID';
+        } else {
+            try {
+                // Check if service has associated appointments
+                $appointmentCount = $db->fetchOne(
+                    "SELECT COUNT(*) as count FROM appointments WHERE service_id = :id",
+                    ['id' => $id]
+                );
+                
+                if ($appointmentCount && $appointmentCount['count'] > 0) {
+                    $error = 'Cannot delete service: There are ' . $appointmentCount['count'] . ' appointment(s) associated with this service.';
+                } else {
+                    $service = new Service();
+                    $result = $service->delete($id);
+                    if ($result['success']) {
+                        $success = 'Service deleted successfully';
+                    } else {
+                        $error = !empty($result['errors']) ? implode(', ', $result['errors']) : 'Failed to delete service';
+                    }
                 }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();

@@ -1,4 +1,10 @@
-<?php require_once __DIR__ . '/../partials/header.php'; ?>
+<?php 
+// Make a local copy to prevent any modification
+$view_doctor = isset($doctor) && is_array($doctor) ? $doctor : [];
+$display_doctor = !empty($view_doctor) ? $view_doctor : ($doctor ?? []);
+
+require_once __DIR__ . '/../partials/header.php'; 
+?>
 
 <style>
 .account-container {
@@ -240,7 +246,7 @@
 
     <div class="account-grid">
         <!-- Profile & Account Information -->
-        <?php if (!empty($doctor)): ?>
+        <?php if (!empty($display_doctor)): ?>
         <div class="account-card">
             <div class="account-card-header">
                 <div class="account-card-icon">
@@ -257,19 +263,19 @@
                     <?php if (!empty($profile_picture_url)): ?>
                         <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
-                        <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1)) ?>
+                        <?= strtoupper(substr($display_doctor['doc_first_name'] ?? 'D', 0, 1)) ?>
                     <?php endif; ?>
                 </div>
                 <div class="profile-info">
-                    <div class="profile-name">Dr. <?= htmlspecialchars(($doctor['doc_first_name'] ?? '') . ' ' . ($doctor['doc_last_name'] ?? '')) ?></div>
-                    <div class="profile-email"><?= htmlspecialchars($doctor['doc_email'] ?? '') ?></div>
+                    <div class="profile-name">Dr. <?= htmlspecialchars(($display_doctor['doc_first_name'] ?? '') . ' ' . ($display_doctor['doc_last_name'] ?? '')) ?></div>
+                    <div class="profile-email"><?= htmlspecialchars($display_doctor['doc_email'] ?? '') ?></div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap;">
                         <span class="profile-role">Doctor</span>
-                        <?php if (!empty($doctor['spec_name'])): ?>
-                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($doctor['spec_name']) ?></span>
+                        <?php if (!empty($display_doctor['spec_name'])): ?>
+                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($display_doctor['spec_name']) ?></span>
                         <?php endif; ?>
-                        <?php if (!empty($doctor['doc_phone'])): ?>
-                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($doctor['doc_phone']) ?></span>
+                        <?php if (!empty($display_doctor['doc_phone'])): ?>
+                            <span style="color: var(--text-secondary); font-size: 0.875rem;">• <?= htmlspecialchars($display_doctor['doc_phone']) ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -305,80 +311,98 @@
                 </form>
             </div>
 
-            <form method="POST">
-                <input type="hidden" name="action" value="update_profile">
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        First Name <span class="required">*</span>
-                    </label>
-                    <input type="text" name="first_name" value="<?= htmlspecialchars($doctor['doc_first_name'] ?? '') ?>" required class="form-control-modern">
+            <!-- Account Details (Read-Only) -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">First Name</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_first_name'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Middle Initial</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_middle_initial'] ?? '') ?: 'N/A' ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Last Name</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_last_name'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Email Address</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_email'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Phone Number</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_phone'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Specialization</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['spec_name'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">License Number</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_license_number'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Experience (Years)</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_doctor['doc_experience_years'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Consultation Fee</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= !empty($display_doctor['doc_consultation_fee']) ? '₱' . number_format($display_doctor['doc_consultation_fee'], 2) : 'N/A' ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Role</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">Doctor</div>
+                    </div>
+                    <?php if (!empty($display_doctor['doc_qualification'])): ?>
+                    <div style="grid-column: 1 / -1;">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Qualification</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary); white-space: pre-wrap;"><?= htmlspecialchars($display_doctor['doc_qualification']) ?></div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if (!empty($display_doctor['doc_bio'])): ?>
+                    <div style="grid-column: 1 / -1;">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Bio</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary); white-space: pre-wrap;"><?= htmlspecialchars($display_doctor['doc_bio']) ?></div>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Middle Initial
-                    </label>
-                    <input type="text" name="middle_initial" value="<?= htmlspecialchars($doctor['doc_middle_initial'] ?? '') ?>" maxlength="1" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Last Name <span class="required">*</span>
-                    </label>
-                    <input type="text" name="last_name" value="<?= htmlspecialchars($doctor['doc_last_name'] ?? '') ?>" required class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Email Address <span class="required">*</span>
-                    </label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($doctor['doc_email'] ?? '') ?>" required class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Phone Number</label>
-                    <input type="text" name="phone" id="phone" value="<?= htmlspecialchars($doctor['doc_phone'] ?? '') ?>" class="form-control-modern" placeholder="XXXX-XXX-XXXX">
-                </div>
-                <?php if (isset($specializations) && !empty($specializations)): ?>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Specialization</label>
-                    <select name="specialization_id" class="form-control-modern">
-                        <option value="">Select Specialization</option>
-                        <?php foreach ($specializations as $spec): ?>
-                            <option value="<?= $spec['spec_id'] ?>" <?= ($doctor['doc_specialization_id'] ?? null) == $spec['spec_id'] ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($spec['spec_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <?php endif; ?>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">License Number</label>
-                    <input type="text" name="license_number" value="<?= htmlspecialchars($doctor['doc_license_number'] ?? '') ?>" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Experience (Years)</label>
-                    <input type="number" name="experience_years" min="0" value="<?= htmlspecialchars($doctor['doc_experience_years'] ?? '') ?>" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Consultation Fee</label>
-                    <input type="number" name="consultation_fee" step="0.01" min="0" value="<?= htmlspecialchars($doctor['doc_consultation_fee'] ?? '') ?>" class="form-control-modern">
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Qualification</label>
-                    <textarea name="qualification" rows="3" class="form-control-modern"><?= htmlspecialchars($doctor['doc_qualification'] ?? '') ?></textarea>
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Bio</label>
-                    <textarea name="bio" rows="5" class="form-control-modern"><?= htmlspecialchars($doctor['doc_bio'] ?? '') ?></textarea>
-                </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Role</label>
-                    <input type="text" value="Doctor" disabled class="form-control-modern">
-                </div>
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i>
-                    <span>Save Changes</span>
+                
+                <button type="button" onclick="openEditProfileModal()" class="btn-save" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Profile</span>
                 </button>
-            </form>
+            </div>
         </div>
         <?php endif; ?>
+
+        <!-- Change Email Address -->
+        <div class="account-card">
+            <div class="account-card-header">
+                <div class="account-card-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                    <h2 class="account-card-title">Change Email Address</h2>
+                    <p class="account-card-description">Update your email address with OTP verification</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Email Address</div>
+                <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">
+                    <?php 
+                    $email = $display_doctor['doc_email'] ?? null;
+                    echo htmlspecialchars(($email !== null && $email !== '') ? $email : 'N/A');
+                    ?>
+                </div>
+            </div>
+
+            <button type="button" onclick="openChangeEmailModal()" class="btn-save" style="display: inline-flex;">
+                <i class="fas fa-envelope"></i>
+                <span>Change Email Address</span>
+            </button>
+        </div>
 
         <!-- Change Password -->
         <div class="account-card">
@@ -482,6 +506,392 @@ function deleteProfilePicture() {
         form.submit();
     }
 }
+
+// Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
+function formatPhoneNumber(value) {
+    if (!value) return '';
+    let digits = value.toString().replace(/\D/g, '');
+    if (digits.length > 11) digits = digits.substring(0, 11);
+    if (digits.length >= 7) {
+        return digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7);
+    } else if (digits.length >= 4) {
+        return digits.substring(0, 4) + '-' + digits.substring(4);
+    }
+    return digits;
+}
+
+function formatPhoneInput(inputId) {
+    const input = document.getElementById(inputId);
+    if (input && !input.hasAttribute('data-phone-formatted')) {
+        input.setAttribute('data-phone-formatted', 'true');
+        input.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            const oldValue = e.target.value;
+            const formatted = formatPhoneNumber(e.target.value);
+            if (oldValue !== formatted) {
+                e.target.value = formatted;
+                const newCursorPosition = cursorPosition + (formatted.length - oldValue.length);
+                setTimeout(() => e.target.setSelectionRange(newCursorPosition, newCursorPosition), 0);
+            }
+        });
+        input.addEventListener('blur', function(e) {
+            if (e.target.value) e.target.value = formatPhoneNumber(e.target.value);
+        });
+        if (input.value) input.value = formatPhoneNumber(input.value);
+    }
+}
+
+function openEditProfileModal() {
+    // Populate form fields from display_doctor data
+    <?php if (isset($display_doctor) && is_array($display_doctor)): ?>
+    document.getElementById('edit_first_name').value = <?= json_encode($display_doctor['doc_first_name'] ?? '') ?>;
+    document.getElementById('edit_middle_initial').value = <?= json_encode($display_doctor['doc_middle_initial'] ?? '') ?>;
+    document.getElementById('edit_last_name').value = <?= json_encode($display_doctor['doc_last_name'] ?? '') ?>;
+    document.getElementById('edit_phone').value = <?= json_encode($display_doctor['doc_phone'] ?? '') ?>;
+    document.getElementById('edit_license_number').value = <?= json_encode($display_doctor['doc_license_number'] ?? '') ?>;
+    document.getElementById('edit_experience_years').value = <?= json_encode($display_doctor['doc_experience_years'] ?? '') ?>;
+    document.getElementById('edit_consultation_fee').value = <?= json_encode($display_doctor['doc_consultation_fee'] ?? '') ?>;
+    document.getElementById('edit_qualification').value = <?= json_encode($display_doctor['doc_qualification'] ?? '') ?>;
+    document.getElementById('edit_bio').value = <?= json_encode($display_doctor['doc_bio'] ?? '') ?>;
+    <?php if (isset($display_doctor['doc_specialization_id'])): ?>
+    document.getElementById('edit_specialization_id').value = <?= json_encode($display_doctor['doc_specialization_id']) ?>;
+    <?php endif; ?>
+    <?php endif; ?>
+    document.getElementById('editProfileModal').classList.add('active');
+    formatPhoneInput('edit_phone');
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeEditProfileModal();
+            }
+        });
+    }
+    
+    // Format phone input on page load
+    formatPhoneInput('edit_phone');
+});
+</script>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+    <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Profile</h2>
+            <button type="button" class="modal-close" onclick="closeEditProfileModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" id="editProfileForm">
+            <input type="hidden" name="action" value="update_profile">
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    First Name <span class="required">*</span>
+                </label>
+                <input type="text" name="first_name" id="edit_first_name" value="<?= htmlspecialchars($display_doctor['doc_first_name'] ?? '') ?>" required class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    Middle Initial
+                </label>
+                <input type="text" name="middle_initial" id="edit_middle_initial" value="<?= htmlspecialchars(isset($display_doctor['doc_middle_initial']) && $display_doctor['doc_middle_initial'] !== null ? $display_doctor['doc_middle_initial'] : '') ?>" maxlength="1" class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    Last Name <span class="required">*</span>
+                </label>
+                <input type="text" name="last_name" id="edit_last_name" value="<?= htmlspecialchars($display_doctor['doc_last_name'] ?? '') ?>" required class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Phone Number</label>
+                <input type="text" name="phone" id="edit_phone" value="<?= htmlspecialchars($display_doctor['doc_phone'] ?? '') ?>" class="form-control-modern" placeholder="XXXX-XXX-XXXX">
+            </div>
+            <?php if (isset($specializations) && !empty($specializations)): ?>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Specialization</label>
+                <select name="specialization_id" id="edit_specialization_id" class="form-control-modern">
+                    <option value="">Select Specialization</option>
+                    <?php foreach ($specializations as $spec): ?>
+                        <option value="<?= $spec['spec_id'] ?>" <?= ($display_doctor['doc_specialization_id'] ?? null) == $spec['spec_id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($spec['spec_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+            <div class="form-group-modern">
+                <label class="form-label-modern">License Number</label>
+                <input type="text" name="license_number" id="edit_license_number" value="<?= htmlspecialchars($display_doctor['doc_license_number'] ?? '') ?>" class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Experience (Years)</label>
+                <input type="number" name="experience_years" id="edit_experience_years" min="0" value="<?= htmlspecialchars($display_doctor['doc_experience_years'] ?? '') ?>" class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Consultation Fee</label>
+                <input type="number" name="consultation_fee" id="edit_consultation_fee" step="0.01" min="0" value="<?= htmlspecialchars($display_doctor['doc_consultation_fee'] ?? '') ?>" class="form-control-modern">
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Qualification</label>
+                <textarea name="qualification" id="edit_qualification" rows="3" class="form-control-modern"><?= htmlspecialchars($display_doctor['doc_qualification'] ?? '') ?></textarea>
+            </div>
+            <div class="form-group-modern">
+                <label class="form-label-modern">Bio</label>
+                <textarea name="bio" id="edit_bio" rows="5" class="form-control-modern"><?= htmlspecialchars($display_doctor['doc_bio'] ?? '') ?></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i>
+                    <span>Save Changes</span>
+                </button>
+                <button type="button" onclick="closeEditProfileModal()" class="btn-save" style="background: #6b7280;">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Email Modal -->
+<div id="changeEmailModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="changeEmailModalTitle">Change Email Address</h2>
+            <button type="button" class="modal-close" onclick="closeChangeEmailModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="changeEmailError" class="alert-modern error" style="display: none; margin-bottom: 1.5rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="changeEmailErrorText"></span>
+        </div>
+        
+        <div id="changeEmailSuccess" class="alert-modern success" style="display: none; margin-bottom: 1.5rem;">
+            <i class="fas fa-check-circle"></i>
+            <span id="changeEmailSuccessText"></span>
+        </div>
+
+        <!-- Step 1: Enter New Email -->
+        <div id="changeEmailStep1">
+            <form method="POST" id="changeEmailForm1">
+                <input type="hidden" name="action" value="request_email_change">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        Current Email Address
+                    </label>
+                    <input type="text" id="currentEmailDisplay" value="<?= htmlspecialchars($display_doctor['doc_email'] ?? '') ?>" readonly class="form-control-modern" style="background: #f9fafb;">
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        New Email Address <span class="required">*</span>
+                    </label>
+                    <input type="email" name="new_email" id="newEmailInput" required class="form-control-modern" placeholder="Enter your new email address">
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>You will receive an OTP code to verify your new email address. The OTP will be valid for 10 minutes.</span>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Continue</span>
+                    </button>
+                    <button type="button" onclick="closeChangeEmailModal()" class="btn-save" style="background: #6b7280;">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 2: OTP Verification -->
+        <div id="changeEmailStep2" style="display: none;">
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Email Address</div>
+                <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);" id="otpCurrentEmail"></div>
+            </div>
+            <div style="background: #f0fdf4; border: 1px solid #10b981; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.875rem; color: #059669; margin-bottom: 0.5rem; font-weight: 500;">New Email Address</div>
+                <div style="font-size: 1rem; font-weight: 600; color: #065f46;" id="otpNewEmail"></div>
+            </div>
+            <form method="POST" id="changeEmailForm2">
+                <input type="hidden" name="action" value="verify_otp">
+                <div class="form-group-modern">
+                    <label class="form-label-modern">
+                        Enter OTP Code <span class="required">*</span>
+                    </label>
+                    <input type="text" name="otp" id="otpInput" required class="form-control-modern" style="font-size: 1.5rem; text-align: center; letter-spacing: 0.5rem; font-weight: 600;" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="off">
+                    <div style="text-align: center; font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">Enter the 6-digit OTP code</div>
+                </div>
+                <div style="background: #eff6ff; border: 1px solid #3b82f6; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #1e40af;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>For testing purposes, your OTP is: <strong id="otpDisplay"></strong></span>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-check"></i>
+                        <span>Verify & Update Email</span>
+                    </button>
+                    <button type="button" onclick="resetChangeEmailModal()" class="btn-save" style="background: #6b7280;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Change Email Modal Functions
+function openChangeEmailModal() {
+    document.getElementById('changeEmailModal').classList.add('active');
+    resetChangeEmailModal();
+}
+
+function closeChangeEmailModal() {
+    document.getElementById('changeEmailModal').classList.remove('active');
+    resetChangeEmailModal();
+}
+
+function resetChangeEmailModal() {
+    document.getElementById('changeEmailStep1').style.display = 'block';
+    document.getElementById('changeEmailStep2').style.display = 'none';
+    document.getElementById('changeEmailError').style.display = 'none';
+    document.getElementById('changeEmailSuccess').style.display = 'none';
+    document.getElementById('changeEmailForm1').reset();
+    document.getElementById('changeEmailForm2').reset();
+    document.getElementById('changeEmailModalTitle').textContent = 'Change Email Address';
+}
+
+// Handle change email form submission
+document.getElementById('changeEmailForm1').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('/doctor/account', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        }
+        return response.text();
+    })
+    .then(data => {
+        if (typeof data === 'object') {
+            if (data.success) {
+                document.getElementById('otpDisplay').textContent = data.otp;
+                document.getElementById('otpCurrentEmail').textContent = document.getElementById('currentEmailDisplay').value;
+                document.getElementById('otpNewEmail').textContent = data.new_email;
+                document.getElementById('changeEmailStep1').style.display = 'none';
+                document.getElementById('changeEmailStep2').style.display = 'block';
+                document.getElementById('changeEmailModalTitle').textContent = 'Verify OTP';
+                document.getElementById('changeEmailError').style.display = 'none';
+                document.getElementById('otpInput').focus();
+            } else {
+                document.getElementById('changeEmailErrorText').textContent = data.error || 'An error occurred';
+                document.getElementById('changeEmailError').style.display = 'flex';
+            }
+        } else {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const errorDiv = doc.querySelector('.alert-modern.error');
+            if (errorDiv) {
+                document.getElementById('changeEmailErrorText').textContent = errorDiv.textContent.trim();
+                document.getElementById('changeEmailError').style.display = 'flex';
+            }
+        }
+    })
+    .catch(error => {
+        document.getElementById('changeEmailErrorText').textContent = 'An error occurred. Please try again.';
+        document.getElementById('changeEmailError').style.display = 'flex';
+    });
+});
+
+// Handle OTP verification
+document.getElementById('changeEmailForm2').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('/doctor/account', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        }
+        return response.text();
+    })
+    .then(data => {
+        if (typeof data === 'object') {
+            if (data.success) {
+                closeChangeEmailModal();
+                window.location.href = '/doctor/account?email_changed=1';
+            } else {
+                document.getElementById('changeEmailErrorText').textContent = data.error || 'An error occurred';
+                document.getElementById('changeEmailError').style.display = 'flex';
+                document.getElementById('changeEmailSuccess').style.display = 'none';
+            }
+        } else {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const errorDiv = doc.querySelector('.alert-modern.error');
+            if (errorDiv) {
+                document.getElementById('changeEmailErrorText').textContent = errorDiv.textContent.trim();
+                document.getElementById('changeEmailError').style.display = 'flex';
+                document.getElementById('changeEmailSuccess').style.display = 'none';
+            } else {
+                closeChangeEmailModal();
+                window.location.href = '/doctor/account?email_changed=1';
+            }
+        }
+    })
+    .catch(error => {
+        document.getElementById('changeEmailErrorText').textContent = 'An error occurred. Please try again.';
+        document.getElementById('changeEmailError').style.display = 'flex';
+    });
+});
+
+// OTP input formatting
+document.getElementById('otpInput').addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '');
+    if (e.target.value.length > 6) {
+        e.target.value = e.target.value.substring(0, 6);
+    }
+});
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('changeEmailModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeChangeEmailModal();
+            }
+        });
+    }
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

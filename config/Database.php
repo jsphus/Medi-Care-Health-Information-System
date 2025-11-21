@@ -25,6 +25,10 @@ class Database {
         try {
             $this->conn = new PDO($dsn, $user, $password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Ensure all columns are returned
+            $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            // For PostgreSQL, ensure we get all column data
+            $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
         }
@@ -72,6 +76,13 @@ class Database {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute($params);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Debug: Log if we get fewer columns than expected
+            if ($result && count($result) < 3) {
+                error_log("Database::fetchOne() - Only got " . count($result) . " columns. SQL: " . $sql);
+                error_log("Database::fetchOne() - Keys: " . implode(', ', array_keys($result)));
+            }
+            
             return $result ?: null;
         } catch (PDOException $e) {
             throw new PDOException("Database query failed: " . $e->getMessage());

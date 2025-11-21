@@ -142,8 +142,51 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    $sql = "SELECT * FROM staff $where_clause ORDER BY staff_first_name, staff_last_name";
-    $staff_members = $db->fetchAll($sql, $params);
+    // Handle sorting
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
+    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+    
+    // Validate sort column to prevent SQL injection
+    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'staff_hire_date', 'created_at'];
+    if (!in_array($sort_column, $allowed_columns)) {
+        $sort_column = 'created_at';
+    }
+    
+    // Special handling for name sorting (sort by first name, then last name)
+    if ($sort_column === 'staff_first_name') {
+        $order_by = "staff_first_name $sort_order, staff_last_name $sort_order";
+    } else {
+        $order_by = "$sort_column $sort_order";
+    }
+
+    // Pagination
+    $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+    $items_per_page = $load_all ? 10000 : 10;
+    $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+    
+    // Get total count for pagination
+    $count_sql = "SELECT COUNT(*) as count FROM staff s $where_clause";
+    $count_result = $db->fetchOne($count_sql, $params);
+    $total_items = (int)($count_result['count'] ?? 0);
+    $total_pages = $items_per_page > 0 ? ceil($total_items / $items_per_page) : 1;
+
+    // Fetch staff with profile pictures
+    $sql = "SELECT s.*, u.profile_picture_url 
+            FROM staff s 
+            LEFT JOIN users u ON s.staff_id = u.staff_id 
+            $where_clause 
+            ORDER BY $order_by 
+            LIMIT :limit OFFSET :offset";
+    
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $staff_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch staff: ' . $e->getMessage();
     $staff_members = [];

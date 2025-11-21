@@ -1,4 +1,10 @@
-<?php require_once __DIR__ . '/../partials/header.php'; ?>
+<?php 
+// Make a local copy to prevent any modification
+$view_user = isset($user) && is_array($user) ? $user : [];
+$display_user = !empty($view_user) ? $view_user : ($user ?? []);
+
+require_once __DIR__ . '/../partials/header.php'; 
+?>
 
 <style>
 .account-container {
@@ -240,7 +246,7 @@
 
     <div class="account-grid">
         <!-- Profile & Account Information -->
-        <?php if (!empty($user)): ?>
+        <?php if (!empty($display_user)): ?>
         <div class="account-card">
             <div class="account-card-header">
                 <div class="account-card-icon">
@@ -257,12 +263,12 @@
                     <?php if (!empty($profile_picture_url)): ?>
                         <img src="<?= htmlspecialchars($profile_picture_url) ?>" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover;">
                     <?php else: ?>
-                        <?= strtoupper(substr($user['user_email'] ?? 'A', 0, 1)) ?>
+                        <?= strtoupper(substr($display_user['user_email'] ?? $_SESSION['user_email'] ?? 'A', 0, 1)) ?>
                     <?php endif; ?>
                 </div>
                 <div class="profile-info">
-                    <div class="profile-name"><?= htmlspecialchars(explode('@', $user['user_email'] ?? 'Admin')[0]) ?></div>
-                    <div class="profile-email"><?= htmlspecialchars($user['user_email'] ?? '') ?></div>
+                    <div class="profile-name"><?= htmlspecialchars(explode('@', $display_user['user_email'] ?? $_SESSION['user_email'] ?? 'Admin')[0]) ?></div>
+                    <div class="profile-email"><?= htmlspecialchars($display_user['user_email'] ?? $_SESSION['user_email'] ?? '') ?></div>
                     <span class="profile-role">Super Admin</span>
                 </div>
             </div>
@@ -297,23 +303,24 @@
                 </form>
             </div>
 
-            <form method="POST">
-                <input type="hidden" name="action" value="update_profile">
-                <div class="form-group-modern">
-                    <label class="form-label-modern">
-                        Email Address <span class="required">*</span>
-                    </label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($user['user_email'] ?? '') ?>" required class="form-control-modern">
+            <!-- Account Details (Read-Only) -->
+            <div style="margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Email Address</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);"><?= htmlspecialchars($display_user['user_email'] ?? $_SESSION['user_email'] ?? 'N/A') ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Role</div>
+                        <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary);">Super Admin</div>
+                    </div>
                 </div>
-                <div class="form-group-modern">
-                    <label class="form-label-modern">Role</label>
-                    <input type="text" value="Super Admin" disabled class="form-control-modern">
-                </div>
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i>
-                    <span>Save Changes</span>
+                
+                <button type="button" onclick="openEditProfileModal()" class="btn-save" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit Profile</span>
                 </button>
-            </form>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -388,6 +395,61 @@ function deleteProfilePicture() {
         form.submit();
     }
 }
+
+function openEditProfileModal() {
+    // Populate form fields from display_user data
+    <?php if (isset($display_user) && is_array($display_user)): ?>
+    document.getElementById('edit_email').value = <?= json_encode($display_user['user_email'] ?? $_SESSION['user_email'] ?? '') ?>;
+    <?php endif; ?>
+    document.getElementById('editProfileModal').classList.add('active');
+}
+
+function closeEditProfileModal() {
+    document.getElementById('editProfileModal').classList.remove('active');
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeEditProfileModal();
+            }
+        });
+    }
+});
 </script>
+
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" class="modal">
+    <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Profile</h2>
+            <button type="button" class="modal-close" onclick="closeEditProfileModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" id="editProfileForm">
+            <input type="hidden" name="action" value="update_profile">
+            <div class="form-group-modern">
+                <label class="form-label-modern">
+                    Email Address <span class="required">*</span>
+                </label>
+                <input type="email" name="email" id="edit_email" value="<?= htmlspecialchars($display_user['user_email'] ?? $_SESSION['user_email'] ?? '') ?>" required class="form-control-modern">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i>
+                    <span>Save Changes</span>
+                </button>
+                <button type="button" onclick="closeEditProfileModal()" class="btn-save" style="background: #6b7280;">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
