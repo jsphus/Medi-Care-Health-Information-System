@@ -110,7 +110,7 @@ $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'spec_name';
 $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
 
 // Validate sort column to prevent SQL injection
-$allowed_columns = ['spec_name', 'created_at'];
+$allowed_columns = ['spec_name', 'created_at', 'updated_at'];
 if (!in_array($sort_column, $allowed_columns)) {
     $sort_column = 'spec_name';
 }

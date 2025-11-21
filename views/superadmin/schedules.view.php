@@ -84,10 +84,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Schedules
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -104,9 +110,40 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Days</option>
+                        <?php for ($i = 1; $i <= 31; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Years</option>
+                        <?php 
+                        $current_year = (int)date('Y');
+                        for ($year = $current_year; $year >= 2020; $year--): 
+                        ?>
+                            <option value="<?= $year ?>"><?= $year ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
@@ -180,6 +217,8 @@
                         </th>
                         <th>Max Appointments</th>
                         <th>Available</th>
+                        <th>Date Created</th>
+                        <th>Date Updated</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -188,7 +227,7 @@
                         <tr class="table-row" 
                             data-doctor="<?= htmlspecialchars(strtolower(($sched['doc_first_name'] ?? '') . ' ' . ($sched['doc_last_name'] ?? ''))) ?>"
                             data-specialization="<?= htmlspecialchars(strtolower($sched['spec_name'] ?? '')) ?>"
-                            data-date="<?= !empty($sched['schedule_date']) ? date('Y-m-d', strtotime($sched['schedule_date'])) : '' ?>"
+                            data-date="<?= !empty($sched['created_at']) ? date('Y-m-d', strtotime($sched['created_at'])) : '' ?>"
                             data-start-time="<?= htmlspecialchars($sched['start_time'] ?? '') ?>"
                             data-end-time="<?= htmlspecialchars($sched['end_time'] ?? '') ?>"
                             data-max-appointments="<?= (int)($sched['max_appointments'] ?? 0) ?>"
@@ -204,6 +243,8 @@
                                     <?= $sched['is_available'] ? 'Yes' : 'No' ?>
                                 </span>
                             </td>
+                            <td style="color: var(--text-secondary);"><?= $sched['created_at'] ? date('d M Y', strtotime($sched['created_at'])) : 'N/A' ?></td>
+                            <td style="color: var(--text-secondary);"><?= $sched['updated_at'] ? date('d M Y', strtotime($sched['updated_at'])) : 'N/A' ?></td>
                             <td>
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-schedule-btn" 
@@ -349,6 +390,34 @@ function sortTable(column) {
 }
 
 // Filtering Functions
+function applyTableFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterDoctor: document.getElementById('filterDoctor')?.value || '',
+            filterSpecialization: document.getElementById('filterSpecialization')?.value || '',
+            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
+            filterDateDay: document.getElementById('filterDateDay')?.value || '',
+            filterDateYear: document.getElementById('filterDateYear')?.value || '',
+            filterStartTime: document.getElementById('filterStartTime')?.value || '',
+            filterEndTime: document.getElementById('filterEndTime')?.value || '',
+            filterMinAppointments: document.getElementById('filterMinAppointments')?.value || '',
+            filterAvailable: document.getElementById('filterAvailable')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterTable();
+}
+
 function filterTable() {
     const tbody = document.getElementById('tableBody');
     if (!tbody) return;
@@ -356,19 +425,21 @@ function filterTable() {
     const rows = tbody.querySelectorAll('.table-row');
     const filterDoctor = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
     const filterSpecialization = document.getElementById('filterSpecialization')?.value.toLowerCase().trim() || '';
-    const filterDate = document.getElementById('filterDate')?.value || '';
+    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
+    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
+    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     const filterStartTime = document.getElementById('filterStartTime')?.value || '';
     const filterEndTime = document.getElementById('filterEndTime')?.value || '';
     const filterMinAppointments = document.getElementById('filterMinAppointments')?.value ? parseInt(document.getElementById('filterMinAppointments').value) : null;
     const filterAvailable = document.getElementById('filterAvailable')?.value.toLowerCase().trim() || '';
     
     let visibleCount = 0;
-    let hasActiveFilters = filterDoctor || filterSpecialization || filterDate || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
+    let hasActiveFilters = filterDoctor || filterSpecialization || dateMonthFilter || dateDayFilter || dateYearFilter || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
     
     rows.forEach(row => {
         const doctor = row.getAttribute('data-doctor') || '';
         const specialization = row.getAttribute('data-specialization') || '';
-        const date = row.getAttribute('data-date') || '';
+        const dateStr = row.getAttribute('data-date') || '';
         const startTime = row.getAttribute('data-start-time') || '';
         const endTime = row.getAttribute('data-end-time') || '';
         const maxAppointments = parseInt(row.getAttribute('data-max-appointments') || '0');
@@ -376,7 +447,30 @@ function filterTable() {
         
         const matchesDoctor = !filterDoctor || doctor.includes(filterDoctor);
         const matchesSpecialization = !filterSpecialization || specialization.includes(filterSpecialization);
-        const matchesDate = !filterDate || date === filterDate;
+        
+        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
+            if (dateStr) {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0];
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    
+                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
+                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
+                    const matchesYear = !dateYearFilter || year === dateYearFilter;
+                    
+                    matchesDate = matchesMonth && matchesDay && matchesYear;
+                } else {
+                    matchesDate = false;
+                }
+            } else {
+                matchesDate = false;
+            }
+        }
+        
         const matchesStartTime = !filterStartTime || startTime === filterStartTime;
         const matchesEndTime = !filterEndTime || endTime === filterEndTime;
         const matchesMinAppointments = filterMinAppointments === null || maxAppointments >= filterMinAppointments;
@@ -419,7 +513,9 @@ function filterTable() {
 function resetTableFilters() {
     document.getElementById('filterDoctor').value = '';
     document.getElementById('filterSpecialization').value = '';
-    document.getElementById('filterDate').value = '';
+    document.getElementById('filterDateMonth').value = '';
+    document.getElementById('filterDateDay').value = '';
+    document.getElementById('filterDateYear').value = '';
     document.getElementById('filterStartTime').value = '';
     document.getElementById('filterEndTime').value = '';
     document.getElementById('filterMinAppointments').value = '';
@@ -561,14 +657,7 @@ function closeViewModal() {
 
 // Initialize filter event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = ['filterDoctor', 'filterSpecialization', 'filterDate', 'filterStartTime', 'filterEndTime', 'filterMinAppointments', 'filterAvailable'];
-    filterInputs.forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
-        }
-    });
+    // Filters only apply when "Apply Filters" button is clicked
     
     // Add event listeners for edit buttons
     document.querySelectorAll('.edit-schedule-btn').forEach(btn => {
@@ -627,6 +716,48 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
             toggleBtn.style.color = 'white';
+        }
+        
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                if (filterValues.filterDoctor && document.getElementById('filterDoctor')) {
+                    document.getElementById('filterDoctor').value = filterValues.filterDoctor;
+                }
+                if (filterValues.filterSpecialization && document.getElementById('filterSpecialization')) {
+                    document.getElementById('filterSpecialization').value = filterValues.filterSpecialization;
+                }
+                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
+                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
+                }
+                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
+                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
+                }
+                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
+                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
+                }
+                if (filterValues.filterStartTime && document.getElementById('filterStartTime')) {
+                    document.getElementById('filterStartTime').value = filterValues.filterStartTime;
+                }
+                if (filterValues.filterEndTime && document.getElementById('filterEndTime')) {
+                    document.getElementById('filterEndTime').value = filterValues.filterEndTime;
+                }
+                if (filterValues.filterMinAppointments && document.getElementById('filterMinAppointments')) {
+                    document.getElementById('filterMinAppointments').value = filterValues.filterMinAppointments;
+                }
+                if (filterValues.filterAvailable && document.getElementById('filterAvailable')) {
+                    document.getElementById('filterAvailable').value = filterValues.filterAvailable;
+                }
+                // Apply the filters
+                filterTable();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
         }
     }
 });

@@ -338,7 +338,7 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['pat_first_name', 'pat_last_name', 'pat_email', 'pat_phone', 'pat_gender', 'pat_date_of_birth', 'created_at'];
+    $allowed_columns = ['pat_first_name', 'pat_last_name', 'pat_email', 'pat_phone', 'pat_gender', 'pat_date_of_birth', 'created_at', 'updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }
@@ -401,7 +401,7 @@ $stats = [
     'total' => 0,
     'total_this_month' => 0,
     'active' => 0,
-    'inactive' => 0
+    'with_appointments' => 0
 ];
 
 try {
@@ -414,14 +414,38 @@ try {
     $stats['total_this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
     // Active patients (patients with user accounts)
-    $stmt = $db->query("SELECT COUNT(*) as count FROM patients p INNER JOIN users u ON p.pat_id = u.pat_id");
+    $stmt = $db->query("SELECT COUNT(DISTINCT p.pat_id) as count FROM patients p INNER JOIN users u ON p.pat_id = u.pat_id");
     $stats['active'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Inactive patients (patients without user accounts)
-    $stmt = $db->query("SELECT COUNT(*) as count FROM patients p LEFT JOIN users u ON p.pat_id = u.pat_id WHERE u.user_id IS NULL");
-    $stats['inactive'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // Patients with appointments
+    $stmt = $db->query("SELECT COUNT(DISTINCT pat_id) as count FROM appointments");
+    $stats['with_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 } catch (PDOException $e) {
     // Keep default values
+}
+
+// Fetch most active patients (patients with most appointments)
+$most_active_patients = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            p.pat_id,
+            p.pat_first_name,
+            p.pat_middle_initial,
+            p.pat_last_name,
+            p.pat_email,
+            u.profile_picture_url,
+            COUNT(a.appointment_id) as appointment_count
+        FROM patients p
+        INNER JOIN appointments a ON p.pat_id = a.pat_id
+        LEFT JOIN users u ON p.pat_id = u.pat_id
+        GROUP BY p.pat_id, p.pat_first_name, p.pat_middle_initial, p.pat_last_name, p.pat_email, u.profile_picture_url
+        ORDER BY appointment_count DESC
+        LIMIT 10
+    ");
+    $most_active_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array
 }
 
 require_once __DIR__ . '/../../views/superadmin/patients.view.php';

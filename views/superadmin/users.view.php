@@ -72,10 +72,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Users
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -110,9 +116,40 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Joined
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Days</option>
+                        <?php for ($i = 1; $i <= 31; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Years</option>
+                        <?php 
+                        $current_year = (int)date('Y');
+                        for ($year = $current_year; $year >= 2020; $year--): 
+                        ?>
+                            <option value="<?= $year ?>"><?= $year ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -155,7 +192,16 @@
                         <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('created_at')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Date Created
+                            Date Joined
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated On
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
                                 <i class="fas fa-arrow-down"></i>
@@ -197,8 +243,9 @@
                             // Format phone number
                             $phone_display = !empty($user['phone_number']) ? htmlspecialchars($user['phone_number']) : 'N/A';
                             
-                            // Format date
+                            // Format dates
                             $date_created = !empty($user['created_at']) ? date('d M Y', strtotime($user['created_at'])) : 'N/A';
+                            $date_updated = !empty($user['updated_at']) ? date('d M Y', strtotime($user['updated_at'])) : 'N/A';
                             
                             // Get first letter for avatar
                             $firstLetter = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
@@ -227,6 +274,7 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($user['user_email']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $phone_display ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $date_created ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $date_updated ?></td>
                             <td style="padding: 1rem;">
                                 <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $roleColor ?>20; color: <?= $roleColor ?>;">
                                     <?= htmlspecialchars($role) ?>
@@ -1121,32 +1169,82 @@ function sortTable(column) {
 }
 
 // Table Filtering Functions
+function applyTableFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterName: document.getElementById('filterName')?.value || '',
+            filterEmail: document.getElementById('filterEmail')?.value || '',
+            filterPhone: document.getElementById('filterPhone')?.value || '',
+            filterRole: document.getElementById('filterRole')?.value || '',
+            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
+            filterDateDay: document.getElementById('filterDateDay')?.value || '',
+            filterDateYear: document.getElementById('filterDateYear')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterTable();
+}
+
 function filterTable() {
     const nameFilter = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
     const emailFilter = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
     const phoneFilter = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
     const roleFilter = document.getElementById('filterRole')?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById('filterDate')?.value || '';
+    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
+    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
+    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     
     const rows = document.querySelectorAll('tbody .table-row');
     const paginationContainer = document.getElementById('paginationContainer');
     let visibleCount = 0;
     
     // Check if any filters are active
-    const hasActiveFilters = nameFilter || emailFilter || phoneFilter || roleFilter || dateFilter;
+    const hasActiveFilters = nameFilter || emailFilter || phoneFilter || roleFilter || dateMonthFilter || dateDayFilter || dateYearFilter;
     
     rows.forEach(row => {
         const name = row.getAttribute('data-name') || '';
         const email = row.getAttribute('data-email') || '';
         const phone = row.getAttribute('data-phone') || '';
         const role = row.getAttribute('data-role') || '';
-        const date = row.getAttribute('data-date') || '';
+        const dateStr = row.getAttribute('data-date') || '';
         
         const matchesName = !nameFilter || name.includes(nameFilter);
         const matchesEmail = !emailFilter || email.includes(emailFilter);
         const matchesPhone = !phoneFilter || phone.includes(phoneFilter);
         const matchesRole = !roleFilter || role === roleFilter;
-        const matchesDate = !dateFilter || date === dateFilter;
+        
+        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
+            if (dateStr) {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0];
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    
+                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
+                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
+                    const matchesYear = !dateYearFilter || year === dateYearFilter;
+                    
+                    matchesDate = matchesMonth && matchesDay && matchesYear;
+                } else {
+                    matchesDate = false;
+                }
+            } else {
+                matchesDate = false;
+            }
+        }
         
         if (matchesName && matchesEmail && matchesPhone && matchesRole && matchesDate) {
             row.style.display = '';
@@ -1228,7 +1326,9 @@ function resetTableFilters() {
     document.getElementById('filterEmail').value = '';
     document.getElementById('filterPhone').value = '';
     document.getElementById('filterRole').value = '';
-    document.getElementById('filterDate').value = '';
+    document.getElementById('filterDateMonth').value = '';
+    document.getElementById('filterDateDay').value = '';
+    document.getElementById('filterDateYear').value = '';
     filterTable();
 }
 
@@ -1254,14 +1354,7 @@ function resetToPaginatedView() {
 
 // Initialize filtering
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterRole', 'filterDate'];
-    filterInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
-        }
-    });
+    // Filters only apply when "Apply Filters" button is clicked
     
     // Check if we're in all_results mode
     const url = new URL(window.location.href);
@@ -1271,6 +1364,42 @@ document.addEventListener('DOMContentLoaded', function() {
         if (filterBar && toggleBtn) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
+        }
+        
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                if (filterValues.filterName && document.getElementById('filterName')) {
+                    document.getElementById('filterName').value = filterValues.filterName;
+                }
+                if (filterValues.filterEmail && document.getElementById('filterEmail')) {
+                    document.getElementById('filterEmail').value = filterValues.filterEmail;
+                }
+                if (filterValues.filterPhone && document.getElementById('filterPhone')) {
+                    document.getElementById('filterPhone').value = filterValues.filterPhone;
+                }
+                if (filterValues.filterRole && document.getElementById('filterRole')) {
+                    document.getElementById('filterRole').value = filterValues.filterRole;
+                }
+                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
+                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
+                }
+                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
+                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
+                }
+                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
+                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
+                }
+                // Apply the filters
+                filterTable();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
         }
     }
     

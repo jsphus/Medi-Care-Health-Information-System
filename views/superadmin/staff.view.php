@@ -65,10 +65,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Staff
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -93,7 +99,14 @@
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
                     <i class="fas fa-briefcase" style="margin-right: 0.25rem;"></i>Position
                 </label>
-                <input type="text" id="filterPosition" class="filter-input" placeholder="Search position..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterPosition" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Positions</option>
+                    <?php if (!empty($filter_positions)): ?>
+                        <?php foreach ($filter_positions as $position): ?>
+                            <option value="<?= htmlspecialchars($position) ?>"><?= htmlspecialchars($position) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
@@ -109,7 +122,38 @@
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
                     <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Days</option>
+                        <?php for ($i = 1; $i <= 31; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Years</option>
+                        <?php 
+                        $current_year = (int)date('Y');
+                        for ($year = $current_year; $year >= 2020; $year--): 
+                        ?>
+                            <option value="<?= $year ?>"><?= $year ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -173,7 +217,16 @@
                         <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('created_at')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Date Registered
+                            Date Joined
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated On
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
                                 <i class="fas fa-arrow-down"></i>
@@ -188,7 +241,7 @@
                             data-name="<?= htmlspecialchars(strtolower(($member['staff_first_name'] ?? '') . ' ' . ($member['staff_last_name'] ?? ''))) ?>"
                             data-email="<?= htmlspecialchars(strtolower($member['staff_email'] ?? '')) ?>"
                             data-phone="<?= htmlspecialchars(strtolower($member['staff_phone'] ?? '')) ?>"
-                            data-position="<?= htmlspecialchars(strtolower($member['staff_position'] ?? '')) ?>"
+                            data-position="<?= htmlspecialchars($member['staff_position'] ?? '') ?>"
                             data-status="<?= htmlspecialchars(strtolower($member['staff_status'] ?? '')) ?>"
                             data-date="<?= !empty($member['created_at']) ? date('Y-m-d', strtotime($member['created_at'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
@@ -220,6 +273,7 @@
                                 </span>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['created_at'] ? date('d M Y', strtotime($member['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['updated_at'] ? date('d M Y', strtotime($member['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-staff-btn" 
@@ -708,15 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize filter event listeners
-    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterPosition', 'filterStatus', 'filterDate'];
-    filterInputs.forEach(id => {
-        const input = document.getElementById(id);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
-        }
-    });
+    // Filters only apply when "Apply Filters" button is clicked
     
     // Check if filters are active on page load
     const urlParams = new URLSearchParams(window.location.search);
@@ -728,6 +774,46 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
             toggleBtn.style.color = 'white';
+        }
+        
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                // Restore filter input values
+                if (filterValues.filterName && document.getElementById('filterName')) {
+                    document.getElementById('filterName').value = filterValues.filterName;
+                }
+                if (filterValues.filterEmail && document.getElementById('filterEmail')) {
+                    document.getElementById('filterEmail').value = filterValues.filterEmail;
+                }
+                if (filterValues.filterPhone && document.getElementById('filterPhone')) {
+                    document.getElementById('filterPhone').value = filterValues.filterPhone;
+                }
+                if (filterValues.filterPosition && document.getElementById('filterPosition')) {
+                    document.getElementById('filterPosition').value = filterValues.filterPosition;
+                }
+                if (filterValues.filterStatus && document.getElementById('filterStatus')) {
+                    document.getElementById('filterStatus').value = filterValues.filterStatus;
+                }
+                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
+                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
+                }
+                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
+                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
+                }
+                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
+                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
+                }
+                // Apply the filters
+                filterTable();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
         }
     }
 });
@@ -752,6 +838,33 @@ function sortTable(column) {
 }
 
 // Filtering Functions
+function applyTableFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterName: document.getElementById('filterName')?.value || '',
+            filterEmail: document.getElementById('filterEmail')?.value || '',
+            filterPhone: document.getElementById('filterPhone')?.value || '',
+            filterPosition: document.getElementById('filterPosition')?.value || '',
+            filterStatus: document.getElementById('filterStatus')?.value || '',
+            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
+            filterDateDay: document.getElementById('filterDateDay')?.value || '',
+            filterDateYear: document.getElementById('filterDateYear')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterTable();
+}
+
 function filterTable() {
     const tbody = document.getElementById('tableBody');
     if (!tbody) return;
@@ -760,12 +873,14 @@ function filterTable() {
     const filterName = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
     const filterEmail = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
     const filterPhone = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
-    const filterPosition = document.getElementById('filterPosition')?.value.toLowerCase().trim() || '';
+    const filterPosition = document.getElementById('filterPosition')?.value || '';
     const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
-    const filterDate = document.getElementById('filterDate')?.value || '';
+    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
+    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
+    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     
     let visibleCount = 0;
-    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterStatus || filterDate;
+    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterStatus || dateMonthFilter || dateDayFilter || dateYearFilter;
     
     rows.forEach(row => {
         const name = row.getAttribute('data-name') || '';
@@ -773,14 +888,36 @@ function filterTable() {
         const phone = row.getAttribute('data-phone') || '';
         const position = row.getAttribute('data-position') || '';
         const status = row.getAttribute('data-status') || '';
-        const date = row.getAttribute('data-date') || '';
+        const dateStr = row.getAttribute('data-date') || '';
         
         const matchesName = !filterName || name.includes(filterName);
         const matchesEmail = !filterEmail || email.includes(filterEmail);
         const matchesPhone = !filterPhone || phone.includes(filterPhone);
-        const matchesPosition = !filterPosition || position.includes(filterPosition);
+        const matchesPosition = !filterPosition || position === filterPosition;
         const matchesStatus = !filterStatus || status === filterStatus;
-        const matchesDate = !filterDate || date === filterDate;
+        
+        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
+            if (dateStr) {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0];
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    
+                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
+                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
+                    const matchesYear = !dateYearFilter || year === dateYearFilter;
+                    
+                    matchesDate = matchesMonth && matchesDay && matchesYear;
+                } else {
+                    matchesDate = false;
+                }
+            } else {
+                matchesDate = false;
+            }
+        }
         
         if (matchesName && matchesEmail && matchesPhone && matchesPosition && matchesStatus && matchesDate) {
             row.style.display = '';
@@ -822,7 +959,9 @@ function resetTableFilters() {
     document.getElementById('filterPhone').value = '';
     document.getElementById('filterPosition').value = '';
     document.getElementById('filterStatus').value = '';
-    document.getElementById('filterDate').value = '';
+    document.getElementById('filterDateMonth').value = '';
+    document.getElementById('filterDateDay').value = '';
+    document.getElementById('filterDateYear').value = '';
     
     filterTable();
     resetToPaginatedView();

@@ -72,10 +72,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Payments
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -451,6 +457,30 @@ function filterByCategory(category) {
 }
 
 // Table Filtering Functions
+function applyTableFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterPatient: document.getElementById('filterPatient')?.value || '',
+            filterAmountMin: document.getElementById('filterAmountMin')?.value || '',
+            filterAmountMax: document.getElementById('filterAmountMax')?.value || '',
+            filterMethod: document.getElementById('filterMethod')?.value || '',
+            filterDate: document.getElementById('filterDate')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterTable();
+}
+
 function filterTable() {
     const patientFilter = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
     const amountMin = parseFloat(document.getElementById('filterAmountMin')?.value) || 0;
@@ -525,15 +555,41 @@ function toggleTableFilters() {
 
 // Initialize filtering
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDate'];
-    filterInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
+    // Filters only apply when "Apply Filters" button is clicked
+    
+    // Check if we're in all_results mode and restore filters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('all_results') === '1') {
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                if (filterValues.filterPatient && document.getElementById('filterPatient')) {
+                    document.getElementById('filterPatient').value = filterValues.filterPatient;
+                }
+                if (filterValues.filterAmountMin && document.getElementById('filterAmountMin')) {
+                    document.getElementById('filterAmountMin').value = filterValues.filterAmountMin;
+                }
+                if (filterValues.filterAmountMax && document.getElementById('filterAmountMax')) {
+                    document.getElementById('filterAmountMax').value = filterValues.filterAmountMax;
+                }
+                if (filterValues.filterMethod && document.getElementById('filterMethod')) {
+                    document.getElementById('filterMethod').value = filterValues.filterMethod;
+                }
+                if (filterValues.filterDate && document.getElementById('filterDate')) {
+                    document.getElementById('filterDate').value = filterValues.filterDate;
+                }
+                // Apply the filters
+                filterTable();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
         }
-    });
-    filterTable();
+    }
 });
 
 // Table Sorting Function

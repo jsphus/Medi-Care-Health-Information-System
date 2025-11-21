@@ -25,30 +25,82 @@
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
             <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Patients</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;"><?= $stats['total'] ?? 0 ?></div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">All registered patients in the system</div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
             <span style="font-size: 0.875rem; color: var(--text-secondary);">New This Month</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total_this_month'] ?? 0 ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;"><?= $stats['total_this_month'] ?? 0 ?></div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Patients registered in the current month</div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
             <div style="width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;"></div>
             <span style="font-size: 0.875rem; color: var(--text-secondary);">Active</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;"><?= $stats['active'] ?? 0 ?></div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Patients with user accounts who can log in</div>
     </div>
     <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
         <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #9b59b6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Inactive</span>
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6;"></div>
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">With Appointments</span>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;"><?= $stats['with_appointments'] ?? 0 ?></div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Patients who have scheduled appointments</div>
     </div>
 </div>
+
+<!-- Most Active Patients Section -->
+<?php if (!empty($most_active_patients)): ?>
+<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Most Active Patients</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Patients with the most appointments</p>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+        <?php foreach ($most_active_patients as $index => $patient): ?>
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s;" 
+                 onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                 onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                <div style="position: relative; flex-shrink: 0;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <?php if (!empty($patient['profile_picture_url'])): ?>
+                            <img src="<?= htmlspecialchars($patient['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php else: ?>
+                            <?= strtoupper(substr($patient['pat_first_name'] ?? 'P', 0, 1)) ?>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($index < 3): ?>
+                        <div style="position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: <?= $index === 0 ? '#fbbf24' : ($index === 1 ? '#94a3b8' : '#cd7f32') ?>; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            <?= $index + 1 ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <?= htmlspecialchars($patient['pat_first_name'] . ' ' . ($patient['pat_middle_initial'] ? $patient['pat_middle_initial'] . '. ' : '') . $patient['pat_last_name']) ?>
+                    </div>
+                    <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <?= htmlspecialchars($patient['pat_email']) ?>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                            <i class="fas fa-calendar-check"></i>
+                            <span><?= $patient['appointment_count'] ?> <?= $patient['appointment_count'] == 1 ? 'appointment' : 'appointments' ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
@@ -72,10 +124,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Patients
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -102,10 +160,62 @@
                 </label>
                 <select id="filterGender" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
                     <option value="">All Genders</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <?php if (!empty($filter_genders)): ?>
+                        <?php foreach ($filter_genders as $gender): ?>
+                            <option value="<?= htmlspecialchars(strtolower($gender)) ?>"><?= htmlspecialchars(ucfirst($gender)) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-shield-alt" style="margin-right: 0.25rem;"></i>Insurance Provider
+                </label>
+                <select id="filterInsurance" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Providers</option>
+                    <?php if (!empty($filter_insurance_providers)): ?>
+                        <?php foreach ($filter_insurance_providers as $provider): ?>
+                            <option value="<?= htmlspecialchars($provider) ?>"><?= htmlspecialchars($provider) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered
+                </label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Days</option>
+                        <?php for ($i = 1; $i <= 31; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Years</option>
+                        <?php 
+                        $current_year = (int)date('Y');
+                        for ($year = $current_year; $year >= 2020; $year--): 
+                        ?>
+                            <option value="<?= $year ?>"><?= $year ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -179,6 +289,15 @@
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
+                        <th class="sortable <?= $current_sort === 'updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated On
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -189,6 +308,8 @@
                             data-email="<?= htmlspecialchars(strtolower($patient['pat_email'] ?? '')) ?>"
                             data-phone="<?= htmlspecialchars($patient['pat_phone'] ?? '') ?>"
                             data-gender="<?= htmlspecialchars(strtolower($patient['pat_gender'] ?? '')) ?>"
+                            data-insurance="<?= htmlspecialchars($patient['pat_insurance_provider'] ?? '') ?>"
+                            data-date="<?= !empty($patient['created_at']) ? date('Y-m-d', strtotime($patient['created_at'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
@@ -209,6 +330,7 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $patient['pat_gender'] ? htmlspecialchars(ucfirst($patient['pat_gender'])) : 'N/A' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $patient['pat_date_of_birth'] ? date('d M Y', strtotime($patient['pat_date_of_birth'])) : 'N/A' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $patient['created_at'] ? date('d M Y', strtotime($patient['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $patient['updated_at'] ? date('d M Y', strtotime($patient['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-patient-btn" 
@@ -967,6 +1089,10 @@ function filterTable() {
     const emailFilter = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
     const phoneFilter = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
     const genderFilter = document.getElementById('filterGender')?.value || '';
+    const insuranceFilter = document.getElementById('filterInsurance')?.value || '';
+    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
+    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
+    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     
     const rows = document.querySelectorAll('.table-row');
     let visibleCount = 0;
@@ -976,13 +1102,39 @@ function filterTable() {
         const email = row.getAttribute('data-email') || '';
         const phone = row.getAttribute('data-phone') || '';
         const gender = row.getAttribute('data-gender') || '';
+        const insurance = row.getAttribute('data-insurance') || '';
+        const dateStr = row.getAttribute('data-date') || '';
         
         const matchesName = !nameFilter || name.includes(nameFilter);
         const matchesEmail = !emailFilter || email.includes(emailFilter);
         const matchesPhone = !phoneFilter || phone.includes(phoneFilter);
-        const matchesGender = !genderFilter || gender === genderFilter;
+        const matchesGender = !genderFilter || gender === genderFilter.toLowerCase();
+        const matchesInsurance = !insuranceFilter || insurance === insuranceFilter;
         
-        if (matchesName && matchesEmail && matchesPhone && matchesGender) {
+        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
+            if (dateStr) {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0];
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    
+                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
+                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
+                    const matchesYear = !dateYearFilter || year === dateYearFilter;
+                    
+                    matchesDate = matchesMonth && matchesDay && matchesYear;
+                } else {
+                    matchesDate = false;
+                }
+            } else {
+                matchesDate = false;
+            }
+        }
+        
+        if (matchesName && matchesEmail && matchesPhone && matchesGender && matchesInsurance && matchesDate) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -990,7 +1142,7 @@ function filterTable() {
         }
     });
     
-    const hasActiveFilters = nameFilter || emailFilter || phoneFilter || genderFilter;
+    const hasActiveFilters = nameFilter || emailFilter || phoneFilter || genderFilter || insuranceFilter || dateMonthFilter || dateDayFilter || dateYearFilter;
     const tableBody = document.getElementById('tableBody');
     const noResultsMsg = document.getElementById('noResultsMessage');
     const paginationContainer = document.getElementById('paginationContainer');
@@ -1019,8 +1171,35 @@ function filterTable() {
     }
 }
 
+function applyTableFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterName: document.getElementById('filterName')?.value || '',
+            filterEmail: document.getElementById('filterEmail')?.value || '',
+            filterPhone: document.getElementById('filterPhone')?.value || '',
+            filterGender: document.getElementById('filterGender')?.value || '',
+            filterInsurance: document.getElementById('filterInsurance')?.value || '',
+            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
+            filterDateDay: document.getElementById('filterDateDay')?.value || '',
+            filterDateYear: document.getElementById('filterDateYear')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterTable();
+}
+
 function resetTableFilters() {
-    const inputs = ['filterName', 'filterEmail', 'filterPhone', 'filterGender'];
+    const inputs = ['filterName', 'filterEmail', 'filterPhone', 'filterGender', 'filterInsurance', 'filterDateMonth', 'filterDateDay', 'filterDateYear'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -1098,17 +1277,49 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
         }
+        
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                // Restore filter input values
+                if (filterValues.filterName && document.getElementById('filterName')) {
+                    document.getElementById('filterName').value = filterValues.filterName;
+                }
+                if (filterValues.filterEmail && document.getElementById('filterEmail')) {
+                    document.getElementById('filterEmail').value = filterValues.filterEmail;
+                }
+                if (filterValues.filterPhone && document.getElementById('filterPhone')) {
+                    document.getElementById('filterPhone').value = filterValues.filterPhone;
+                }
+                if (filterValues.filterGender && document.getElementById('filterGender')) {
+                    document.getElementById('filterGender').value = filterValues.filterGender;
+                }
+                if (filterValues.filterInsurance && document.getElementById('filterInsurance')) {
+                    document.getElementById('filterInsurance').value = filterValues.filterInsurance;
+                }
+                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
+                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
+                }
+                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
+                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
+                }
+                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
+                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
+                }
+                // Apply the filters
+                filterTable();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
+        }
     }
     
-    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterGender'];
-    filterInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
-        }
-    });
-    filterTable();
+    // Filters only apply when "Apply Filters" button is clicked
 });
 
 // Profile picture preview and management

@@ -65,10 +65,16 @@
             <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
                 <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Services
             </h3>
-            <button type="button" class="btn btn-sm" onclick="resetServiceFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
-                <i class="fas fa-redo"></i>
-                <span>Reset Filters</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyServiceFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetServiceFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
         </div>
         <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
             <div class="filter-control">
@@ -116,6 +122,43 @@
                     <?php endif; ?>
                 </select>
             </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                </label>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Days</option>
+                        <?php for ($i = 1; $i <= 31; $i++): ?>
+                            <option value="<?= $i ?>"><?= $i ?></option>
+                        <?php endfor; ?>
+                    </select>
+                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                        <option value="">All Years</option>
+                        <?php 
+                        $current_year = (int)date('Y');
+                        for ($year = $current_year; $year >= 2020; $year--): 
+                        ?>
+                            <option value="<?= $year ?>"><?= $year ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -144,6 +187,12 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Category
                         </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Created
+                        </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Updated
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -152,6 +201,7 @@
                         <tr class="service-row" 
                             data-service-name="<?= htmlspecialchars(strtolower($service['service_name'])) ?>"
                             data-description="<?= htmlspecialchars(strtolower($service['service_description'] ?? '')) ?>"
+                            data-date="<?= !empty($service['created_at']) ? date('Y-m-d', strtotime($service['created_at'])) : '' ?>"
                             data-price="<?= floatval($service['service_price'] ?? 0) ?>"
                             data-duration="<?= intval($service['service_duration_minutes'] ?? 30) ?>"
                             data-category="<?= htmlspecialchars($service['service_category'] ?? '') ?>"
@@ -165,6 +215,8 @@
                             <td style="padding: 1rem; color: var(--text-secondary); font-weight: 600;">₱<?= number_format($service['service_price'] ?? 0, 2) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($service['service_duration_minutes'] ?? 30) ?> min</td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($service['service_category'] ?? 'N/A') ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $service['created_at'] ? date('d M Y', strtotime($service['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $service['updated_at'] ? date('d M Y', strtotime($service['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-service-btn" 
@@ -344,6 +396,35 @@
 
 <script>
 // Dynamic Filtering System for Services Table
+function applyServiceFilters() {
+    // Ensure we're in all_results mode for filtering to work properly
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store filter values before reloading
+        const filterValues = {
+            filterServiceName: document.getElementById('filterServiceName')?.value || '',
+            filterDescription: document.getElementById('filterDescription')?.value || '',
+            filterPriceMin: document.getElementById('filterPriceMin')?.value || '',
+            filterPriceMax: document.getElementById('filterPriceMax')?.value || '',
+            filterDurationMin: document.getElementById('filterDurationMin')?.value || '',
+            filterDurationMax: document.getElementById('filterDurationMax')?.value || '',
+            filterCategory: document.getElementById('filterCategory')?.value || '',
+            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
+            filterDateDay: document.getElementById('filterDateDay')?.value || '',
+            filterDateYear: document.getElementById('filterDateYear')?.value || ''
+        };
+        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
+        // Load all results first, then apply filters after page reloads
+        loadAllResults();
+        return;
+    }
+    
+    // Apply filters if already in all_results mode
+    filterServices();
+}
+
 function filterServices() {
     const serviceNameFilter = document.getElementById('filterServiceName').value.toLowerCase().trim();
     const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase().trim();
@@ -352,6 +433,9 @@ function filterServices() {
     const durationMin = parseInt(document.getElementById('filterDurationMin').value) || 0;
     const durationMax = parseInt(document.getElementById('filterDurationMax').value) || Infinity;
     const categoryFilter = document.getElementById('filterCategory').value;
+    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
+    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
+    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     
     const rows = document.querySelectorAll('.service-row');
     let visibleCount = 0;
@@ -362,6 +446,7 @@ function filterServices() {
         const price = parseFloat(row.getAttribute('data-price')) || 0;
         const duration = parseInt(row.getAttribute('data-duration')) || 0;
         const category = row.getAttribute('data-category') || '';
+        const dateStr = row.getAttribute('data-date') || '';
         
         // Apply filters
         const matchesServiceName = !serviceNameFilter || serviceName.includes(serviceNameFilter);
@@ -370,8 +455,31 @@ function filterServices() {
         const matchesDuration = duration >= durationMin && duration <= durationMax;
         const matchesCategory = !categoryFilter || category === categoryFilter;
         
+        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
+        let matchesDate = true;
+        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
+            if (dateStr) {
+                const dateParts = dateStr.split('-');
+                if (dateParts.length === 3) {
+                    const year = dateParts[0];
+                    const month = dateParts[1];
+                    const day = dateParts[2];
+                    
+                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
+                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
+                    const matchesYear = !dateYearFilter || year === dateYearFilter;
+                    
+                    matchesDate = matchesMonth && matchesDay && matchesYear;
+                } else {
+                    matchesDate = false;
+                }
+            } else {
+                matchesDate = false;
+            }
+        }
+        
         // Show row if all filters match
-        if (matchesServiceName && matchesDescription && matchesPrice && matchesDuration && matchesCategory) {
+        if (matchesServiceName && matchesDescription && matchesPrice && matchesDuration && matchesCategory && matchesDate) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -385,7 +493,7 @@ function filterServices() {
                              document.getElementById('filterPriceMax').value ||
                              document.getElementById('filterDurationMin').value ||
                              document.getElementById('filterDurationMax').value ||
-                             categoryFilter;
+                             categoryFilter || dateMonthFilter || dateDayFilter || dateYearFilter;
     
     const tableBody = document.getElementById('servicesTableBody');
     const noResultsMsg = document.getElementById('noResultsMessage');
@@ -427,6 +535,9 @@ function resetServiceFilters() {
     document.getElementById('filterDurationMin').value = '';
     document.getElementById('filterDurationMax').value = '';
     document.getElementById('filterCategory').value = '';
+    document.getElementById('filterDateMonth').value = '';
+    document.getElementById('filterDateDay').value = '';
+    document.getElementById('filterDateYear').value = '';
     filterServices(); // This will restore pagination visibility
 }
 
@@ -459,14 +570,57 @@ document.addEventListener('DOMContentLoaded', function() {
     
     filterInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', filterServices);
-            input.addEventListener('change', filterServices);
-        }
+        // Filters only apply when "Apply Filters" button is clicked
     });
     
-    // Initial filter check (in case page loads with filters)
-    filterServices();
+    // Check if we're in all_results mode and restore filters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('all_results') === '1') {
+        // Restore filter values from sessionStorage and apply them
+        const pendingFilters = sessionStorage.getItem('pendingFilters');
+        if (pendingFilters) {
+            try {
+                const filterValues = JSON.parse(pendingFilters);
+                if (filterValues.filterServiceName && document.getElementById('filterServiceName')) {
+                    document.getElementById('filterServiceName').value = filterValues.filterServiceName;
+                }
+                if (filterValues.filterDescription && document.getElementById('filterDescription')) {
+                    document.getElementById('filterDescription').value = filterValues.filterDescription;
+                }
+                if (filterValues.filterPriceMin && document.getElementById('filterPriceMin')) {
+                    document.getElementById('filterPriceMin').value = filterValues.filterPriceMin;
+                }
+                if (filterValues.filterPriceMax && document.getElementById('filterPriceMax')) {
+                    document.getElementById('filterPriceMax').value = filterValues.filterPriceMax;
+                }
+                if (filterValues.filterDurationMin && document.getElementById('filterDurationMin')) {
+                    document.getElementById('filterDurationMin').value = filterValues.filterDurationMin;
+                }
+                if (filterValues.filterDurationMax && document.getElementById('filterDurationMax')) {
+                    document.getElementById('filterDurationMax').value = filterValues.filterDurationMax;
+                }
+                if (filterValues.filterCategory && document.getElementById('filterCategory')) {
+                    document.getElementById('filterCategory').value = filterValues.filterCategory;
+                }
+                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
+                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
+                }
+                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
+                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
+                }
+                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
+                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
+                }
+                // Apply the filters
+                filterServices();
+                // Clear the stored filters
+                sessionStorage.removeItem('pendingFilters');
+            } catch (e) {
+                console.error('Error restoring filters:', e);
+                sessionStorage.removeItem('pendingFilters');
+            }
+        }
+    }
 });
 
 function openAddServiceModal() {

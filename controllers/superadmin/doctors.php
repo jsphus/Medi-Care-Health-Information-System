@@ -327,7 +327,7 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['doc_first_name', 'doc_last_name', 'doc_email', 'doc_phone', 'doc_specialization_id', 'doc_license_number', 'doc_consultation_fee', 'doc_status', 'created_at'];
+    $allowed_columns = ['doc_first_name', 'doc_last_name', 'doc_email', 'doc_phone', 'doc_specialization_id', 'doc_license_number', 'doc_consultation_fee', 'doc_status', 'created_at', 'updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }
@@ -371,22 +371,31 @@ try {
     $specializations = [];
 }
 
-// Fetch active doctors with profile pictures for doctors cards
-$active_doctors = [];
+// Fetch most active doctors (doctors with most appointments)
+$most_active_doctors = [];
 try {
     $stmt = $db->query("
-        SELECT d.*, s.spec_name, u.profile_picture_url
+        SELECT 
+            d.doc_id,
+            d.doc_first_name,
+            d.doc_middle_initial,
+            d.doc_last_name,
+            d.doc_email,
+            s.spec_name,
+            u.profile_picture_url,
+            COUNT(a.appointment_id) as appointment_count
         FROM doctors d
+        INNER JOIN appointments a ON d.doc_id = a.doc_id
         LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
         LEFT JOIN users u ON d.doc_id = u.doc_id
-        WHERE d.doc_status = 'active'
-        ORDER BY d.doc_first_name, d.doc_last_name
-        LIMIT 12
+        GROUP BY d.doc_id, d.doc_first_name, d.doc_middle_initial, d.doc_last_name, d.doc_email, s.spec_name, u.profile_picture_url
+        ORDER BY appointment_count DESC
+        LIMIT 10
     ");
-    $active_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $most_active_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     // Keep empty array if error
-    $active_doctors = [];
+    $most_active_doctors = [];
 }
 
 // Include the view

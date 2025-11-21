@@ -506,7 +506,7 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['user_email', 'created_at', 'full_name', 'role'];
+    $allowed_columns = ['user_email', 'created_at', 'updated_at', 'full_name', 'role'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }
@@ -554,6 +554,7 @@ try {
             u.staff_id, 
             u.doc_id, 
             u.created_at,
+            u.updated_at,
             u.profile_picture_url,
             COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
                      s.staff_first_name || ' ' || s.staff_last_name,

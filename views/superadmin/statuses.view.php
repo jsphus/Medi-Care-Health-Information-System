@@ -69,6 +69,12 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Appointments
                         </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Created
+                        </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Date Updated
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -87,6 +93,8 @@
                                 </span>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= isset($status['appointment_count']) ? $status['appointment_count'] : 0 ?> appointment(s)</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $status['created_at'] ? date('d M Y', strtotime($status['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $status['updated_at'] ? date('d M Y', strtotime($status['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-status-btn" 
