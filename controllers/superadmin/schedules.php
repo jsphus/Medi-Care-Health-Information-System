@@ -365,15 +365,36 @@ try {
     $today_schedules = $db->fetchAll("
         SELECT s.*, 
                d.doc_first_name, d.doc_last_name,
-               sp.spec_name
+               sp.spec_name,
+               u.profile_picture_url
         FROM schedules s
         LEFT JOIN doctors d ON s.doc_id = d.doc_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN users u ON d.doc_id = u.doc_id
         WHERE s.schedule_date = :today
         ORDER BY s.start_time ASC
     ", ['today' => $today]);
 } catch (PDOException $e) {
     $today_schedules = [];
+}
+
+// Get tomorrow's schedules
+try {
+    $tomorrow = date('Y-m-d', strtotime('+1 day'));
+    $tomorrow_schedules = $db->fetchAll("
+        SELECT s.*, 
+               d.doc_first_name, d.doc_last_name,
+               sp.spec_name,
+               u.profile_picture_url
+        FROM schedules s
+        LEFT JOIN doctors d ON s.doc_id = d.doc_id
+        LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN users u ON d.doc_id = u.doc_id
+        WHERE s.schedule_date = :tomorrow
+        ORDER BY s.start_time ASC
+    ", ['tomorrow' => $tomorrow]);
+} catch (PDOException $e) {
+    $tomorrow_schedules = [];
 }
 
 // Fetch all doctors for dropdown

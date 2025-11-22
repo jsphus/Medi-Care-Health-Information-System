@@ -296,6 +296,20 @@ function viewRecord(record) {
         }
     };
     
+    // Helper function to format time
+    const formatTime = (timeString) => {
+        if (!timeString) return 'N/A';
+        try {
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        } catch (e) {
+            return timeString;
+        }
+    };
+    
     // Helper function to get profile picture or initials
     const getProfilePicture = (profilePic, firstName, lastName) => {
         if (profilePic) {
@@ -308,17 +322,25 @@ function viewRecord(record) {
     const patientPic = getProfilePicture(record.patient_profile_picture, record.pat_first_name, record.pat_last_name);
     const doctorPic = getProfilePicture(record.doctor_profile_picture, record.doc_first_name, record.doc_last_name);
     
+    // Format full names
+    const patientName = `${record.pat_first_name || ''} ${record.pat_middle_initial ? record.pat_middle_initial + '.' : ''} ${record.pat_last_name || ''}`.trim();
+    const doctorName = `Dr. ${record.doc_first_name || ''} ${record.doc_middle_initial ? record.doc_middle_initial + '.' : ''} ${record.doc_last_name || ''}`.trim();
+    
     const content = `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="margin-bottom: 1rem; color: var(--primary-blue); font-size: 1.1rem;">Record Information</h3>
+        <!-- Appointment Details Section -->
+        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid var(--primary-blue);">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-blue); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-calendar-check"></i>
+                Appointment Details
+            </h3>
             <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 2px solid var(--border-color);">
                         ${patientPic}
                     </div>
                     <div>
-                        <p style="margin: 0.25rem 0; font-weight: 600;">Patient</p>
-                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">${record.pat_first_name} ${record.pat_last_name}</p>
+                        <p style="margin: 0.25rem 0; font-weight: 600; color: var(--text-primary);">Patient</p>
+                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">${patientName}</p>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem;">
@@ -326,50 +348,65 @@ function viewRecord(record) {
                         ${doctorPic}
                     </div>
                     <div>
-                        <p style="margin: 0.25rem 0; font-weight: 600;">Doctor</p>
-                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">Dr. ${record.doc_first_name} ${record.doc_last_name}</p>
+                        <p style="margin: 0.25rem 0; font-weight: 600; color: var(--text-primary);">Doctor</p>
+                        <p style="margin: 0.25rem 0; color: var(--text-secondary);">${doctorName}</p>
                     </div>
                 </div>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div>
-                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.med_rec_id}</p>
-                    <p style="margin: 0.5rem 0;"><strong>Visit Date:</strong> ${record.med_rec_visit_date || 'N/A'}</p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Appointment ID:</strong> <span style="color: var(--text-secondary);">${record.appointment_id || 'N/A'}</span></p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Date:</strong> <span style="color: var(--text-secondary);">${record.appointment_date ? new Date(record.appointment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span></p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Time:</strong> <span style="color: var(--text-secondary);">${formatTime(record.appointment_time)}</span></p>
                 </div>
                 <div>
-                    <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appointment_id || 'N/A'}</p>
-                    <p style="margin: 0.5rem 0;"><strong>Appointment Date:</strong> ${record.appointment_date || 'N/A'}</p>
-                    ${record.appointment_time ? `<p style="margin: 0.5rem 0;"><strong>Appointment Time:</strong> ${record.appointment_time}</p>` : ''}
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Service:</strong> <span style="color: var(--text-secondary);">${record.service_name || 'N/A'}</span></p>
+                    ${record.service_price ? `<p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Service Price:</strong> <span style="color: var(--text-secondary);">₱${parseFloat(record.service_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>` : ''}
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Duration:</strong> <span style="color: var(--text-secondary);">${record.appointment_duration || 30} minutes</span></p>
+                </div>
+                <div>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Status:</strong> 
+                        <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500; background: ${record.status_color ? record.status_color + '20' : '#3b82f620'}; color: ${record.status_color || '#3b82f6'};">
+                            ${record.status_name || 'N/A'}
+                        </span>
+                    </p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Created:</strong> <span style="color: var(--text-secondary);">${formatDate(record.appointment_created_at)}</span></p>
                 </div>
             </div>
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 2rem; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
-                    <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.med_rec_created_at)}</p>
-                    </div>
+            ${record.appointment_notes ? `
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Appointment Notes:</strong></p>
+                <p style="white-space: pre-wrap; margin: 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem; padding: 0.75rem; background: white; border-radius: 4px;">${record.appointment_notes}</p>
+            </div>
+            ` : ''}
+        </div>
+        
+        <!-- Medical Record Details Section -->
+        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #10b981;">
+            <h3 style="margin-bottom: 1rem; color: #10b981; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-file-medical"></i>
+                Medical Record Details
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Record ID:</strong> <span style="color: var(--text-secondary);">#${record.med_rec_id || 'N/A'}</span></p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Visit Date:</strong> <span style="color: var(--text-secondary);">${record.med_rec_visit_date ? new Date(record.med_rec_visit_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span></p>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
-                    <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.med_rec_updated_at)}</p>
-                    </div>
+                <div>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Created:</strong> <span style="color: var(--text-secondary);">${formatDate(record.med_rec_created_at)}</span></p>
+                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Updated:</strong> <span style="color: var(--text-secondary);">${formatDate(record.med_rec_updated_at)}</span></p>
                 </div>
             </div>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Diagnosis</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_diagnosis || 'N/A'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Prescription</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_prescription || 'None'}</p>
+            
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; font-weight: 600;">Diagnosis</h4>
+                <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary); padding: 0.75rem; background: white; border-radius: 4px; border: 1px solid var(--border-color);">${record.med_rec_diagnosis || 'N/A'}</p>
+            </div>
+            
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 0.75rem; color: var(--text-primary); font-size: 1rem; font-weight: 600;">Prescription</h4>
+                <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary); padding: 0.75rem; background: white; border-radius: 4px; border: 1px solid var(--border-color);">${record.med_rec_prescription || 'None'}</p>
+            </div>
         </div>
     `;
     document.getElementById('viewContent').innerHTML = content;

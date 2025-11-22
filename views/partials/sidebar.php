@@ -143,19 +143,23 @@ function getIcon($emoji) {
 $menus = [
     'superadmin' => [
         ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/superadmin/dashboard'],
-        ['icon' => '👥', 'label' => 'Users', 'url' => '/superadmin/users'],
+        ['type' => 'separator'],
+        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/superadmin/appointments'],
+        ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/superadmin/medical-records'],
+        ['type' => 'separator'],
         ['icon' => '🏥', 'label' => 'Patients', 'url' => '/superadmin/patients'],
         ['icon' => '👨‍⚕️', 'label' => 'Doctors', 'url' => '/superadmin/doctors'],
         ['icon' => '👔', 'label' => 'Staff', 'url' => '/superadmin/staff'],
+        ['icon' => '👥', 'label' => 'Users', 'url' => '/superadmin/users'],
+        ['type' => 'separator'],
+        ['icon' => '💵', 'label' => 'Payments', 'url' => '/superadmin/payments'],
+        ['icon' => '💳', 'label' => 'Payment Methods', 'url' => '/superadmin/payment-methods'],
+        ['icon' => '💰', 'label' => 'Payment Statuses', 'url' => '/superadmin/payment-statuses'],
+        ['type' => 'separator'],
+        ['icon' => '🔬', 'label' => 'Services', 'url' => '/superadmin/services'],
         ['icon' => '🎓', 'label' => 'Specializations', 'url' => '/superadmin/specializations'],
         ['icon' => '🗓️', 'label' => 'Schedules', 'url' => '/superadmin/schedules'],
         ['icon' => '📋', 'label' => 'Statuses', 'url' => '/superadmin/statuses'],
-        ['icon' => '🔬', 'label' => 'Services', 'url' => '/superadmin/services'],
-        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/superadmin/appointments'],
-        ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/superadmin/medical-records'],
-        ['icon' => '💳', 'label' => 'Payment Methods', 'url' => '/superadmin/payment-methods'],
-        ['icon' => '💰', 'label' => 'Payment Statuses', 'url' => '/superadmin/payment-statuses'],
-        ['icon' => '💵', 'label' => 'Payments', 'url' => '/superadmin/payments'],
     ],
     'staff' => [
         ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/staff/dashboard'],
@@ -179,8 +183,6 @@ $menus = [
         ['icon' => '🏠', 'label' => 'Dashboard', 'url' => '/patient/dashboard'],
         ['icon' => '📅', 'label' => 'My Appointments', 'url' => '/patient/appointments'],
         ['icon' => '📖', 'label' => 'Book', 'url' => '/patient/book'],
-        ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/patient/medical-records'],
-        ['icon' => '💳', 'label' => 'Payments', 'url' => '/patient/payments'],
         ['icon' => '🔔', 'label' => 'Notifications', 'url' => '/patient/notifications'],
     ],
 ];
@@ -212,23 +214,27 @@ $currentPath = $_SERVER['REQUEST_URI'];
     <!-- Menu Items -->
     <div class="sidebar-menu">
         <?php foreach ($currentMenu as $item): ?>
-            <?php 
-            // Remove query string for path comparison
-            $pathWithoutQuery = strtok($currentPath, '?');
-            
-            // For appointments, check if path starts with /doctor/appointments (for today, overview, future, previous)
-            if ($item['url'] === '/doctor/appointments/today') {
-                $isActive = strpos($pathWithoutQuery, '/doctor/appointments') !== false;
-            } else {
-                // For other menu items, check for exact match or path starts with item URL
-                $isActive = $pathWithoutQuery === $item['url'] || strpos($pathWithoutQuery, $item['url'] . '/') === 0;
-            }
-            ?>
-            <a href="<?= $item['url'] ?>" class="menu-item-modern <?= $isActive ? 'active' : '' ?>" 
-               data-tooltip="<?= htmlspecialchars($item['label']) ?>">
-                <i class="<?= getIcon($item['icon']) ?>"></i>
-                <span class="menu-label"><?= htmlspecialchars($item['label']) ?></span>
-            </a>
+            <?php if (isset($item['type']) && $item['type'] === 'separator'): ?>
+                <div class="menu-separator"></div>
+            <?php else: ?>
+                <?php 
+                // Remove query string for path comparison
+                $pathWithoutQuery = strtok($currentPath, '?');
+                
+                // For appointments, check if path starts with /doctor/appointments (for today, overview, future, previous)
+                if ($item['url'] === '/doctor/appointments/today') {
+                    $isActive = strpos($pathWithoutQuery, '/doctor/appointments') !== false;
+                } else {
+                    // For other menu items, check for exact match or path starts with item URL
+                    $isActive = $pathWithoutQuery === $item['url'] || strpos($pathWithoutQuery, $item['url'] . '/') === 0;
+                }
+                ?>
+                <a href="<?= $item['url'] ?>" class="menu-item-modern <?= $isActive ? 'active' : '' ?>" 
+                   data-tooltip="<?= htmlspecialchars($item['label']) ?>">
+                    <i class="<?= getIcon($item['icon']) ?>"></i>
+                    <span class="menu-label"><?= htmlspecialchars($item['label']) ?></span>
+                </a>
+            <?php endif; ?>
         <?php endforeach; ?>
     </div>
     
@@ -376,6 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sidebarSearch')?.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
         const menuItems = document.querySelectorAll('.menu-item-modern');
+        const separators = document.querySelectorAll('.menu-separator');
         
         menuItems.forEach(item => {
             const label = item.querySelector('.menu-label')?.textContent.toLowerCase() || '';
@@ -384,6 +391,11 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 item.style.display = searchTerm ? 'none' : 'flex';
             }
+        });
+        
+        // Hide separators when searching
+        separators.forEach(separator => {
+            separator.style.display = searchTerm ? 'none' : 'block';
         });
     });
     

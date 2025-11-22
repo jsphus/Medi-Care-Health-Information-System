@@ -59,14 +59,19 @@ try {
     $sql = "
         SELECT mr.*, 
                a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
-               p.pat_first_name, p.pat_last_name,
-               d.doc_first_name, d.doc_last_name,
+               a.appointment_notes, a.appointment_duration, a.created_at as appointment_created_at,
+               p.pat_first_name, p.pat_last_name, p.pat_middle_initial,
+               d.doc_first_name, d.doc_last_name, d.doc_middle_initial,
+               s.status_name, s.status_color,
+               sv.service_name, sv.service_price,
                up.profile_picture_url as patient_profile_picture,
                ud.profile_picture_url as doctor_profile_picture
         FROM medical_records mr
         JOIN appointments a ON mr.appt_id = a.appointment_id
         JOIN patients p ON a.pat_id = p.pat_id
         JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN appointment_statuses s ON a.status_id = s.status_id
+        LEFT JOIN services sv ON a.service_id = sv.service_id
         LEFT JOIN users up ON up.pat_id = p.pat_id
         LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause

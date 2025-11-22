@@ -415,22 +415,6 @@
             </div>
         </div>
         
-        <div class="kpi-card">
-            <div class="kpi-label">Total Payments</div>
-            <div class="kpi-value">₱<?= number_format($stats['total_payments'], 0) ?></div>
-            <div class="kpi-trend-text" style="margin-top: 0.5rem; color: #6b7280;">
-                All time payments
-            </div>
-        </div>
-        
-        <div class="kpi-card">
-            <div class="kpi-label">Pending Payments</div>
-            <div class="kpi-value"><?= number_format($stats['pending_payments']) ?></div>
-            <div class="kpi-trend negative">
-                <i class="fas fa-clock"></i>
-                <span class="kpi-trend-text">Awaiting payment</span>
-            </div>
-        </div>
     </div>
 
     <!-- Upcoming Appointments -->
@@ -485,99 +469,6 @@
 
     <!-- Bottom Row -->
     <div class="bottom-grid">
-        <!-- Recent Medical Records -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <div>
-                    <h2 class="chart-title">Recent Medical Records</h2>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                        Total: <?= number_format($stats['completed_appointments'] ?? 0) ?> 
-                        <span style="color: #10b981; margin-left: 0.5rem;">
-                            <i class="fas fa-file-medical"></i> Records
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <?php if (empty($recent_records)): ?>
-                <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                    <i class="fas fa-file-medical" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                    <div>No medical records yet</div>
-                </div>
-            <?php else: ?>
-                <div class="records-list">
-                    <?php foreach ($recent_records as $record): ?>
-                        <?php
-                        $docInitial = strtoupper(substr($record['doc_first_name'] ?? 'D', 0, 1));
-                        $docName = htmlspecialchars(formatFullName($record['doc_first_name'] ?? '', $record['doc_middle_initial'] ?? null, $record['doc_last_name'] ?? ''));
-                        $recordDate = isset($record['record_date']) ? date('M j, Y', strtotime($record['record_date'])) : 'N/A';
-                        ?>
-                        <div class="record-item" onclick="window.location.href='/patient/medical-records?view=<?= $record['record_id'] ?>'" style="cursor: pointer;">
-                            <div class="record-avatar" style="overflow: hidden;">
-                                <?php if (!empty($record['doctor_profile_picture'])): ?>
-                                    <img src="<?= htmlspecialchars($record['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
-                                <?php else: ?>
-                                    <?= $docInitial ?>
-                                <?php endif; ?>
-                            </div>
-                            <div class="record-info">
-                                <div class="record-doctor-name">Dr. <?= $docName ?></div>
-                                <div class="record-date-info">
-                                    <i class="fas fa-calendar"></i> <?= $recordDate ?>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <a href="/patient/medical-records" class="view-all-btn">View All</a>
-            <?php endif; ?>
-        </div>
-        
-        <!-- Recent Payments -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <div>
-                    <h2 class="chart-title">Recent Payments</h2>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
-                        Total: ₱<?= number_format($stats['total_payments'], 0) ?>
-                    </div>
-                </div>
-            </div>
-            <?php if (empty($recent_payments)): ?>
-                <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                    <i class="fas fa-credit-card" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                    <div>No payment history</div>
-                </div>
-            <?php else: ?>
-                <div class="payments-list">
-                    <?php foreach ($recent_payments as $payment): ?>
-                        <?php
-                        $statusName = strtolower($payment['status_name'] ?? 'pending');
-                        $statusColor = $payment['status_color'] ?? '#f59e0b';
-                        $paymentDate = isset($payment['payment_date']) ? date('M j, Y', strtotime($payment['payment_date'])) : 'N/A';
-                        $methodName = htmlspecialchars($payment['method_name'] ?? 'N/A');
-                        ?>
-                        <div class="payment-item">
-                            <div class="payment-avatar">₱</div>
-                            <div class="payment-info">
-                                <div class="payment-amount">₱<?= number_format($payment['payment_amount'], 2) ?></div>
-                                <div class="payment-date-info">
-                                    <i class="fas fa-calendar"></i> <?= $paymentDate ?>
-                                    <?php if ($methodName !== 'N/A'): ?>
-                                        • <i class="fas fa-credit-card"></i> <?= $methodName ?>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <span class="appointment-status" style="background: <?= $statusColor ?>20; color: <?= $statusColor ?>;">
-                                <?= htmlspecialchars($payment['status_name'] ?? 'Pending') ?>
-                            </span>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-                <a href="/patient/payments" class="view-all-btn">View All</a>
-            <?php endif; ?>
-        </div>
-        
         <!-- Quick Actions -->
         <div class="chart-card">
             <div class="chart-header">
@@ -611,27 +502,6 @@
                     <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
                 </a>
                 
-                <a href="/patient/medical-records" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; transition: background 0.2s; cursor: pointer; text-decoration: none; color: #1f2937; border: 1px solid #e5e7eb;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #8b5cf6; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                        <i class="fas fa-file-medical"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.125rem;">Medical Records</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">View health history</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
-                </a>
-                
-                <a href="/patient/payments" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 0.5rem; transition: background 0.2s; cursor: pointer; text-decoration: none; color: #1f2937; border: 1px solid #e5e7eb;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem;">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 0.875rem; font-weight: 600; color: #1f2937; margin-bottom: 0.125rem;">Payments</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">View payment history</div>
-                    </div>
-                    <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
-                </a>
             </div>
         </div>
     </div>

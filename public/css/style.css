@@ -286,6 +286,17 @@ body {
     color: #1a1a2e;
 }
 
+/* Menu Separator */
+.menu-separator {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0.75rem 1rem;
+}
+
+.sidebar-modern.collapsed .menu-separator {
+    margin: 0.75rem 0.5rem;
+}
+
 /* Menu Tooltip */
 .menu-tooltip {
     position: fixed;

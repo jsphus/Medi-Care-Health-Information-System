@@ -42,17 +42,12 @@ $success = '';
 $appointmentModel = new Appointment();
 $patientModel = new Patient();
 
-// Check for success message from redirect
 if (isset($_GET['success'])) {
     if ($_GET['success'] === 'cancelled') {
         $success = 'Appointment cancelled successfully';
-    } elseif ($_GET['success'] === 'rescheduled') {
-        $appointment_id = isset($_GET['id']) ? sanitize($_GET['id']) : '';
-        $success = "Appointment rescheduled successfully! Your appointment ID is: <strong>$appointment_id</strong>.";
     }
 }
 
-// Handle appointment cancellation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel') {
     $appointment_id = sanitize($_POST['appointment_id'] ?? '');
     
@@ -62,11 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $cancelResult = $appointmentModel->cancelForPatient($appointment_id, $patient_id);
 
         if ($cancelResult['success']) {
-            $redirectUrl = '/patient/appointments';
-            if (isset($_GET['tab'])) {
-                $redirectUrl .= '/' . sanitize($_GET['tab']);
-            }
-            header('Location: ' . $redirectUrl . '?success=cancelled');
+            header('Location: /patient/appointments/today?success=cancelled');
             exit;
         }
 
@@ -74,50 +65,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Get patient info
 $patient = $patientModel->getById($patient_id);
 if (!$patient) {
     $error = 'Failed to fetch patient info.';
 }
 
-// Handle search and filters
 $search_query = isset($_GET['search']) ? sanitize($_GET['search']) : '';
 $filter_status = isset($_GET['status']) ? (int)$_GET['status'] : null;
 
-// Get all appointments data
 $appointmentData = $appointmentModel->getForPatient($patient_id, [
     'search' => $search_query,
     'status' => $filter_status
 ]);
 
-$all_appointments = $appointmentData['all'];
-$upcoming_appointments = $appointmentData['upcoming'];
-$past_appointments = $appointmentData['past'];
-
-// Get today's appointments
 $today = date('Y-m-d');
-$today_appointments = array_filter($all_appointments, function($apt) use ($today) {
+$today_appointments = array_filter($appointmentData['all'], function($apt) use ($today) {
     return $apt['appointment_date'] === $today;
 });
 $today_appointments = array_values($today_appointments);
 
-// Sort today's appointments by time
 usort($today_appointments, function($a, $b) {
     $timeA = isset($a['appointment_time']) ? strtotime($a['appointment_time']) : 0;
     $timeB = isset($b['appointment_time']) ? strtotime($b['appointment_time']) : 0;
     return $timeA <=> $timeB;
 });
 
-// Get next appointment
-$next_appointment = null;
-if (!empty($upcoming_appointments)) {
-    $next_appointment = $upcoming_appointments[0];
-}
+$all_appointments = $appointmentData['all'];
+$upcoming_appointments = $appointmentData['upcoming'];
+$past_appointments = $appointmentData['past'];
 
-// Fetch filter data
 $filter_statuses = $appointmentModel->getPatientStatusFilters($patient_id);
 
-// Calculate comprehensive statistics
 $stats = [
     'total' => count($all_appointments),
     'today' => count($today_appointments),
@@ -125,23 +103,10 @@ $stats = [
     'past' => count($past_appointments),
     'completed' => count(array_filter($past_appointments, function($apt) {
         return strtolower($apt['status_name'] ?? '') === 'completed';
-    })),
-    'this_week' => 0,
-    'this_month' => 0
+    }))
 ];
 
-// Calculate this week and month stats
-$weekStart = date('Y-m-d', strtotime('monday this week'));
-$weekEnd = date('Y-m-d', strtotime('sunday this week'));
-$monthStart = date('Y-m-01');
-$monthEnd = date('Y-m-t');
-
-$stats['this_week'] = count(array_filter($all_appointments, function($apt) use ($weekStart, $weekEnd) {
-    return $apt['appointment_date'] >= $weekStart && $apt['appointment_date'] <= $weekEnd;
-}));
-
-$stats['this_month'] = count(array_filter($all_appointments, function($apt) use ($monthStart, $monthEnd) {
-    return $apt['appointment_date'] >= $monthStart && $apt['appointment_date'] <= $monthEnd;
-}));
+$next_appointment = !empty($today_appointments) ? $today_appointments[0] : null;
 
 require_once __DIR__ . '/../../views/patient/appointments.view.php';
+

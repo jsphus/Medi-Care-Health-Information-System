@@ -134,7 +134,17 @@ class MedicalRecord extends Entity {
     public function getRecentByPatient(int $patientId, int $limit = 5): array {
         $limit = max(1, (int)$limit);
         return $this->db->fetchAll("
-            SELECT mr.*, 
+            SELECT mr.med_rec_id,
+                   mr.appt_id,
+                   mr.med_rec_diagnosis as diagnosis,
+                   mr.med_rec_prescription as prescription,
+                   mr.med_rec_visit_date,
+                   mr.med_rec_visit_date as record_date,
+                   mr.med_rec_created_at,
+                   mr.med_rec_updated_at,
+                   NULL as treatment,
+                   NULL as notes,
+                   NULL as follow_up_date,
                    a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
                    p.pat_first_name, p.pat_last_name,
                    d.doc_first_name, d.doc_last_name,
@@ -162,7 +172,17 @@ class MedicalRecord extends Entity {
         $whereClause = 'WHERE ' . implode(' AND ', $where);
 
         return $this->db->fetchAll("
-            SELECT mr.*, 
+            SELECT mr.med_rec_id,
+                   mr.appt_id,
+                   mr.med_rec_diagnosis as diagnosis,
+                   mr.med_rec_prescription as prescription,
+                   mr.med_rec_visit_date,
+                   mr.med_rec_visit_date as record_date,
+                   mr.med_rec_created_at,
+                   mr.med_rec_updated_at,
+                   NULL as treatment,
+                   NULL as notes,
+                   NULL as follow_up_date,
                    a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
                    p.pat_first_name, p.pat_last_name,
                    d.doc_first_name, d.doc_last_name, d.doc_specialization_id,

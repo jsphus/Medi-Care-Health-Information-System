@@ -282,7 +282,7 @@
                         <div>
                             <div class="record-date-info">
                                 <i class="fas fa-calendar"></i>
-                                <span><?= date('F j, Y', strtotime($record['record_date'])) ?></span>
+                                <span><?= $record['med_rec_visit_date'] ? date('F j, Y', strtotime($record['med_rec_visit_date'])) : 'N/A' ?></span>
                                 <?php if ($record['appointment_date']): ?>
                                     <span>•</span>
                                     <span>Appointment: <?= date('M j, Y', strtotime($record['appointment_date'])) ?></span>
@@ -347,21 +347,21 @@
                             <div class="record-section-content" style="display: flex; gap: 2rem; flex-wrap: wrap; padding: 0.75rem 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
-                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> <?= $record['created_at'] ? date('F j, Y g:i A', strtotime($record['created_at'])) : 'N/A' ?></span>
+                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> <?= $record['med_rec_created_at'] ? date('F j, Y g:i A', strtotime($record['med_rec_created_at'])) : 'N/A' ?></span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
-                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> <?= $record['updated_at'] ? date('F j, Y g:i A', strtotime($record['updated_at'])) : 'N/A' ?></span>
+                                    <span style="font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> <?= $record['med_rec_updated_at'] ? date('F j, Y g:i A', strtotime($record['med_rec_updated_at'])) : 'N/A' ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="record-actions">
-                        <button class="btn-action btn-secondary" onclick="printRecord(<?= $record['record_id'] ?>)">
+                        <button class="btn-action btn-secondary" onclick="printRecord(<?= $record['med_rec_id'] ?>)">
                             <i class="fas fa-print"></i> Print
                         </button>
-                        <button class="btn-action btn-secondary" onclick="downloadRecord(<?= $record['record_id'] ?>)">
+                        <button class="btn-action btn-secondary" onclick="downloadRecord(<?= $record['med_rec_id'] ?>)">
                             <i class="fas fa-download"></i> Download
                         </button>
                     </div>

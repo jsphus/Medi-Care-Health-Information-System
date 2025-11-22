@@ -20,35 +20,161 @@
     </div>
 <?php endif; ?>
 
-<!-- Today's Schedules -->
-<?php if (!empty($today_schedules)): ?>
-    <div class="card" style="border-left: 4px solid var(--primary-blue);">
-        <div class="card-header">
-            <h2 class="card-title">Today's Schedules (<?= date('F d, Y') ?>)</h2>
-        </div>
-        <div style="overflow-x: auto;">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Doctor</th>
-                        <th>Specialization</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                    </tr>
-                </thead>
-                <tbody>
+<?php
+// Helper function to format time to 12-hour AM/PM format
+function formatTimeToAMPM($time) {
+    if (empty($time)) return 'N/A';
+    try {
+        // Handle both HH:MM:SS and HH:MM formats
+        $timeParts = explode(':', $time);
+        if (count($timeParts) >= 2) {
+            $hour = (int)$timeParts[0];
+            $minute = $timeParts[1];
+            $amPm = $hour >= 12 ? 'PM' : 'AM';
+            if ($hour == 0) {
+                $hour12 = 12; // 00:00 = 12:00 AM
+            } else if ($hour == 12) {
+                $hour12 = 12; // 12:00 = 12:00 PM
+            } else if ($hour > 12) {
+                $hour12 = $hour - 12; // 13:00 = 1:00 PM, etc.
+            } else {
+                $hour12 = $hour; // 1-11 stay as is
+            }
+            return sprintf('%d:%s %s', $hour12, $minute, $amPm);
+        }
+        return $time;
+    } catch (Exception $e) {
+        return $time;
+    }
+}
+?>
+
+<style>
+/* Scrollable schedules container styling */
+.schedules-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 500px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.schedules-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.schedules-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.schedules-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.schedules-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1024px) {
+    .schedules-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+<!-- Today's and Tomorrow's Schedules -->
+<?php if (!empty($today_schedules) || !empty($tomorrow_schedules)): ?>
+<div class="schedules-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Today's Schedules -->
+    <?php if (!empty($today_schedules)): ?>
+        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+            <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Today's Schedules</h2>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);"><?= date('F d, Y') ?></p>
+            </div>
+            <div class="schedules-scroll-container">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <?php foreach ($today_schedules as $sched): ?>
-                        <tr>
-                            <td><strong>Dr. <?= htmlspecialchars($sched['doc_first_name'] . ' ' . $sched['doc_last_name']) ?></strong></td>
-                            <td><?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?></td>
-                            <td><?= htmlspecialchars($sched['start_time']) ?></td>
-                            <td><?= htmlspecialchars($sched['end_time']) ?></td>
-                        </tr>
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                             onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                             onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                            <div style="position: relative; flex-shrink: 0;">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <?php if (!empty($sched['profile_picture_url'])): ?>
+                                        <img src="<?= htmlspecialchars($sched['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($sched['doc_first_name'] ?? 'D', 0, 1) . substr($sched['doc_last_name'] ?? 'D', 0, 1)) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    Dr. <?= htmlspecialchars(($sched['doc_first_name'] ?? '') . ' ' . ($sched['doc_last_name'] ?? '')) ?>
+                                </div>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-clock"></i>
+                                        <span><?= formatTimeToAMPM($sched['start_time'] ?? '') ?> - <?= formatTimeToAMPM($sched['end_time'] ?? '') ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                </div>
+            </div>
         </div>
-    </div>
+    <?php endif; ?>
+
+    <!-- Tomorrow's Schedules -->
+    <?php if (!empty($tomorrow_schedules)): ?>
+        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+            <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Tomorrow's Schedules</h2>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);"><?= date('F d, Y', strtotime('+1 day')) ?></p>
+            </div>
+            <div class="schedules-scroll-container">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <?php foreach ($tomorrow_schedules as $sched): ?>
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                             onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                             onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                            <div style="position: relative; flex-shrink: 0;">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <?php if (!empty($sched['profile_picture_url'])): ?>
+                                        <img src="<?= htmlspecialchars($sched['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($sched['doc_first_name'] ?? 'D', 0, 1) . substr($sched['doc_last_name'] ?? 'D', 0, 1)) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    Dr. <?= htmlspecialchars(($sched['doc_first_name'] ?? '') . ' ' . ($sched['doc_last_name'] ?? '')) ?>
+                                </div>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-clock"></i>
+                                        <span><?= formatTimeToAMPM($sched['start_time'] ?? '') ?> - <?= formatTimeToAMPM($sched['end_time'] ?? '') ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
 <?php endif; ?>
 
 <!-- All Schedules -->
@@ -210,8 +336,8 @@
                             <td><strong><?= $sched['schedule_date'] ? date('d M Y', strtotime($sched['schedule_date'])) : 'N/A' ?></strong></td>
                             <td>Dr. <?= htmlspecialchars($sched['doc_first_name'] . ' ' . $sched['doc_last_name']) ?></td>
                             <td><?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?></td>
-                            <td><?= htmlspecialchars($sched['start_time']) ?></td>
-                            <td><?= htmlspecialchars($sched['end_time']) ?></td>
+                            <td><?= formatTimeToAMPM($sched['start_time']) ?></td>
+                            <td><?= formatTimeToAMPM($sched['end_time']) ?></td>
                             <td style="color: var(--text-secondary);"><?= $sched['created_at'] ? date('d M Y', strtotime($sched['created_at'])) : 'N/A' ?></td>
                             <td style="color: var(--text-secondary);"><?= $sched['updated_at'] ? date('d M Y', strtotime($sched['updated_at'])) : 'N/A' ?></td>
                             <td>
@@ -696,6 +822,30 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
 }
 
+// Helper function to format time to 12-hour AM/PM format
+function formatTimeToAMPM(time) {
+    if (!time || time === 'N/A') return 'N/A';
+    try {
+        const timeParts = time.split(':');
+        if (timeParts.length >= 2) {
+            let hour = parseInt(timeParts[0], 10);
+            const minute = timeParts[1];
+            const amPm = hour >= 12 ? 'PM' : 'AM';
+            if (hour === 0) {
+                hour = 12; // 00:00 = 12:00 AM
+            } else if (hour === 12) {
+                hour = 12; // 12:00 = 12:00 PM
+            } else if (hour > 12) {
+                hour = hour - 12; // 13:00 = 1:00 PM, etc.
+            }
+            return `${hour}:${minute} ${amPm}`;
+        }
+        return time;
+    } catch (e) {
+        return time;
+    }
+}
+
 function viewSchedule(sched) {
     const doctorName = sched.doc_first_name && sched.doc_last_name 
         ? `Dr. ${sched.doc_first_name} ${sched.doc_last_name}` 
@@ -706,8 +856,8 @@ function viewSchedule(sched) {
         month: 'long', 
         day: 'numeric' 
     }) : 'N/A';
-    const startTime = sched.start_time || 'N/A';
-    const endTime = sched.end_time || 'N/A';
+    const startTime = formatTimeToAMPM(sched.start_time || '');
+    const endTime = formatTimeToAMPM(sched.end_time || '');
     const created = sched.created_at ? new Date(sched.created_at).toLocaleString('en-US') : 'N/A';
     const updated = sched.updated_at ? new Date(sched.updated_at).toLocaleString('en-US') : 'N/A';
     
