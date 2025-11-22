@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/staff/services">
-                <i class="fas fa-flask"></i>
-                <span>Services</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Appointments</span>
-        </div>
         <h1 class="page-title"><?= isset($service) && $service ? htmlspecialchars($service['service_name']) . ' - Appointments' : 'Service Appointments' ?></h1>
     </div>
 </div>

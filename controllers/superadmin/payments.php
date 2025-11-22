@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all payments with related data
@@ -175,27 +175,26 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
-    // Handle sorting - default to showing newest payments first
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'payment_date';
+    // Handle sorting - default to showing newest payments first by creation date
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
     $allowed_columns = ['payment_date', 'payment_amount', 'payment_id', 'created_at'];
     if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'payment_date';
+        $sort_column = 'created_at';
     }
     
     // Special handling for date sorting - ensure NULL dates are handled and newest appear first
     if ($sort_column === 'payment_date') {
         // Use COALESCE to fall back to created_at if payment_date is NULL
-        // Default order is DESC to show newest first
         $order_by = "COALESCE(p.payment_date, p.created_at) $sort_order, p.created_at DESC";
+    } elseif ($sort_column === 'created_at') {
+        $order_by = "COALESCE(p.created_at, '1970-01-01'::timestamp) $sort_order, p.payment_id DESC";
     } else {
         $order_by = "p.$sort_column $sort_order";
         // For non-date sorts, still add a secondary sort by created_at DESC to show newest first
-        if ($sort_column !== 'created_at') {
-            $order_by .= ", p.created_at DESC";
-        }
+        $order_by .= ", p.created_at DESC";
     }
     
     // Fetch paginated results - ensure all payments are shown even if JOINs fail
@@ -289,6 +288,56 @@ try {
 } catch (PDOException $e) {
     // Keep default values
     error_log("Payment statistics error: " . $e->getMessage());
+}
+
+// Fetch recent payments for the card (last 10, ordered by most recent - use payment_id DESC for most recently created)
+$recent_payments = [];
+try {
+    $stmt = $db->prepare("
+        SELECT p.*, 
+               a.appointment_id, a.pat_id, a.doc_id,
+               pat.pat_first_name, pat.pat_last_name,
+               up.profile_picture_url as patient_profile_picture,
+               pm.method_name,
+               ps.status_name
+        FROM payments p
+        LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN users up ON up.pat_id = pat.pat_id
+        LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
+        LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        ORDER BY p.payment_id DESC
+        LIMIT 10
+    ");
+    $stmt->execute();
+    $recent_payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Recent payments error: " . $e->getMessage());
+}
+
+// Fetch pending payments for the card (all pending payments, ordered by most recent)
+$pending_payments = [];
+try {
+    $stmt = $db->prepare("
+        SELECT p.*, 
+               a.appointment_id, a.pat_id, a.doc_id,
+               pat.pat_first_name, pat.pat_last_name,
+               up.profile_picture_url as patient_profile_picture,
+               pm.method_name,
+               ps.status_name
+        FROM payments p
+        LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN users up ON up.pat_id = pat.pat_id
+        LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
+        LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        WHERE LOWER(ps.status_name) = 'pending'
+        ORDER BY p.payment_id DESC
+    ");
+    $stmt->execute();
+    $pending_payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Pending payments error: " . $e->getMessage());
 }
 
 require_once __DIR__ . '/../../views/superadmin/payments.view.php';

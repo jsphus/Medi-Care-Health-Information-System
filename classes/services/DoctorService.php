@@ -57,15 +57,21 @@ class DoctorService {
         $stats = [
             'total_appointments' => 0,
             'today_appointments' => 0,
+            'today_completed' => 0,
+            'today_pending' => 0,
             'upcoming_appointments' => 0,
             'completed_appointments' => 0,
             'total_patients' => 0,
             'my_schedules' => 0,
             'all_schedules' => 0,
             'pending_lab_results' => 0,
+            'pending_records' => 0,
+            'follow_up_count' => 0,
             'active_doctors' => 0,
             'today_revenue' => 0,
-            'admitted_patients' => 0
+            'admitted_patients' => 0,
+            'this_week_appointments' => 0,
+            'this_week_completed' => 0
         ];
 
         try {
@@ -80,6 +86,28 @@ class DoctorService {
             ");
             $stmt->execute(['doc_id' => $docId]);
             $stats['today_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            
+            // Today's completed appointments
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count 
+                FROM appointments a
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                WHERE a.doc_id = :doc_id AND a.appointment_date = CURRENT_DATE 
+                AND LOWER(s.status_name) = 'completed'
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $stats['today_completed'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            
+            // Today's pending (scheduled but not completed)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count 
+                FROM appointments a
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                WHERE a.doc_id = :doc_id AND a.appointment_date = CURRENT_DATE 
+                AND LOWER(s.status_name) != 'completed' AND LOWER(s.status_name) != 'cancelled' AND LOWER(s.status_name) != 'canceled'
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $stats['today_pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
             $stmt = $this->db->prepare("
                 SELECT COUNT(*) as count 
@@ -115,10 +143,10 @@ class DoctorService {
 
             $stmt = $this->db->prepare("
                 SELECT COUNT(*) as count 
-                FROM medical_records 
-                WHERE doc_id = :doc_id 
-                AND (follow_up_date IS NOT NULL AND follow_up_date >= CURRENT_DATE)
-                AND diagnosis IS NOT NULL
+                FROM medical_records mr
+                JOIN appointments a ON mr.appt_id = a.appointment_id
+                WHERE a.doc_id = :doc_id 
+                AND mr.med_rec_diagnosis IS NOT NULL
             ");
             $stmt->execute(['doc_id' => $docId]);
             $stats['pending_lab_results'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
@@ -139,13 +167,67 @@ class DoctorService {
             $stats['today_revenue'] = $stmt->fetch(PDO::FETCH_ASSOC)['total_revenue'] ?? 0;
 
             $stmt = $this->db->prepare("
-                SELECT COUNT(DISTINCT mr.pat_id) as count
+                SELECT COUNT(DISTINCT a.pat_id) as count
                 FROM medical_records mr
-                WHERE mr.doc_id = :doc_id
-                AND (mr.follow_up_date IS NOT NULL AND mr.follow_up_date >= CURRENT_DATE)
+                JOIN appointments a ON mr.appt_id = a.appointment_id
+                WHERE a.doc_id = :doc_id
             ");
             $stmt->execute(['doc_id' => $docId]);
             $stats['admitted_patients'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // Pending records (appointments without medical records)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments a
+                LEFT JOIN medical_records mr ON a.appointment_id = mr.appt_id
+                WHERE a.doc_id = :doc_id
+                AND a.appointment_date <= CURRENT_DATE
+                AND a.status_id IN (SELECT status_id FROM appointment_statuses WHERE LOWER(status_name) = 'completed')
+                AND mr.med_rec_id IS NULL
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $stats['pending_records'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // Follow-up appointments scheduled (removed follow_up_date, using appointment-based logic)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(DISTINCT a2.pat_id) as count
+                FROM appointments a1
+                JOIN appointments a2 ON a1.pat_id = a2.pat_id AND a1.doc_id = a2.doc_id
+                JOIN medical_records mr ON a1.appointment_id = mr.appt_id
+                WHERE a1.doc_id = :doc_id
+                AND a2.appointment_date > CURRENT_DATE
+                AND a1.appointment_date < a2.appointment_date
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $stats['follow_up_count'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // This week's stats (Monday to Sunday)
+            $dayOfWeek = (int)date('w'); // 0 = Sunday, 1 = Monday, etc.
+            $daysFromMonday = $dayOfWeek == 0 ? 6 : $dayOfWeek - 1; // Convert to Monday = 0
+            $weekStart = date('Y-m-d', strtotime("-$daysFromMonday days"));
+            $weekEnd = date('Y-m-d', strtotime("$weekStart +6 days"));
+            
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments
+                WHERE doc_id = :doc_id
+                AND appointment_date >= :week_start
+                AND appointment_date <= :week_end
+            ");
+            $stmt->execute(['doc_id' => $docId, 'week_start' => $weekStart, 'week_end' => $weekEnd]);
+            $stats['this_week_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments a
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                WHERE a.doc_id = :doc_id
+                AND a.appointment_date >= :week_start
+                AND a.appointment_date <= :week_end
+                AND LOWER(s.status_name) = 'completed'
+            ");
+            $stmt->execute(['doc_id' => $docId, 'week_start' => $weekStart, 'week_end' => $weekEnd]);
+            $stats['this_week_completed'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
         } catch (PDOException $e) {
             // ignore
         }
@@ -241,7 +323,7 @@ class DoctorService {
                        CASE 
                            WHEN EXISTS (
                                SELECT 1 FROM medical_records mr 
-                               WHERE mr.appointment_id = a.appointment_id
+                               WHERE mr.appt_id = a.appointment_id
                            ) THEN 'Yes'
                            ELSE 'No'
                        END as has_report
@@ -352,13 +434,15 @@ class DoctorService {
 
         try {
             $stmt = $this->db->prepare("
-                SELECT DISTINCT ON (mr.pat_id) mr.*, 
+                SELECT DISTINCT ON (a.pat_id) mr.*, 
+                       a.pat_id, a.doc_id, a.appointment_date, a.appointment_time,
                        p.pat_first_name, p.pat_last_name,
-                       mr.record_date
+                       mr.med_rec_visit_date
                 FROM medical_records mr
-                JOIN patients p ON mr.pat_id = p.pat_id
-                WHERE mr.doc_id = :doc_id
-                ORDER BY mr.pat_id, mr.record_date DESC
+                JOIN appointments a ON mr.appt_id = a.appointment_id
+                JOIN patients p ON a.pat_id = p.pat_id
+                WHERE a.doc_id = :doc_id
+                ORDER BY a.pat_id, mr.med_rec_visit_date DESC
                 LIMIT 5
             ");
             $stmt->execute(['doc_id' => $docId]);
@@ -370,17 +454,72 @@ class DoctorService {
         try {
             $stmt = $this->db->prepare("
                 SELECT mr.*, 
+                       a.pat_id, a.doc_id, a.appointment_date, a.appointment_time,
                        p.pat_first_name, p.pat_last_name
                 FROM medical_records mr
-                JOIN patients p ON mr.pat_id = p.pat_id
-                WHERE mr.doc_id = :doc_id
-                ORDER BY mr.record_date DESC
+                JOIN appointments a ON mr.appt_id = a.appointment_id
+                JOIN patients p ON a.pat_id = p.pat_id
+                WHERE a.doc_id = :doc_id
+                ORDER BY mr.med_rec_visit_date DESC
                 LIMIT 5
             ");
             $stmt->execute(['doc_id' => $docId]);
             $data['recent_records'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $data['recent_records'] = [];
+        }
+
+        // Get next appointment (first upcoming today)
+        try {
+            $stmt = $this->db->prepare("
+                SELECT a.*, 
+                       p.pat_first_name, p.pat_last_name, p.pat_date_of_birth, p.pat_email, p.pat_phone,
+                       p.pat_id,
+                       s.status_name, s.status_color,
+                       sv.service_name,
+                       up.profile_picture_url as patient_profile_picture
+                FROM appointments a
+                JOIN patients p ON a.pat_id = p.pat_id
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                LEFT JOIN services sv ON a.service_id = sv.service_id
+                LEFT JOIN users up ON up.pat_id = p.pat_id
+                WHERE a.doc_id = :doc_id 
+                AND a.appointment_date = CURRENT_DATE
+                AND LOWER(s.status_name) != 'completed'
+                AND LOWER(s.status_name) != 'cancelled'
+                AND LOWER(s.status_name) != 'canceled'
+                ORDER BY a.appointment_time ASC
+                LIMIT 1
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $nextAppt = $stmt->fetch(PDO::FETCH_ASSOC);
+            $data['next_appointment'] = $nextAppt ?: null;
+        } catch (PDOException $e) {
+            $data['next_appointment'] = null;
+        }
+
+        // Get recent activity (completed appointments today, new appointments)
+        try {
+            $stmt = $this->db->prepare("
+                SELECT a.*, 
+                       p.pat_first_name, p.pat_last_name,
+                       s.status_name, s.status_color,
+                       sv.service_name,
+                       'appointment_completed' as activity_type
+                FROM appointments a
+                JOIN patients p ON a.pat_id = p.pat_id
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                LEFT JOIN services sv ON a.service_id = sv.service_id
+                WHERE a.doc_id = :doc_id 
+                AND a.appointment_date = CURRENT_DATE
+                AND LOWER(s.status_name) = 'completed'
+                ORDER BY a.updated_at DESC
+                LIMIT 5
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $data['recent_activity'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $data['recent_activity'] = [];
         }
 
         try {

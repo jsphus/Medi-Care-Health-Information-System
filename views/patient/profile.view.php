@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/patient/appointments">
-                <i class="fas fa-home"></i>
-                <span>Appointments</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Profile</span>
-        </div>
         <h1 class="page-title">My Profile</h1>
     </div>
 </div>

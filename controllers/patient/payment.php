@@ -40,12 +40,18 @@ if (!$appointment) {
         exit;
     }
 
-    $payment_amount = 0;
-    if (!empty($appointment['service_price'])) {
-        $payment_amount = (float)$appointment['service_price'];
-    } elseif (!empty($appointment['doc_consultation_fee'])) {
-        $payment_amount = (float)$appointment['doc_consultation_fee'];
+    // Calculate payment amount: consultation fee + service fee (if any)
+    $consultation_fee = 0;
+    if (!empty($appointment['doc_consultation_fee'])) {
+        $consultation_fee = (float)$appointment['doc_consultation_fee'];
     }
+    
+    $service_fee = 0;
+    if (!empty($appointment['service_price'])) {
+        $service_fee = (float)$appointment['service_price'];
+    }
+    
+    $payment_amount = $consultation_fee + $service_fee;
 }
 
 // Handle payment submission

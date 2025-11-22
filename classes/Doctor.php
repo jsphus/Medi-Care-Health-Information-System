@@ -179,7 +179,7 @@ class Doctor extends Entity {
 
     // Get all doctors (maintains backward compatibility)
     public function getAll() {
-        return $this->db->fetchAll("SELECT doc_id, doc_first_name, doc_last_name FROM doctors WHERE doc_status = 'active' ORDER BY doc_first_name, doc_last_name");
+        return $this->db->fetchAll("SELECT doc_id, doc_first_name, doc_last_name FROM doctors ORDER BY created_at DESC, doc_first_name, doc_last_name");
     }
 
     // Get doctor by ID (maintains backward compatibility)
@@ -255,6 +255,8 @@ class Doctor extends Entity {
     public function searchDoctors(array $options = []): array {
         $search = $options['search'] ?? '';
         $specialization = $options['specialization'] ?? null;
+        $appointment_date = $options['appointment_date'] ?? null;
+        $appointment_time = $options['appointment_time'] ?? null;
 
         $where = ["d.doc_status = 'active'"];
         $params = [];
@@ -269,15 +271,29 @@ class Doctor extends Entity {
             $params['specialization'] = $specialization;
         }
 
+        // Filter by availability if date and time are provided
+        if (!empty($appointment_date) && !empty($appointment_time)) {
+            // Only show doctors who have an available schedule slot for the requested date/time
+            $where[] = "EXISTS (
+                SELECT 1 FROM schedules sch
+                WHERE sch.doc_id = d.doc_id
+                AND sch.schedule_date = :appointment_date
+                AND sch.start_time <= :appointment_time
+                AND sch.end_time > :appointment_time
+            )";
+            $params['appointment_date'] = $appointment_date;
+            $params['appointment_time'] = $appointment_time;
+        }
+
         $whereClause = 'WHERE ' . implode(' AND ', $where);
 
         return $this->db->fetchAll("
-            SELECT d.*, s.spec_name, u.profile_picture_url
+            SELECT DISTINCT ON (d.doc_id) d.*, s.spec_name, u.profile_picture_url
             FROM doctors d
             LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
             LEFT JOIN users u ON d.doc_id = u.doc_id
             $whereClause
-            ORDER BY d.doc_first_name, d.doc_last_name
+            ORDER BY d.doc_id, d.doc_first_name, d.doc_last_name
         ", $params);
     }
 
@@ -289,6 +305,8 @@ class Doctor extends Entity {
     public function searchDoctorsWithDetails(array $options = []): array {
         $search = $options['search'] ?? '';
         $specialization = $options['specialization'] ?? null;
+        $appointment_date = $options['appointment_date'] ?? null;
+        $appointment_time = $options['appointment_time'] ?? null;
 
         $where = ["d.doc_status = 'active'"];
         $params = [];
@@ -303,11 +321,26 @@ class Doctor extends Entity {
             $params['specialization'] = $specialization;
         }
 
+        // Filter by availability if date and time are provided
+        if (!empty($appointment_date) && !empty($appointment_time)) {
+            // Only show doctors who have an available schedule slot for the requested date/time
+            $where[] = "EXISTS (
+                SELECT 1 FROM schedules sch
+                WHERE sch.doc_id = d.doc_id
+                AND sch.schedule_date = :appointment_date
+                AND sch.start_time <= :appointment_time
+                AND sch.end_time > :appointment_time
+            )";
+            $params['appointment_date'] = $appointment_date;
+            $params['appointment_time'] = $appointment_time;
+        }
+
         $whereClause = 'WHERE ' . implode(' AND ', $where);
 
         // Single query to get all doctor details including specialization description
+        // Use DISTINCT ON to ensure no duplicate doctors (in case of multiple user records)
         return $this->db->fetchAll("
-            SELECT d.*, 
+            SELECT DISTINCT ON (d.doc_id) d.*, 
                    s.spec_name, 
                    s.spec_description,
                    u.profile_picture_url
@@ -315,7 +348,7 @@ class Doctor extends Entity {
             LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
             LEFT JOIN users u ON d.doc_id = u.doc_id
             $whereClause
-            ORDER BY d.doc_first_name, d.doc_last_name
+            ORDER BY d.doc_id, d.doc_first_name, d.doc_last_name
         ", $params);
     }
 }

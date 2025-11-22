@@ -25,5 +25,7 @@ $appointment_type_chart = $data['appointment_type_chart'];
 $weekly_visits = $data['weekly_visits'];
 $new_appointments = $data['new_appointments'];
 $chart_data = $data['chart_data'];
+$next_appointment = $data['next_appointment'] ?? null;
+$recent_activity = $data['recent_activity'] ?? [];
 
 require_once __DIR__ . '/../../views/doctor/dashboard.view.php';

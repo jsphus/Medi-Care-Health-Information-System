@@ -20,35 +20,145 @@
 
 <!-- Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Users</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Users</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-users"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #3498db;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Staff</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Staff</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['staff'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-tie"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['staff'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Doctors</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Doctors</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['doctor'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-md"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['doctor'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #9b59b6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Patients</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Patients</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['patient'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-heartbeat"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['patient'] ?? 0 ?></div>
     </div>
 </div>
+
+<style>
+/* Scrollable sections styling */
+.recently-added-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 500px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1024px) {
+    .recently-added-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+<!-- Recently Added Users Section -->
+<?php if (!empty($recently_added_users)): ?>
+<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem; display: flex; flex-direction: column;">
+    <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recently Added Users</h2>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Users added to the system recently</p>
+    </div>
+    <div class="recently-added-scroll-container">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <?php foreach ($recently_added_users as $user): ?>
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                     onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                     onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <?php
+                        $roleColor = match($user['role']) {
+                            'Super Admin' => 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                            'Staff' => 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+                            'Doctor' => 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+                            'Patient' => 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                            default => 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)'
+                        };
+                        $initials = strtoupper(substr($user['full_name'] ?? 'U', 0, 1));
+                        ?>
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: <?= $roleColor ?>; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <?php if (!empty($user['profile_picture_url'])): ?>
+                                <img src="<?= htmlspecialchars($user['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <?= $initials ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <?= htmlspecialchars($user['full_name']) ?>
+                        </div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <?= htmlspecialchars($user['user_email']) ?>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: #10b981; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                <i class="fas fa-user-tag"></i>
+                                <span><?= htmlspecialchars($user['role']) ?></span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: #6366f1; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span><?= !empty($user['created_at']) ? date('M d, Y', strtotime($user['created_at'])) : 'Recently' ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
@@ -641,15 +751,15 @@
 
 <!-- View User Profile Modal -->
 <div id="viewModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
         <div class="modal-header">
             <h2 class="modal-title">User Profile</h2>
             <button type="button" class="modal-close" onclick="closeViewModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="viewContent"></div>
-        <div class="action-buttons" style="margin-top: 1.5rem;">
+        <div id="viewContent" style="flex: 1; overflow-y: auto;"></div>
+        <div class="action-buttons" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
             <button type="button" onclick="closeViewModal()" class="btn btn-secondary">
                 <i class="fas fa-times"></i>
                 <span>Close</span>
@@ -659,6 +769,9 @@
 </div>
 
 <script>
+// Global specializations array for use in viewUserProfile
+const globalSpecializations = <?= isset($specializations) ? json_encode($specializations) : '[]' ?>;
+
 function openAddUserModal() {
     document.getElementById('addModal').classList.add('active');
 }
@@ -740,6 +853,24 @@ function viewUserProfile(user) {
         }
     };
     
+    // Helper function to format currency
+    const formatCurrency = (value) => {
+        if (!value && value !== 0) return 'N/A';
+        return '₱' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    
+    // Helper function to get specialization name
+    const getSpecializationName = (specId) => {
+        if (!specId) return 'N/A';
+        const spec = globalSpecializations.find(s => s.spec_id == specId);
+        return spec ? spec.spec_name : 'N/A';
+    };
+    
+    // Helper function to format phone
+    const formatPhone = (phone) => {
+        return phone || 'N/A';
+    };
+    
     // Determine role and profile link
     let role = 'None';
     let profileLink = '';
@@ -762,6 +893,205 @@ function viewUserProfile(user) {
     const firstName = user.full_name ? user.full_name.split(' ')[0] : 'U';
     const firstLetter = firstName.charAt(0).toUpperCase();
     
+    // Build role-specific details
+    let roleSpecificDetails = '';
+    
+    if (role === 'Patient' && user.pat_id) {
+        roleSpecificDetails = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Patient Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">First Name:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_first_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Middle Initial:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_middle_initial || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Last Name:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_last_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Email:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_email || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Phone:</strong>
+                        <span style="color: var(--text-primary);">${formatPhone(user.pat_phone)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Date of Birth:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_date_of_birth ? formatDate(user.pat_date_of_birth) : 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Gender:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_gender ? user.pat_gender.charAt(0).toUpperCase() + user.pat_gender.slice(1) : 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Emergency Contact:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_emergency_contact || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Emergency Phone:</strong>
+                        <span style="color: var(--text-primary);">${formatPhone(user.pat_emergency_phone)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Insurance Provider:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_insurance_provider || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Insurance Number:</strong>
+                        <span style="color: var(--text-primary);">${user.pat_insurance_number || 'N/A'}</span>
+                    </div>
+                </div>
+                ${user.pat_address ? `
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Address:</strong>
+                    <span style="color: var(--text-primary);">${user.pat_address}</span>
+                </div>
+                ` : ''}
+                ${user.pat_medical_history ? `
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Medical History:</strong>
+                    <span style="color: var(--text-primary); white-space: pre-wrap;">${user.pat_medical_history}</span>
+                </div>
+                ` : ''}
+                ${user.pat_allergies ? `
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Allergies:</strong>
+                    <span style="color: var(--text-primary); white-space: pre-wrap;">${user.pat_allergies}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (role === 'Staff' && user.staff_id) {
+        roleSpecificDetails = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Staff Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">First Name:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_first_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Middle Initial:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_middle_initial || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Last Name:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_last_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Email:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_email || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Phone:</strong>
+                        <span style="color: var(--text-primary);">${formatPhone(user.staff_phone)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Position:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_position || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Hire Date:</strong>
+                        <span style="color: var(--text-primary);">${user.staff_hire_date ? formatDate(user.staff_hire_date) : 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Salary:</strong>
+                        <span style="color: var(--text-primary);">${formatCurrency(user.staff_salary)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Status:</strong>
+                        <span style="color: var(--text-primary); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: ${user.staff_status === 'active' ? '#2ecc7120' : '#e74c3c20'}; color: ${user.staff_status === 'active' ? '#2ecc71' : '#e74c3c'};">
+                            ${user.staff_status ? user.staff_status.charAt(0).toUpperCase() + user.staff_status.slice(1) : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (role === 'Doctor' && user.doc_id) {
+        roleSpecificDetails = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Doctor Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">First Name:</strong>
+                        <span style="color: var(--text-primary);">${user.doc_first_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Middle Initial:</strong>
+                        <span style="color: var(--text-primary);">${user.doc_middle_initial || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Last Name:</strong>
+                        <span style="color: var(--text-primary);">${user.doc_last_name || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Email:</strong>
+                        <span style="color: var(--text-primary);">${user.doc_email || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Phone:</strong>
+                        <span style="color: var(--text-primary);">${formatPhone(user.doc_phone)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Specialization:</strong>
+                        <span style="color: var(--text-primary);">${getSpecializationName(user.doc_specialization_id)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">License Number:</strong>
+                        <span style="color: var(--text-primary);">${user.doc_license_number || 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Experience (Years):</strong>
+                        <span style="color: var(--text-primary);">${user.doc_experience_years !== null && user.doc_experience_years !== undefined ? user.doc_experience_years : 'N/A'}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Consultation Fee:</strong>
+                        <span style="color: var(--text-primary);">${formatCurrency(user.doc_consultation_fee)}</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Status:</strong>
+                        <span style="color: var(--text-primary); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: ${user.doc_status === 'active' ? '#2ecc7120' : '#e74c3c20'}; color: ${user.doc_status === 'active' ? '#2ecc71' : '#e74c3c'};">
+                            ${user.doc_status ? user.doc_status.charAt(0).toUpperCase() + user.doc_status.slice(1) : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+                ${user.doc_qualification ? `
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Qualification:</strong>
+                    <span style="color: var(--text-primary); white-space: pre-wrap;">${user.doc_qualification}</span>
+                </div>
+                ` : ''}
+                ${user.doc_bio ? `
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Bio:</strong>
+                    <span style="color: var(--text-primary); white-space: pre-wrap;">${user.doc_bio}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (role === 'Super Admin') {
+        roleSpecificDetails = `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Super Admin Information</h3>
+                <div style="display: grid; gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Account Type:</strong>
+                        <span style="color: var(--text-primary);">Super Administrator</span>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Access Level:</strong>
+                        <span style="color: var(--text-primary);">Full System Access</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
     const content = `
         <div style="padding: 2rem;">
             <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-light);">
@@ -776,37 +1106,34 @@ function viewUserProfile(user) {
                     </div>
                 </div>
             </div>
+            
             <div style="margin-bottom: 1.5rem;">
-                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">User Information</h3>
-                <div style="display: grid; gap: 1rem;">
+                <h3 style="margin-bottom: 1rem; color: var(--primary-blue); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">Account Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                     <div>
-                        <strong>User ID:</strong> ${user.user_id}
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Email:</strong>
+                        <span style="color: var(--text-primary);">${user.user_email || 'N/A'}</span>
                     </div>
                     <div>
-                        <strong>Email:</strong> ${user.user_email}
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Full Name:</strong>
+                        <span style="color: var(--text-primary);">${user.full_name || 'N/A'}</span>
                     </div>
                     <div>
-                        <strong>Full Name:</strong> ${user.full_name || 'N/A'}
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Phone Number:</strong>
+                        <span style="color: var(--text-primary);">${formatPhone(user.phone_number)}</span>
                     </div>
                     <div>
-                        <strong>Phone:</strong> ${user.phone_number || 'N/A'}
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Date Created:</strong>
+                        <span style="color: var(--text-primary);">${formatDate(user.created_at)}</span>
                     </div>
                     <div>
-                        <strong>Date Created:</strong> ${formatDate(user.created_at)}
-                    </div>
-                    <div>
-                        <strong>Date Updated:</strong> ${formatDate(user.updated_at)}
+                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Date Updated:</strong>
+                        <span style="color: var(--text-primary);">${formatDate(user.updated_at)}</span>
                     </div>
                 </div>
             </div>
-            ${profileLink ? `
-            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
-                <a href="${profileLink}" class="btn btn-primary" style="text-decoration: none;">
-                    <i class="fas fa-external-link-alt"></i>
-                    <span>View ${role} Profile</span>
-                </a>
-            </div>
-            ` : ''}
+            
+            ${roleSpecificDetails}
         </div>
     `;
     

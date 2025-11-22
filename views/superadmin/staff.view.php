@@ -20,28 +20,144 @@
 
 <!-- Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Staff</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Staff</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= ($stats['active'] ?? 0) + ($stats['inactive'] ?? 0) ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-tie"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= ($stats['active'] ?? 0) + ($stats['inactive'] ?? 0) ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Active Staff</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Active Staff</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-check-circle"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Inactive Staff</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Inactive Staff</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-slash"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
     </div>
 </div>
+
+<style>
+/* Scrollable sections styling */
+.recently-added-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 500px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.recently-added-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+</style>
+
+<!-- Recently Added Staff Section -->
+<?php if (!empty($recently_added_staff)): ?>
+<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem; display: flex; flex-direction: column;">
+    <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recently Added Staff</h2>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Staff members added to the system recently</p>
+    </div>
+    <div class="recently-added-scroll-container">
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <?php foreach ($recently_added_staff as $recent_staff): ?>
+                <div style="display: flex; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                     onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                     onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.25rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <?php if (!empty($recent_staff['profile_picture_url'])): ?>
+                                <img src="<?= htmlspecialchars($recent_staff['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <?= strtoupper(substr($recent_staff['staff_first_name'] ?? 'S', 0, 1) . substr($recent_staff['staff_last_name'] ?? 'S', 0, 1)) ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem; margin-bottom: 0.25rem;">
+                                <?= htmlspecialchars(formatFullName($recent_staff['staff_first_name'] ?? '', $recent_staff['staff_middle_initial'] ?? null, $recent_staff['staff_last_name'] ?? '')) ?>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary);">
+                                <?= htmlspecialchars($recent_staff['staff_position'] ?? 'Staff') ?>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 1rem; font-size: 0.8125rem;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                                <i class="fas fa-envelope" style="width: 16px; color: var(--primary-blue); flex-shrink: 0;"></i>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($recent_staff['staff_email'] ?? 'N/A') ?></span>
+                            </div>
+                            <?php if (!empty($recent_staff['staff_phone'])): ?>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                                <i class="fas fa-phone" style="width: 16px; color: var(--primary-blue); flex-shrink: 0;"></i>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?= htmlspecialchars($recent_staff['staff_phone']) ?></span>
+                            </div>
+                            <?php else: ?>
+                            <div></div>
+                            <?php endif; ?>
+                            <?php if (!empty($recent_staff['staff_salary'])): ?>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                                <i class="fas fa-money-bill-wave" style="width: 16px; color: var(--primary-blue); flex-shrink: 0;"></i>
+                                <span>₱<?= number_format($recent_staff['staff_salary'], 2) ?></span>
+                            </div>
+                            <?php else: ?>
+                            <div></div>
+                            <?php endif; ?>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+                                <i class="fas fa-calendar-plus" style="width: 16px; color: var(--primary-blue); flex-shrink: 0;"></i>
+                                <span><?= !empty($recent_staff['created_at']) ? date('M d, Y', strtotime($recent_staff['created_at'])) : 'Recently' ?></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <?php if (!empty($recent_staff['staff_status'])): ?>
+                                <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: <?= $recent_staff['staff_status'] === 'active' ? '#10b981' : '#ef4444' ?>; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                    <i class="fas fa-<?= $recent_staff['staff_status'] === 'active' ? 'check-circle' : 'times-circle' ?>"></i>
+                                    <span><?= htmlspecialchars(ucfirst($recent_staff['staff_status'])) ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
@@ -202,15 +318,6 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Position
                         </th>
-                        <th class="sortable <?= $current_sort === 'staff_hire_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('staff_hire_date')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Hire Date
-                            <span class="sort-indicator">
-                                <i class="fas fa-arrow-up"></i>
-                                <i class="fas fa-arrow-down"></i>
-                            </span>
-                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Status
                         </th>
@@ -262,7 +369,6 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_email']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_phone'] ?? 'N/A') ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_position'] ?? 'N/A') ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['staff_hire_date'] ? date('d M Y', strtotime($member['staff_hire_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <?php
                                 $status = $member['staff_status'] ?? 'active';
@@ -406,10 +512,6 @@
                     <input type="text" name="position" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Hire Date:</label>
-                    <input type="date" name="hire_date" class="form-control">
-                </div>
-                <div class="form-group">
                     <label>Salary:</label>
                     <input type="number" name="salary" step="0.01" min="0" class="form-control">
                 </div>
@@ -510,10 +612,6 @@
                     <input type="text" name="position" id="edit_position" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Hire Date:</label>
-                    <input type="date" name="hire_date" id="edit_hire_date" class="form-control">
-                </div>
-                <div class="form-group">
                     <label>Salary:</label>
                     <input type="number" name="salary" id="edit_salary" step="0.01" min="0" class="form-control">
                 </div>
@@ -609,7 +707,6 @@ function editStaff(staff) {
     document.getElementById('edit_email').value = staff.staff_email;
     document.getElementById('edit_phone').value = staff.staff_phone ? formatPhoneNumber(staff.staff_phone) : '';
     document.getElementById('edit_position').value = staff.staff_position || '';
-    document.getElementById('edit_hire_date').value = staff.staff_hire_date || '';
     document.getElementById('edit_salary').value = staff.staff_salary || '';
     document.getElementById('edit_status').value = staff.staff_status || 'active';
     
@@ -676,7 +773,6 @@ function viewStaffDetails(staff) {
                     <div>
                         <p style="margin: 0.5rem 0;"><strong>Phone:</strong> ${staff.staff_phone || 'N/A'}</p>
                         <p style="margin: 0.5rem 0;"><strong>Position:</strong> ${staff.staff_position || 'N/A'}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Hire Date:</strong> ${staff.staff_hire_date || 'N/A'}</p>
                         <p style="margin: 0.5rem 0;"><strong>Status:</strong> 
                             <span class="status-badge ${(staff.staff_status || 'active') === 'active' ? 'active' : 'inactive'}">
                                 ${staff.staff_status || 'active'}

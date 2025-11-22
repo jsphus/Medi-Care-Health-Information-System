@@ -167,7 +167,7 @@ try {
         SELECT d.*, s.spec_name 
         FROM doctors d
         LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
-        ORDER BY d.doc_last_name, d.doc_first_name
+        ORDER BY d.created_at DESC, d.doc_last_name, d.doc_first_name
     ");
     $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -201,7 +201,7 @@ try {
     $stmt = $db->prepare("
         SELECT COUNT(DISTINCT doc_id) as count 
         FROM schedules 
-        WHERE schedule_date = :today AND is_available = 1
+        WHERE schedule_date = :today
     ");
     $stmt->execute(['today' => $today]);
     $stats['doctors_with_schedules_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];

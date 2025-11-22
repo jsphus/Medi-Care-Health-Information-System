@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/doctor/schedules">
-                <i class="fas fa-calendar"></i>
-                <span>My Schedules</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Manage All</span>
-        </div>
         <h1 class="page-title">Manage All Doctor Schedules</h1>
     </div>
 </div>
@@ -144,8 +136,6 @@
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Max Appts</th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Available</th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Actions</th>
                     </tr>
                 </thead>
@@ -159,12 +149,6 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= date('M j, Y', strtotime($schedule['schedule_date'])) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= date('g:i A', strtotime($schedule['start_time'])) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= date('g:i A', strtotime($schedule['end_time'])) ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $schedule['max_appointments'] ?? 10 ?></td>
-                            <td style="padding: 1rem;">
-                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $schedule['is_available'] ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;' ?>">
-                                    <?= $schedule['is_available'] ? 'Yes' : 'No' ?>
-                                </span>
-                            </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button onclick='editSchedule(<?= json_encode($schedule) ?>)' class="btn btn-sm" title="Edit"
@@ -231,15 +215,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" value="10" min="1" max="50" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer; margin-top: 2rem;">
-                        <input type="checkbox" name="is_available" value="1" checked style="margin-right: 0.5rem; width: auto;">
-                        <span>Available for appointments</span>
-                    </label>
                 </div>
             </div>
             
@@ -316,15 +291,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" id="edit_max_appointments" min="1" max="50" required class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label style="display: flex; align-items: center; cursor: pointer; margin-top: 2rem;">
-                        <input type="checkbox" name="is_available" id="edit_is_available" value="1" style="margin-right: 0.5rem; width: auto;">
-                        <span>Available for appointments</span>
-                    </label>
                 </div>
             </div>
             
@@ -359,8 +325,6 @@ function editSchedule(schedule) {
     document.getElementById('edit_schedule_date').value = schedule.schedule_date;
     document.getElementById('edit_start_time').value = schedule.start_time;
     document.getElementById('edit_end_time').value = schedule.end_time;
-    document.getElementById('edit_max_appointments').value = schedule.max_appointments || 10;
-    document.getElementById('edit_is_available').checked = schedule.is_available == 1;
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -386,8 +350,6 @@ function viewSchedule(schedule) {
         minute: '2-digit',
         hour12: true 
     }) : 'N/A';
-    const maxAppointments = schedule.max_appointments || 0;
-    const isAvailable = schedule.is_available == 1 || schedule.is_available === true;
     const created = schedule.created_at ? new Date(schedule.created_at).toLocaleString('en-US') : 'N/A';
     const updated = schedule.updated_at ? new Date(schedule.updated_at).toLocaleString('en-US') : 'N/A';
     
@@ -413,18 +375,6 @@ function viewSchedule(schedule) {
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem;">Time:</strong>
                         <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${startTime} - ${endTime}</p>
-                    </div>
-                    <div>
-                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Max Appointments:</strong>
-                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${maxAppointments}</p>
-                    </div>
-                    <div>
-                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Available:</strong>
-                        <p style="margin: 0.5rem 0 0 0;">
-                            <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: ${isAvailable ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;'}">
-                                ${isAvailable ? 'Yes' : 'No'}
-                            </span>
-                        </p>
                     </div>
                 </div>
             </div>

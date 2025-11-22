@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/superadmin/dashboard">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Schedules</span>
-        </div>
         <h1 class="page-title">Manage All Doctor Schedules</h1>
     </div>
 </div>
@@ -42,8 +34,6 @@
                         <th>Specialization</th>
                         <th>Start Time</th>
                         <th>End Time</th>
-                        <th>Max Appointments</th>
-                        <th>Available</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,12 +43,6 @@
                             <td><?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($sched['start_time']) ?></td>
                             <td><?= htmlspecialchars($sched['end_time']) ?></td>
-                            <td><?= htmlspecialchars($sched['max_appointments']) ?></td>
-                            <td>
-                                <span class="status-badge <?= $sched['is_available'] ? 'active' : 'inactive' ?>">
-                                    <?= $sched['is_available'] ? 'Yes' : 'No' ?>
-                                </span>
-                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -74,6 +58,16 @@
             <h2 class="card-title" style="margin: 0;">All Doctor Schedules</h2>
             <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
                 <i class="fas fa-filter"></i>
+            </button>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-plus"></i>
+                <span>Add Schedule</span>
+            </button>
+            <button type="button" class="btn btn-success" onclick="openBatchCreateModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Batch Create</span>
             </button>
         </div>
     </div>
@@ -157,22 +151,6 @@
                 </label>
                 <input type="time" id="filterEndTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
-            <div class="filter-control">
-                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-users" style="margin-right: 0.25rem;"></i>Min Max Appointments
-                </label>
-                <input type="number" id="filterMinAppointments" class="filter-input" placeholder="Min..." min="0" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-            </div>
-            <div class="filter-control">
-                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Available
-                </label>
-                <select id="filterAvailable" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-                    <option value="">All</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                </select>
-            </div>
         </div>
     </div>
     <?php if (empty($schedules)): ?>
@@ -215,8 +193,6 @@
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
-                        <th>Max Appointments</th>
-                        <th>Available</th>
                         <th>Date Created</th>
                         <th>Date Updated</th>
                         <th>Actions</th>
@@ -230,19 +206,12 @@
                             data-date="<?= !empty($sched['created_at']) ? date('Y-m-d', strtotime($sched['created_at'])) : '' ?>"
                             data-start-time="<?= htmlspecialchars($sched['start_time'] ?? '') ?>"
                             data-end-time="<?= htmlspecialchars($sched['end_time'] ?? '') ?>"
-                            data-max-appointments="<?= (int)($sched['max_appointments'] ?? 0) ?>"
-                            data-available="<?= $sched['is_available'] ? 'yes' : 'no' ?>">
+>
                             <td><strong><?= $sched['schedule_date'] ? date('d M Y', strtotime($sched['schedule_date'])) : 'N/A' ?></strong></td>
                             <td>Dr. <?= htmlspecialchars($sched['doc_first_name'] . ' ' . $sched['doc_last_name']) ?></td>
                             <td><?= htmlspecialchars($sched['spec_name'] ?? 'N/A') ?></td>
                             <td><?= htmlspecialchars($sched['start_time']) ?></td>
                             <td><?= htmlspecialchars($sched['end_time']) ?></td>
-                            <td><?= htmlspecialchars($sched['max_appointments']) ?></td>
-                            <td>
-                                <span class="status-badge <?= $sched['is_available'] ? 'active' : 'inactive' ?>">
-                                    <?= $sched['is_available'] ? 'Yes' : 'No' ?>
-                                </span>
-                            </td>
                             <td style="color: var(--text-secondary);"><?= $sched['created_at'] ? date('d M Y', strtotime($sched['created_at'])) : 'N/A' ?></td>
                             <td style="color: var(--text-secondary);"><?= $sched['updated_at'] ? date('d M Y', strtotime($sched['updated_at'])) : 'N/A' ?></td>
                             <td>
@@ -325,16 +294,6 @@
                     <label>End Time: <span style="color: var(--status-error);">*</span></label>
                     <input type="time" name="end_time" id="edit_end_time" required class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" id="edit_max_appointments" min="1" class="form-control">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_available" id="edit_is_available" value="1" style="width: auto;">
-                    <span>Available for appointments</span>
-                </label>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -342,6 +301,161 @@
                     <span>Update Schedule</span>
                 </button>
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Schedule</h2>
+            <button type="button" class="modal-close" onclick="closeAddScheduleModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="create">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Doctor: <span style="color: var(--status-error);">*</span></label>
+                    <select name="doc_id" required class="form-control">
+                        <option value="">Select Doctor</option>
+                        <?php foreach ($doctors as $doc): ?>
+                            <option value="<?= $doc['doc_id'] ?>"><?= htmlspecialchars($doc['doctor_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Schedule Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="schedule_date" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="start_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="end_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                </div>
+                
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer; margin-top: 2rem;">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Schedule</span>
+                </button>
+                <button type="button" onclick="closeAddScheduleModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Batch Create Schedule Modal -->
+<div id="batchCreateModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Batch Create Schedules</h2>
+            <button type="button" class="modal-close" onclick="closeBatchCreateModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="batch_create">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Doctor: <span style="color: var(--status-error);">*</span></label>
+                    <select name="doc_id" id="batch_doc_id" required class="form-control">
+                        <option value="">Select Doctor</option>
+                        <?php foreach ($doctors as $doc): ?>
+                            <option value="<?= $doc['doc_id'] ?>"><?= htmlspecialchars($doc['doctor_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Start Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="start_date" id="batch_start_date" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>End Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="end_date" id="batch_end_date" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="start_time" id="batch_start_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="end_time" id="batch_end_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Days of Week: <span style="color: var(--status-error);">*</span></label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="monday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Monday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="tuesday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Tuesday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="wednesday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Wednesday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="thursday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Thursday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="friday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Friday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="saturday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Saturday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="sunday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Sunday</span>
+                    </label>
+                </div>
+            </div>
+            
+            
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Create Schedules</span>
+                </button>
+                <button type="button" onclick="closeBatchCreateModal()" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     <span>Cancel</span>
                 </button>
@@ -370,6 +484,28 @@
 </div>
 
 <script>
+// Add Schedule Modal Functions
+function openAddScheduleModal() {
+    document.getElementById('addModal').classList.add('active');
+}
+
+function closeAddScheduleModal() {
+    const modal = document.getElementById('addModal');
+    modal.classList.remove('active');
+    modal.querySelector('form').reset();
+}
+
+// Batch Create Modal Functions
+function openBatchCreateModal() {
+    document.getElementById('batchCreateModal').classList.add('active');
+}
+
+function closeBatchCreateModal() {
+    const modal = document.getElementById('batchCreateModal');
+    modal.classList.remove('active');
+    modal.querySelector('form').reset();
+}
+
 // Table Sorting Function
 function sortTable(column) {
     const url = new URL(window.location.href);
@@ -405,8 +541,6 @@ function applyTableFilters() {
             filterDateYear: document.getElementById('filterDateYear')?.value || '',
             filterStartTime: document.getElementById('filterStartTime')?.value || '',
             filterEndTime: document.getElementById('filterEndTime')?.value || '',
-            filterMinAppointments: document.getElementById('filterMinAppointments')?.value || '',
-            filterAvailable: document.getElementById('filterAvailable')?.value || ''
         };
         sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
         // Load all results first, then apply filters after page reloads
@@ -430,11 +564,8 @@ function filterTable() {
     const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
     const filterStartTime = document.getElementById('filterStartTime')?.value || '';
     const filterEndTime = document.getElementById('filterEndTime')?.value || '';
-    const filterMinAppointments = document.getElementById('filterMinAppointments')?.value ? parseInt(document.getElementById('filterMinAppointments').value) : null;
-    const filterAvailable = document.getElementById('filterAvailable')?.value.toLowerCase().trim() || '';
-    
     let visibleCount = 0;
-    let hasActiveFilters = filterDoctor || filterSpecialization || dateMonthFilter || dateDayFilter || dateYearFilter || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
+    let hasActiveFilters = filterDoctor || filterSpecialization || dateMonthFilter || dateDayFilter || dateYearFilter || filterStartTime || filterEndTime;
     
     rows.forEach(row => {
         const doctor = row.getAttribute('data-doctor') || '';
@@ -442,9 +573,6 @@ function filterTable() {
         const dateStr = row.getAttribute('data-date') || '';
         const startTime = row.getAttribute('data-start-time') || '';
         const endTime = row.getAttribute('data-end-time') || '';
-        const maxAppointments = parseInt(row.getAttribute('data-max-appointments') || '0');
-        const available = row.getAttribute('data-available') || '';
-        
         const matchesDoctor = !filterDoctor || doctor.includes(filterDoctor);
         const matchesSpecialization = !filterSpecialization || specialization.includes(filterSpecialization);
         
@@ -473,10 +601,8 @@ function filterTable() {
         
         const matchesStartTime = !filterStartTime || startTime === filterStartTime;
         const matchesEndTime = !filterEndTime || endTime === filterEndTime;
-        const matchesMinAppointments = filterMinAppointments === null || maxAppointments >= filterMinAppointments;
-        const matchesAvailable = !filterAvailable || available === filterAvailable;
         
-        if (matchesDoctor && matchesSpecialization && matchesDate && matchesStartTime && matchesEndTime && matchesMinAppointments && matchesAvailable) {
+        if (matchesDoctor && matchesSpecialization && matchesDate && matchesStartTime && matchesEndTime) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -518,8 +644,6 @@ function resetTableFilters() {
     document.getElementById('filterDateYear').value = '';
     document.getElementById('filterStartTime').value = '';
     document.getElementById('filterEndTime').value = '';
-    document.getElementById('filterMinAppointments').value = '';
-    document.getElementById('filterAvailable').value = '';
     
     filterTable();
     resetToPaginatedView();
@@ -565,8 +689,6 @@ function editSchedule(sched) {
     document.getElementById('edit_schedule_date').value = sched.schedule_date;
     document.getElementById('edit_start_time').value = sched.start_time;
     document.getElementById('edit_end_time').value = sched.end_time;
-    document.getElementById('edit_max_appointments').value = sched.max_appointments;
-    document.getElementById('edit_is_available').checked = sched.is_available == 1 || sched.is_available === true;
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -586,8 +708,6 @@ function viewSchedule(sched) {
     }) : 'N/A';
     const startTime = sched.start_time || 'N/A';
     const endTime = sched.end_time || 'N/A';
-    const maxAppointments = sched.max_appointments || 0;
-    const isAvailable = sched.is_available == 1 || sched.is_available === true;
     const created = sched.created_at ? new Date(sched.created_at).toLocaleString('en-US') : 'N/A';
     const updated = sched.updated_at ? new Date(sched.updated_at).toLocaleString('en-US') : 'N/A';
     
@@ -613,18 +733,6 @@ function viewSchedule(sched) {
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem;">Time:</strong>
                         <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${startTime} - ${endTime}</p>
-                    </div>
-                    <div>
-                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Max Appointments:</strong>
-                        <p style="margin: 0.5rem 0 0 0; color: var(--text-primary);">${maxAppointments}</p>
-                    </div>
-                    <div>
-                        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Available:</strong>
-                        <p style="margin: 0.5rem 0 0 0;">
-                            <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: ${isAvailable ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;'}">
-                                ${isAvailable ? 'Yes' : 'No'}
-                            </span>
-                        </p>
                     </div>
                 </div>
             </div>
@@ -693,7 +801,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
-                this.classList.remove('active');
+                if (this.id === 'addModal') {
+                    closeAddScheduleModal();
+                } else if (this.id === 'batchCreateModal') {
+                    closeBatchCreateModal();
+                } else {
+                    this.classList.remove('active');
+                }
             }
         });
     });
@@ -701,7 +815,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
-                modal.classList.remove('active');
+                if (modal.id === 'addModal') {
+                    closeAddScheduleModal();
+                } else if (modal.id === 'batchCreateModal') {
+                    closeBatchCreateModal();
+                } else {
+                    modal.classList.remove('active');
+                }
             });
         }
     });
@@ -743,12 +863,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (filterValues.filterEndTime && document.getElementById('filterEndTime')) {
                     document.getElementById('filterEndTime').value = filterValues.filterEndTime;
-                }
-                if (filterValues.filterMinAppointments && document.getElementById('filterMinAppointments')) {
-                    document.getElementById('filterMinAppointments').value = filterValues.filterMinAppointments;
-                }
-                if (filterValues.filterAvailable && document.getElementById('filterAvailable')) {
-                    document.getElementById('filterAvailable').value = filterValues.filterAvailable;
                 }
                 // Apply the filters
                 filterTable();

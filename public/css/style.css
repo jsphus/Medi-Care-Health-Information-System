@@ -1543,34 +1543,6 @@ body {
     gap: 0.75rem;
 }
 
-/* Breadcrumbs */
-.breadcrumbs {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-}
-
-.breadcrumbs a {
-    color: var(--primary-blue);
-    text-decoration: none;
-    transition: var(--transition);
-}
-
-.breadcrumbs a:hover {
-    text-decoration: underline;
-}
-
-.breadcrumbs span {
-    color: var(--text-light);
-}
-
-.breadcrumbs i {
-    font-size: 0.75rem;
-}
-
 /* Info Box */
 .info-box {
     background: var(--primary-blue-bg);

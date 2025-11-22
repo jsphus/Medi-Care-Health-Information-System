@@ -147,11 +147,11 @@
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
                         <?php
-                        $current_sort = $_GET['sort'] ?? 'record_date';
+                        $current_sort = $_GET['sort'] ?? 'med_rec_visit_date';
                         $current_order = $_GET['order'] ?? 'DESC';
                         ?>
-                        <th class="sortable <?= $current_sort === 'record_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('record_id')" 
+                        <th class="sortable <?= $current_sort === 'med_rec_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_id')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Record ID
                             <span class="sort-indicator">
@@ -159,10 +159,13 @@
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
-                        <th class="sortable <?= $current_sort === 'record_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('record_date')" 
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Appointment
+                        </th>
+                        <th class="sortable <?= $current_sort === 'med_rec_visit_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_visit_date')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Date
+                            Visit Date
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
                                 <i class="fas fa-arrow-down"></i>
@@ -174,18 +177,6 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Diagnosis
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Treatment
-                        </th>
-                        <th class="sortable <?= $current_sort === 'follow_up_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('follow_up_date')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Follow-up
-                            <span class="sort-indicator">
-                                <i class="fas fa-arrow-up"></i>
-                                <i class="fas fa-arrow-down"></i>
-                            </span>
-                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -193,15 +184,23 @@
                     <?php foreach ($records as $record): ?>
                         <tr class="table-row" 
                             data-patient="<?= htmlspecialchars(strtolower(($record['pat_first_name'] ?? '') . ' ' . ($record['pat_last_name'] ?? ''))) ?>"
-                            data-diagnosis="<?= htmlspecialchars(strtolower($record['diagnosis'] ?? '')) ?>"
-                            data-date="<?= $record['record_date'] ? date('Y-m-d', strtotime($record['record_date'])) : '' ?>"
+                            data-diagnosis="<?= htmlspecialchars(strtolower($record['med_rec_diagnosis'] ?? $record['diagnosis'] ?? '')) ?>"
+                            data-date="<?= $record['med_rec_visit_date'] ?? $record['record_date'] ? date('Y-m-d', strtotime($record['med_rec_visit_date'] ?? $record['record_date'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
-                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['record_id']) ?></strong>
+                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['med_rec_id'] ?? $record['record_id']) ?></strong>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['record_date'] ? date('d M Y', strtotime($record['record_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);">
+                                <div style="font-size: 0.875rem;">
+                                    <strong><?= htmlspecialchars($record['appointment_id'] ?? $record['appt_id'] ?? 'N/A') ?></strong><br>
+                                    <span style="color: var(--text-secondary); font-size: 0.8125rem;">
+                                        <?= $record['appointment_date'] ? date('d M Y', strtotime($record['appointment_date'])) : 'N/A' ?>
+                                    </span>
+                                </div>
+                            </td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= ($record['med_rec_visit_date'] ?? $record['record_date']) ? date('d M Y', strtotime($record['med_rec_visit_date'] ?? $record['record_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                                     <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
@@ -214,9 +213,7 @@
                                     <strong style="color: var(--text-primary);"><?= htmlspecialchars($record['pat_first_name'] . ' ' . $record['pat_last_name']) ?></strong>
                                 </div>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['treatment'] ?? '', 0, 50)) ?><?= strlen($record['treatment'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['follow_up_date'] ? date('d M Y', strtotime($record['follow_up_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['med_rec_diagnosis'] ?? $record['diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['med_rec_diagnosis'] ?? $record['diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-record-btn" 
@@ -272,49 +269,42 @@
         <form method="POST">
             <input type="hidden" name="action" value="create">
             <div class="form-grid">
-                <div class="form-group">
-                    <label>Patient: <span style="color: var(--status-error);">*</span></label>
-                    <select name="pat_id" id="add_patient_select" required class="form-control" style="width: 100%;">
-                        <option value="">Select Patient</option>
-                        <?php if (!empty($patients)): ?>
-                            <?php foreach ($patients as $patient): ?>
-                                <option value="<?= $patient['pat_id'] ?>">
-                                    <?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?>
+                <div class="form-group form-grid-full">
+                    <label>Appointment: <span style="color: var(--status-error);">*</span></label>
+                    <select name="appointment_id" id="add_appointment_select" required class="form-control" style="width: 100%;">
+                        <option value="">Select Appointment</option>
+                        <?php if (!empty($appointments)): ?>
+                            <?php foreach ($appointments as $appt): ?>
+                                <?php 
+                                $patientName = htmlspecialchars(trim($appt['pat_first_name'] . ' ' . ($appt['pat_middle_initial'] ?? '') . ' ' . $appt['pat_last_name']));
+                                $apptDate = date('M d, Y', strtotime($appt['appointment_date']));
+                                $apptTime = date('g:i A', strtotime($appt['appointment_time']));
+                                $serviceName = !empty($appt['service_name']) ? ' - ' . htmlspecialchars($appt['service_name']) : '';
+                                ?>
+                                <option value="<?= htmlspecialchars($appt['appointment_id']) ?>" data-appointment-date="<?= htmlspecialchars($appt['appointment_date']) ?>">
+                                    <?= htmlspecialchars($appt['appointment_id']) ?> - <?= $patientName ?> (<?= $apptDate ?> at <?= $apptTime ?>)<?= $serviceName ?>
                                 </option>
                             <?php endforeach; ?>
                         <?php else: ?>
-                            <option value="" disabled>No patients available</option>
+                            <option value="" disabled>No completed appointments available without medical records</option>
                         <?php endif; ?>
                     </select>
+                    <small style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                        Only completed appointments without medical records are shown
+                    </small>
                 </div>
                 <div class="form-group">
-                    <label>Appointment ID (Optional):</label>
-                    <input type="text" name="appointment_id" placeholder="e.g., 2025-10-0000001" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Record Date: <span style="color: var(--status-error);">*</span></label>
-                    <input type="date" name="record_date" value="<?= date('Y-m-d') ?>" required class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Follow-up Date:</label>
-                    <input type="date" name="follow_up_date" class="form-control">
+                    <label>Visit Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="med_rec_visit_date" id="add_visit_date" value="<?= date('Y-m-d') ?>" required class="form-control">
                 </div>
             </div>
             <div class="form-group form-grid-full">
                 <label>Diagnosis: <span style="color: var(--status-error);">*</span></label>
-                <textarea name="diagnosis" rows="3" required class="form-control"></textarea>
-            </div>
-            <div class="form-group form-grid-full">
-                <label>Treatment: <span style="color: var(--status-error);">*</span></label>
-                <textarea name="treatment" rows="3" required class="form-control"></textarea>
+                <textarea name="med_rec_diagnosis" id="add_diagnosis" rows="4" required class="form-control" placeholder="Enter diagnosis details..."></textarea>
             </div>
             <div class="form-group form-grid-full">
                 <label>Prescription:</label>
-                <textarea name="prescription" rows="3" class="form-control"></textarea>
-            </div>
-            <div class="form-group form-grid-full">
-                <label>Notes:</label>
-                <textarea name="notes" rows="2" class="form-control"></textarea>
+                <textarea name="med_rec_prescription" id="add_prescription" rows="4" class="form-control" placeholder="Enter prescription details..."></textarea>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -344,23 +334,11 @@
             <input type="hidden" name="id" id="edit_id">
             <div class="form-group form-grid-full">
                 <label>Diagnosis: <span style="color: var(--status-error);">*</span></label>
-                <textarea name="diagnosis" id="edit_diagnosis" rows="3" required class="form-control"></textarea>
-            </div>
-            <div class="form-group form-grid-full">
-                <label>Treatment: <span style="color: var(--status-error);">*</span></label>
-                <textarea name="treatment" id="edit_treatment" rows="3" required class="form-control"></textarea>
+                <textarea name="med_rec_diagnosis" id="edit_diagnosis" rows="4" required class="form-control" placeholder="Enter diagnosis details..."></textarea>
             </div>
             <div class="form-group form-grid-full">
                 <label>Prescription:</label>
-                <textarea name="prescription" id="edit_prescription" rows="3" class="form-control"></textarea>
-            </div>
-            <div class="form-group form-grid-full">
-                <label>Notes:</label>
-                <textarea name="notes" id="edit_notes" rows="2" class="form-control"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Follow-up Date:</label>
-                <input type="date" name="follow_up_date" id="edit_follow_up_date" class="form-control">
+                <textarea name="med_rec_prescription" id="edit_prescription" rows="4" class="form-control" placeholder="Enter prescription details..."></textarea>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -385,6 +363,22 @@ function closeAddMedicalRecordModal() {
     document.getElementById('addModal').classList.remove('active');
     document.querySelector('#addModal form').reset();
 }
+
+// Auto-populate visit date when appointment is selected
+document.addEventListener('DOMContentLoaded', function() {
+    const appointmentSelect = document.getElementById('add_appointment_select');
+    const visitDateInput = document.getElementById('add_visit_date');
+    
+    if (appointmentSelect && visitDateInput) {
+        appointmentSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value && selectedOption.dataset.appointmentDate) {
+                // Use the appointment date from data attribute
+                visitDateInput.value = selectedOption.dataset.appointmentDate;
+            }
+        });
+    }
+});
 
 function viewRecord(record) {
     // Helper function to format date
@@ -432,24 +426,25 @@ function viewRecord(record) {
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div>
-                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.record_id}</p>
-                    <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${record.record_date}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.med_rec_id}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Visit Date:</strong> ${record.med_rec_visit_date || 'N/A'}</p>
                 </div>
                 <div>
-                    <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appointment_id || 'N/A'}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appt_id || record.appointment_id || 'N/A'}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Appointment Date:</strong> ${record.appointment_date || 'N/A'}</p>
                 </div>
             </div>
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 2rem; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.created_at)}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.med_rec_created_at || record.created_at)}</p>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.updated_at)}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.med_rec_updated_at || record.updated_at)}</p>
                     </div>
                 </div>
             </div>
@@ -459,35 +454,14 @@ function viewRecord(record) {
         
         <div style="margin-bottom: 1.5rem;">
             <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Diagnosis</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.diagnosis || 'N/A'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Treatment</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.treatment || 'N/A'}</p>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_diagnosis || record.diagnosis || 'N/A'}</p>
         </div>
         
         <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
         
         <div style="margin-bottom: 1.5rem;">
             <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Prescription</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.prescription || 'None'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Notes</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.notes || 'None'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0;">
-            <i class="fas fa-calendar-check" style="color: var(--primary-blue);"></i>
-            <p style="margin: 0;"><strong>Follow-up Date:</strong> ${record.follow_up_date || 'Not scheduled'}</p>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_prescription || record.prescription || 'None'}</p>
         </div>
     `;
     document.getElementById('viewContent').innerHTML = content;
@@ -499,12 +473,9 @@ function closeViewModal() {
 }
 
 function editRecord(record) {
-    document.getElementById('edit_id').value = record.record_id;
-    document.getElementById('edit_diagnosis').value = record.diagnosis;
-    document.getElementById('edit_treatment').value = record.treatment;
-    document.getElementById('edit_prescription').value = record.prescription || '';
-    document.getElementById('edit_notes').value = record.notes || '';
-    document.getElementById('edit_follow_up_date').value = record.follow_up_date || '';
+    document.getElementById('edit_id').value = record.med_rec_id;
+    document.getElementById('edit_diagnosis').value = record.med_rec_diagnosis || '';
+    document.getElementById('edit_prescription').value = record.med_rec_prescription || '';
     document.getElementById('editModal').classList.add('active');
 }
 

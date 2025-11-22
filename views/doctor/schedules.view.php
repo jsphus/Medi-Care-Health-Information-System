@@ -44,8 +44,6 @@
                     <tr>
                         <th>Start Time</th>
                         <th>End Time</th>
-                        <th>Max Appointments</th>
-                        <th>Available</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,12 +51,6 @@
                         <tr>
                             <td><?= htmlspecialchars($sched['start_time']) ?></td>
                             <td><?= htmlspecialchars($sched['end_time']) ?></td>
-                            <td><?= htmlspecialchars($sched['max_appointments']) ?></td>
-                            <td>
-                                <span class="status-badge <?= $sched['is_available'] ? 'active' : 'inactive' ?>">
-                                    <?= $sched['is_available'] ? 'Yes' : 'No' ?>
-                                </span>
-                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -149,10 +141,16 @@
                 <i class="fas fa-filter"></i>
             </button>
         </div>
-        <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()" style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fas fa-plus"></i>
-            <span>Add New Schedule</span>
-        </button>
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-plus"></i>
+                <span>Add Schedule</span>
+            </button>
+            <button type="button" class="btn btn-success" onclick="openBatchCreateModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Batch Create</span>
+            </button>
+        </div>
     </div>
 
     <!-- Filter Bar (Hidden by default) -->
@@ -190,22 +188,6 @@
                     <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>End Time
                 </label>
                 <input type="time" id="filterEndTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-            </div>
-            <div class="filter-control">
-                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-users" style="margin-right: 0.25rem;"></i>Min Max Appointments
-                </label>
-                <input type="number" id="filterMinAppointments" class="filter-input" placeholder="Min..." min="0" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-            </div>
-            <div class="filter-control">
-                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Available
-                </label>
-                <select id="filterAvailable" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-                    <option value="">All</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                </select>
             </div>
         </div>
     </div>
@@ -266,8 +248,6 @@
                             data-date="<?= !empty($sched['schedule_date']) ? date('Y-m-d', strtotime($sched['schedule_date'])) : '' ?>"
                             data-start-time="<?= htmlspecialchars($sched['start_time'] ?? '') ?>"
                             data-end-time="<?= htmlspecialchars($sched['end_time'] ?? '') ?>"
-                            data-max-appointments="<?= (int)($sched['max_appointments'] ?? 0) ?>"
-                            data-available="<?= $sched['is_available'] ? 'yes' : 'no' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
@@ -276,12 +256,6 @@
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($sched['start_time']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($sched['end_time']) ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($sched['max_appointments']) ?></td>
-                            <td style="padding: 1rem;">
-                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $sched['is_available'] ? '#10b98120; color: #10b981;' : '#ef444420; color: #ef4444;' ?>">
-                                    <?= $sched['is_available'] ? 'Yes' : 'No' ?>
-                                </span>
-                            </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-schedule-btn" 
@@ -338,16 +312,6 @@
                     <label>End Time: <span style="color: var(--status-error);">*</span></label>
                     <input type="time" name="end_time" required class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" min="1" value="10" class="form-control">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_available" value="1" checked style="width: auto;">
-                    <span>Available for appointments</span>
-                </label>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -388,16 +352,6 @@
                     <label>End Time: <span style="color: var(--status-error);">*</span></label>
                     <input type="time" name="end_time" id="edit_end_time" required class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Max Appointments:</label>
-                    <input type="number" name="max_appointments" id="edit_max_appointments" min="1" class="form-control">
-                </div>
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_available" id="edit_is_available" value="1" style="width: auto;">
-                    <span>Available for appointments</span>
-                </label>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -405,6 +359,95 @@
                     <span>Update Schedule</span>
                 </button>
                 <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Batch Create Schedule Modal -->
+<div id="batchCreateModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Batch Create Schedules</h2>
+            <button type="button" class="modal-close" onclick="closeBatchCreateModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="batch_create">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Start Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="start_date" id="batch_start_date" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>End Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="end_date" id="batch_end_date" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>Start Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="start_time" id="batch_start_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label>End Time: <span style="color: var(--status-error);">*</span></label>
+                    <input type="time" name="end_time" id="batch_end_time" required class="form-control">
+                </div>
+                
+                <div class="form-group">
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Days of Week: <span style="color: var(--status-error);">*</span></label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="monday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Monday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="tuesday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Tuesday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="wednesday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Wednesday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="thursday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Thursday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="friday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Friday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="saturday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Saturday</span>
+                    </label>
+                    <label style="display: flex; align-items: center; cursor: pointer; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-md);">
+                        <input type="checkbox" name="days_of_week[]" value="sunday" style="margin-right: 0.5rem; width: auto;">
+                        <span>Sunday</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                </label>
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Create Schedules</span>
+                </button>
+                <button type="button" onclick="closeBatchCreateModal()" class="btn btn-secondary">
                     <i class="fas fa-times"></i>
                     <span>Cancel</span>
                 </button>
@@ -424,13 +467,22 @@ function closeAddScheduleModal() {
     modal.querySelector('form').reset();
 }
 
+// Batch Create Modal Functions
+function openBatchCreateModal() {
+    document.getElementById('batchCreateModal').classList.add('active');
+}
+
+function closeBatchCreateModal() {
+    const modal = document.getElementById('batchCreateModal');
+    modal.classList.remove('active');
+    modal.querySelector('form').reset();
+}
+
 function editSchedule(sched) {
     document.getElementById('edit_id').value = sched.schedule_id;
     document.getElementById('edit_schedule_date').value = sched.schedule_date;
     document.getElementById('edit_start_time').value = sched.start_time;
     document.getElementById('edit_end_time').value = sched.end_time;
-    document.getElementById('edit_max_appointments').value = sched.max_appointments;
-    document.getElementById('edit_is_available').checked = sched.is_available == 1 || sched.is_available === true;
     document.getElementById('editModal').classList.add('active');
 }
 
@@ -473,12 +525,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Reset batch create form when modal closes
+    const batchCreateModal = document.getElementById('batchCreateModal');
+    if (batchCreateModal) {
+        batchCreateModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.querySelector('form').reset();
+            }
+        });
+    }
+    
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
-                // Reset add form if it's the add modal
-                if (modal.id === 'addModal') {
+                // Reset forms if it's the add or batch create modal
+                if (modal.id === 'addModal' || modal.id === 'batchCreateModal') {
                     modal.querySelector('form').reset();
                 }
             });
@@ -516,26 +578,18 @@ function filterTable() {
     const filterDate = document.getElementById('filterDate')?.value || '';
     const filterStartTime = document.getElementById('filterStartTime')?.value || '';
     const filterEndTime = document.getElementById('filterEndTime')?.value || '';
-    const filterMinAppointments = document.getElementById('filterMinAppointments')?.value ? parseInt(document.getElementById('filterMinAppointments').value) : null;
-    const filterAvailable = document.getElementById('filterAvailable')?.value.toLowerCase().trim() || '';
-    
     let visibleCount = 0;
-    let hasActiveFilters = filterDate || filterStartTime || filterEndTime || filterMinAppointments !== null || filterAvailable;
+    let hasActiveFilters = filterDate || filterStartTime || filterEndTime;
     
     rows.forEach(row => {
         const date = row.getAttribute('data-date') || '';
         const startTime = row.getAttribute('data-start-time') || '';
         const endTime = row.getAttribute('data-end-time') || '';
-        const maxAppointments = parseInt(row.getAttribute('data-max-appointments') || '0');
-        const available = row.getAttribute('data-available') || '';
-        
         const matchesDate = !filterDate || date === filterDate;
         const matchesStartTime = !filterStartTime || startTime === filterStartTime;
         const matchesEndTime = !filterEndTime || endTime === filterEndTime;
-        const matchesMinAppointments = filterMinAppointments === null || maxAppointments >= filterMinAppointments;
-        const matchesAvailable = !filterAvailable || available === filterAvailable;
         
-        if (matchesDate && matchesStartTime && matchesEndTime && matchesMinAppointments && matchesAvailable) {
+        if (matchesDate && matchesStartTime && matchesEndTime) {
             row.style.display = '';
             visibleCount++;
         } else {

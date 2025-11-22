@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/staff/specializations">
-                <i class="fas fa-graduation-cap"></i>
-                <span>Specializations</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Doctors</span>
-        </div>
         <h1 class="page-title"><?= isset($specialization) && $specialization ? htmlspecialchars($specialization['spec_name']) . ' Doctors' : 'Doctors' ?></h1>
     </div>
 </div>

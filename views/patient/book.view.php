@@ -446,7 +446,7 @@
         </div>
     </div>
     
-    <?php if (empty($doctors)): ?>
+    <?php if (empty($available_doctors) && empty($unavailable_doctors)): ?>
         <div class="empty-state">
             <div class="empty-state-icon"><i class="fas fa-user-md"></i></div>
             <div class="empty-state-text">No doctors found</div>
@@ -455,36 +455,118 @@
             <?php endif; ?>
         </div>
     <?php else: ?>
-        <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem;">
-            <div class="doctors-grid">
-                <?php foreach ($doctors as $doctor): ?>
-                    <?php
-                    $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
-                    $doctorName = 'Dr. ' . htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? ''));
-                    $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
-                    $fee = $doctor['doc_consultation_fee'] ?? 0;
-                    ?>
-                    <div class="doctor-card" 
-                         data-doctor='<?= json_encode($doctor, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
-                         onclick="openDoctorModalFromCard(this)" 
-                         style="cursor: pointer;"
-                         aria-label="View details for <?= $doctorName ?>">
-                        <div class="doctor-avatar-large">
-                            <?php if (!empty($doctor['profile_picture_url'])): ?>
-                                <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor">
-                            <?php else: ?>
-                                <?= $initials ?>
-                            <?php endif; ?>
-                        </div>
-                        <div class="doctor-name"><?= $doctorName ?></div>
-                        <div class="doctor-specialization"><?= $specialization ?></div>
-                        <?php if ($fee > 0): ?>
-                            <div class="doctor-fee">₱<?= number_format($fee, 2) ?>/consultation</div>
-                        <?php endif; ?>
+        <!-- Available Doctors Section -->
+        <?php if (!empty($available_doctors)): ?>
+            <div style="margin-bottom: 3rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    Available Doctors
+                </h2>
+                <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem;">
+                    <div class="doctors-grid">
+                        <?php foreach ($available_doctors as $doctor): ?>
+                            <?php
+                            $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
+                            $doctorName = 'Dr. ' . htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? ''));
+                            $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+                            $fee = $doctor['doc_consultation_fee'] ?? 0;
+                            $schedules = $doctor_schedules[$doctor['doc_id']] ?? [];
+                            ?>
+                            <div class="doctor-card" 
+                                 data-doctor='<?= json_encode($doctor, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                 data-schedules='<?= json_encode($schedules, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                 onclick="openDoctorModalFromCard(this)" 
+                                 style="cursor: pointer; position: relative;"
+                                 aria-label="View details for <?= $doctorName ?>">
+                                <div class="doctor-avatar-large">
+                                    <?php if (!empty($doctor['profile_picture_url'])): ?>
+                                        <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor">
+                                    <?php else: ?>
+                                        <?= $initials ?>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="doctor-name"><?= $doctorName ?></div>
+                                <div class="doctor-specialization"><?= $specialization ?></div>
+                                <?php if ($fee > 0): ?>
+                                    <div class="doctor-fee">₱<?= number_format($fee, 2) ?>/consultation</div>
+                                <?php endif; ?>
+                                <?php if (!empty($schedules)): ?>
+                                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; width: 100%;">
+                                        <div style="font-size: 0.75rem; color: #6b7280; font-weight: 600; margin-bottom: 0.5rem;">Available Times:</div>
+                                        <div style="display: flex; flex-direction: column; gap: 0.25rem; max-height: 80px; overflow-y: auto;">
+                                            <?php 
+                                            $displayed_count = 0;
+                                            foreach (array_slice($schedules, 0, 3) as $schedule): 
+                                                $displayed_count++;
+                                                $schedule_date = date('M j', strtotime($schedule['schedule_date']));
+                                                $start_time = date('g:i A', strtotime($schedule['start_time']));
+                                                $end_time = date('g:i A', strtotime($schedule['end_time']));
+                                            ?>
+                                                <div style="font-size: 0.7rem; color: #10b981; display: flex; align-items: center; gap: 0.25rem;">
+                                                    <i class="fas fa-calendar-alt" style="font-size: 0.6rem;"></i>
+                                                    <span><?= $schedule_date ?>: <?= $start_time ?> - <?= $end_time ?></span>
+                                                </div>
+                                            <?php endforeach; ?>
+                                            <?php if (count($schedules) > 3): ?>
+                                                <div style="font-size: 0.7rem; color: #6b7280; font-style: italic;">
+                                                    +<?= count($schedules) - 3 ?> more
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
+        
+        <!-- Unavailable Doctors Section -->
+        <?php if (!empty($unavailable_doctors)): ?>
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-clock" style="color: #f59e0b;"></i>
+                    Currently Unavailable
+                </h2>
+                <div style="background: #f9fafb; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; border: 1px solid #e5e7eb;">
+                    <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+                        These doctors don't have available schedules at the moment. Check back later or contact them directly.
+                    </p>
+                    <div class="doctors-grid">
+                        <?php foreach ($unavailable_doctors as $doctor): ?>
+                            <?php
+                            $initials = strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1));
+                            $doctorName = 'Dr. ' . htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? ''));
+                            $specialization = htmlspecialchars($doctor['spec_name'] ?? 'General Practice');
+                            $fee = $doctor['doc_consultation_fee'] ?? 0;
+                            ?>
+                            <div class="doctor-card" 
+                                 data-doctor='<?= json_encode($doctor, JSON_HEX_APOS | JSON_HEX_QUOT) ?>'
+                                 onclick="openDoctorModalFromCard(this)" 
+                                 style="cursor: pointer; opacity: 0.7;"
+                                 aria-label="View details for <?= $doctorName ?>">
+                                <div class="doctor-avatar-large" style="opacity: 0.6;">
+                                    <?php if (!empty($doctor['profile_picture_url'])): ?>
+                                        <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Doctor">
+                                    <?php else: ?>
+                                        <?= $initials ?>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="doctor-name"><?= $doctorName ?></div>
+                                <div class="doctor-specialization"><?= $specialization ?></div>
+                                <?php if ($fee > 0): ?>
+                                    <div class="doctor-fee">₱<?= number_format($fee, 2) ?>/consultation</div>
+                                <?php endif; ?>
+                                <div style="margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.75rem; color: #92400e; font-weight: 600;">
+                                    <i class="fas fa-exclamation-triangle"></i> Not Available
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
@@ -554,17 +636,19 @@ function filterBySpecialization(specialization) {
 // Doctor Modal Functions
 function openDoctorModalFromCard(cardElement) {
     const doctorData = cardElement.getAttribute('data-doctor');
+    const schedulesData = cardElement.getAttribute('data-schedules');
     if (doctorData) {
         try {
             const doctor = JSON.parse(doctorData);
-            openDoctorModal(doctor);
+            const schedules = schedulesData ? JSON.parse(schedulesData) : [];
+            openDoctorModal(doctor, schedules);
         } catch (e) {
             console.error('Error parsing doctor data:', e);
         }
     }
 }
 
-function openDoctorModal(doctor) {
+function openDoctorModal(doctor, schedules = []) {
     const modal = document.getElementById('doctorModal');
     const modalBody = document.getElementById('doctorModalBody');
     
@@ -615,6 +699,78 @@ function openDoctorModal(doctor) {
             ` : ''}
         </div>
     `;
+    
+    // Add schedules section
+    if (schedules && schedules.length > 0) {
+        content += `
+            <div class="doctor-modal-section">
+                <h2 class="doctor-modal-section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Available Schedules
+                </h2>
+                <div class="doctor-modal-section-content">
+                    <div style="display: grid; gap: 0.75rem; max-height: 300px; overflow-y: auto; padding-right: 0.5rem;">
+        `;
+        
+        // Group schedules by date
+        const schedulesByDate = {};
+        schedules.forEach(schedule => {
+            const date = schedule.schedule_date;
+            if (!schedulesByDate[date]) {
+                schedulesByDate[date] = [];
+            }
+            schedulesByDate[date].push(schedule);
+        });
+        
+        // Display schedules grouped by date
+        Object.keys(schedulesByDate).sort().forEach(date => {
+            const dateSchedules = schedulesByDate[date];
+            const dateFormatted = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            content += `
+                <div style="background: #f9fafb; border-radius: 8px; padding: 1rem; border-left: 3px solid #10b981;">
+                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">
+                        <i class="fas fa-calendar" style="color: #10b981; margin-right: 0.5rem;"></i>
+                        ${dateFormatted}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            `;
+            
+            dateSchedules.forEach(schedule => {
+                const startTime = new Date('2000-01-01T' + schedule.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                const endTime = new Date('2000-01-01T' + schedule.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                content += `
+                    <div style="background: white; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 0.875rem;">
+                        <i class="fas fa-clock" style="color: #6b7280; margin-right: 0.25rem;"></i>
+                        <strong>${startTime}</strong> - ${endTime}
+                    </div>
+                `;
+            });
+            
+            content += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        content += `
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        content += `
+            <div class="doctor-modal-section">
+                <h2 class="doctor-modal-section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Available Schedules
+                </h2>
+                <div class="doctor-modal-section-content">
+                    <p style="color: #6b7280; font-style: italic;">No available schedules at the moment. Please check back later.</p>
+                </div>
+            </div>
+        `;
+    }
     
     if (doctor.doc_bio) {
         content += `

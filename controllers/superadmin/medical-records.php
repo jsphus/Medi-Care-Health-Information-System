@@ -14,7 +14,7 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $id = (int)$_POST['id'];
     try {
-        $stmt = $db->prepare("DELETE FROM medical_records WHERE record_id = :id");
+        $stmt = $db->prepare("DELETE FROM medical_records WHERE med_rec_id = :id");
         $stmt->execute(['id' => $id]);
         $success = 'Medical record deleted successfully';
     } catch (PDOException $e) {
@@ -37,45 +37,51 @@ try {
     $params = [];
 
     if (!empty($search_query)) {
-        $where_conditions[] = "(p.pat_first_name LIKE :search OR p.pat_middle_initial LIKE :search OR p.pat_last_name LIKE :search OR mr.diagnosis LIKE :search)";
+        $where_conditions[] = "(p.pat_first_name LIKE :search OR p.pat_last_name LIKE :search OR mr.med_rec_diagnosis LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
 
     if ($filter_doctor) {
-        $where_conditions[] = "mr.doc_id = :doctor";
+        $where_conditions[] = "a.doc_id = :doctor";
         $params['doctor'] = $filter_doctor;
     }
 
     if ($filter_patient) {
-        $where_conditions[] = "mr.pat_id = :patient";
+        $where_conditions[] = "a.pat_id = :patient";
         $params['patient'] = $filter_patient;
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    // Handle sorting
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'record_date';
+    // Handle sorting - default to showing newest records first by creation date
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'med_rec_created_at';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['record_date', 'record_id', 'follow_up_date'];
+    $allowed_columns = ['med_rec_visit_date', 'med_rec_id', 'med_rec_created_at'];
     if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'record_date';
+        $sort_column = 'med_rec_created_at';
     }
     
-    $order_by = "mr.$sort_column $sort_order";
+    if ($sort_column === 'med_rec_created_at') {
+        $order_by = "COALESCE(mr.med_rec_created_at, '1970-01-01'::timestamp) $sort_order, mr.med_rec_id DESC";
+    } else {
+        $order_by = "mr.$sort_column $sort_order";
+    }
 
     $stmt = $db->prepare("
         SELECT mr.*, 
+               a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
                p.pat_first_name, p.pat_last_name,
                d.doc_first_name, d.doc_last_name,
-               a.appointment_date,
-               (SELECT profile_picture_url FROM users WHERE pat_id = p.pat_id LIMIT 1) as patient_profile_picture,
-               (SELECT profile_picture_url FROM users WHERE doc_id = d.doc_id LIMIT 1) as doctor_profile_picture
+               up.profile_picture_url as patient_profile_picture,
+               ud.profile_picture_url as doctor_profile_picture
         FROM medical_records mr
-        LEFT JOIN patients p ON mr.pat_id = p.pat_id
-        LEFT JOIN doctors d ON mr.doc_id = d.doc_id
-        LEFT JOIN appointments a ON mr.appointment_id = a.appointment_id
+        JOIN appointments a ON mr.appt_id = a.appointment_id
+        JOIN patients p ON a.pat_id = p.pat_id
+        JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN users up ON up.pat_id = p.pat_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY $order_by
     ");
@@ -90,12 +96,12 @@ try {
 $filter_doctors = [];
 $filter_patients = [];
 try {
-    // Get unique doctors from medical records
-    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM medical_records mr JOIN doctors d ON mr.doc_id = d.doc_id ORDER BY d.doc_first_name");
+    // Get unique doctors from medical records (via appointments)
+    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
     $filter_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get unique patients from medical records
-    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM medical_records mr JOIN patients p ON mr.pat_id = p.pat_id ORDER BY p.pat_first_name");
+    // Get unique patients from medical records (via appointments)
+    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
     $filter_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $filter_doctors = [];
@@ -115,12 +121,11 @@ try {
     $stats['total'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
     // Records this month
-    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records WHERE DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE)");
+    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records WHERE DATE_TRUNC('month', med_rec_visit_date) = DATE_TRUNC('month', CURRENT_DATE)");
     $stats['this_month'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Pending follow-up (records with follow-up date in the future)
-    $stmt = $db->query("SELECT COUNT(*) as count FROM medical_records WHERE follow_up_date IS NOT NULL AND follow_up_date >= CURRENT_DATE");
-    $stats['pending_followup'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // Pending follow-up removed (field no longer exists)
+    $stats['pending_followup'] = 0;
 } catch (PDOException $e) {
     // Keep default values
 }

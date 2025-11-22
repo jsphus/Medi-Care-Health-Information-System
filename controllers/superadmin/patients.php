@@ -254,9 +254,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute(['id' => $id]);
             $appointments = $stmt->fetchAll(PDO::FETCH_COLUMN);
             
-            // Step 2: Delete medical records for this patient (before deleting appointments they reference)
-            $stmt = $db->prepare("DELETE FROM medical_records WHERE pat_id = :id");
-            $stmt->execute(['id' => $id]);
+            // Step 2: Delete medical records for this patient (via appointments, before deleting appointments they reference)
+            if (!empty($appointments)) {
+                $placeholders = str_repeat('?,', count($appointments) - 1) . '?';
+                $stmt = $db->prepare("DELETE FROM medical_records WHERE appt_id IN ($placeholders)");
+                $stmt->execute($appointments);
+            }
             
             // Step 3: Delete payments for these appointments
             if (!empty($appointments)) {
@@ -302,7 +305,7 @@ $filter_insurance = isset($_GET['insurance']) ? sanitize($_GET['insurance']) : '
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all patients with filters
@@ -345,9 +348,13 @@ try {
     
     // Special handling for name sorting (sort by first name, then last name)
     if ($sort_column === 'pat_first_name') {
-        $order_by = "pat_first_name $sort_order, pat_last_name $sort_order";
+        $order_by = "p.pat_first_name $sort_order, p.pat_last_name $sort_order";
+    } elseif ($sort_column === 'created_at') {
+        // Use COALESCE to handle NULL values and add pat_id DESC as secondary sort
+        // This ensures most recent patients (by creation date, then by ID) appear first
+        $order_by = "COALESCE(p.created_at, '1970-01-01'::timestamp) $sort_order, p.pat_id DESC";
     } else {
-        $order_by = "$sort_column $sort_order";
+        $order_by = "p.$sort_column $sort_order";
     }
     
     // Fetch paginated results with profile pictures
@@ -446,6 +453,30 @@ try {
     $most_active_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     // Keep empty array
+}
+
+// Fetch recently added patients
+$recently_added_patients = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            p.pat_id,
+            p.pat_first_name,
+            p.pat_middle_initial,
+            p.pat_last_name,
+            p.pat_email,
+            p.pat_gender,
+            p.created_at,
+            u.profile_picture_url
+        FROM patients p
+        LEFT JOIN users u ON p.pat_id = u.pat_id
+        ORDER BY COALESCE(p.created_at, '1970-01-01'::timestamp) DESC, p.pat_id DESC
+        LIMIT 10
+    ");
+    $recently_added_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_patients = [];
 }
 
 require_once __DIR__ . '/../../views/superadmin/patients.view.php';

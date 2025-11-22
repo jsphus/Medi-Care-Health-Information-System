@@ -55,6 +55,19 @@ class Appointment extends Entity {
             $errors[] = 'Appointment time is required.';
         }
 
+        // Validate that appointment date/time matches doctor's schedule
+        if (!empty($data['doc_id']) && !empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+            $scheduleValidation = $this->validateScheduleAvailability(
+                $data['doc_id'],
+                $data['appointment_date'],
+                $data['appointment_time'],
+                $isNew ? null : ($data['appointment_id'] ?? null)
+            );
+            if (!$scheduleValidation['valid']) {
+                $errors[] = $scheduleValidation['error'];
+            }
+        }
+
         return $errors;
     }
 
@@ -320,17 +333,26 @@ class Appointment extends Entity {
 
         $appointments = $this->db->fetchAll("
             SELECT a.*, 
-                   d.doc_first_name, d.doc_last_name, d.doc_specialization_id,
+                   d.doc_first_name, d.doc_last_name, d.doc_middle_initial, d.doc_specialization_id, d.doc_consultation_fee,
                    s.service_name, s.service_price,
                    st.status_name, st.status_color,
                    sp.spec_name,
-                   ud.profile_picture_url as doctor_profile_picture
+                   ud.profile_picture_url as doctor_profile_picture,
+                   p.payment_id, p.payment_amount, p.payment_status_id,
+                   ps.status_name as payment_status_name, ps.status_color as payment_status_color
             FROM appointments a
             LEFT JOIN doctors d ON a.doc_id = d.doc_id
             LEFT JOIN services s ON a.service_id = s.service_id
             LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
             LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
             LEFT JOIN users ud ON ud.doc_id = d.doc_id
+            LEFT JOIN (
+                SELECT DISTINCT ON (appointment_id) 
+                    appointment_id, payment_id, payment_amount, payment_status_id
+                FROM payments
+                ORDER BY appointment_id, payment_date DESC, created_at DESC
+            ) p ON p.appointment_id = a.appointment_id
+            LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
             $whereClause
             ORDER BY a.appointment_date DESC, a.appointment_time DESC
         ", $params);
@@ -423,6 +445,41 @@ class Appointment extends Entity {
         return isset($service['service_duration_minutes']) ? (int)$service['service_duration_minutes'] : 30;
     }
 
+    /**
+     * Validate that appointment date/time matches an available doctor schedule
+     * @param int $docId Doctor ID
+     * @param string $appointmentDate Appointment date (Y-m-d format)
+     * @param string $appointmentTime Appointment time (H:i format)
+     * @param string|null $excludeAppointmentId Appointment ID to exclude from count (for rescheduling)
+     * @return array ['valid' => bool, 'error' => string|null]
+     */
+    private function validateScheduleAvailability(int $docId, string $appointmentDate, string $appointmentTime, ?string $excludeAppointmentId = null): array {
+        // Check if doctor has a schedule for this date and time
+        $schedule = $this->db->fetchOne("
+            SELECT schedule_id, start_time, end_time
+            FROM schedules
+            WHERE doc_id = :doc_id
+            AND schedule_date = :schedule_date
+            AND start_time <= :appointment_time
+            AND end_time > :appointment_time
+            ORDER BY start_time ASC
+            LIMIT 1
+        ", [
+            'doc_id' => $docId,
+            'schedule_date' => $appointmentDate,
+            'appointment_time' => $appointmentTime
+        ]);
+
+        if (!$schedule) {
+            return [
+                'valid' => false,
+                'error' => 'The selected date and time does not match any available schedule for this doctor. Please select a time when the doctor is available.'
+            ];
+        }
+
+        return ['valid' => true, 'error' => null];
+    }
+
     public function bookForPatient(array $data): array {
         $data['appointment_duration'] = $this->resolveDuration($data['service_id'] ?? null);
         $data['status_id'] = $data['status_id'] ?? 1;
@@ -453,7 +510,7 @@ class Appointment extends Entity {
     public function rescheduleForPatient(string $appointmentId, int $patientId, array $data): array {
         try {
             $appointment = $this->db->fetchOne("
-                SELECT pat_id, status_id, service_id 
+                SELECT pat_id, doc_id, status_id, service_id 
                 FROM appointments 
                 WHERE appointment_id = :appointment_id",
                 ['appointment_id' => $appointmentId]
@@ -476,6 +533,19 @@ class Appointment extends Entity {
 
             if ($status && in_array(strtolower($status['status_name']), ['cancelled', 'completed'])) {
                 return ['success' => false, 'error' => 'This appointment cannot be rescheduled'];
+            }
+
+            // Validate that new date/time matches doctor's schedule
+            if (!empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+                $scheduleValidation = $this->validateScheduleAvailability(
+                    (int)$appointment['doc_id'],
+                    $data['appointment_date'],
+                    $data['appointment_time'],
+                    $appointmentId // Exclude current appointment from count
+                );
+                if (!$scheduleValidation['valid']) {
+                    return ['success' => false, 'error' => $scheduleValidation['error']];
+                }
             }
 
             $duration = $this->resolveDuration($appointment['service_id'] ?? null);

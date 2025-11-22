@@ -170,7 +170,7 @@ $menus = [
     ],
     'doctor' => [
         ['icon' => '📊', 'label' => 'Dashboard', 'url' => '/doctor/dashboard'],
-        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/doctor/appointments'],
+        ['icon' => '📅', 'label' => 'Appointments', 'url' => '/doctor/appointments/today'],
         ['icon' => '⏰', 'label' => 'Schedules', 'url' => '/doctor/schedules'],
         ['icon' => '👨‍⚕️', 'label' => 'Doctors', 'url' => '/doctor/doctors'],
         ['icon' => '📄', 'label' => 'Medical Records', 'url' => '/doctor/medical-records'],
@@ -213,7 +213,16 @@ $currentPath = $_SERVER['REQUEST_URI'];
     <div class="sidebar-menu">
         <?php foreach ($currentMenu as $item): ?>
             <?php 
-            $isActive = strpos($currentPath, $item['url']) !== false;
+            // Remove query string for path comparison
+            $pathWithoutQuery = strtok($currentPath, '?');
+            
+            // For appointments, check if path starts with /doctor/appointments (for today, overview, future, previous)
+            if ($item['url'] === '/doctor/appointments/today') {
+                $isActive = strpos($pathWithoutQuery, '/doctor/appointments') !== false;
+            } else {
+                // For other menu items, check for exact match or path starts with item URL
+                $isActive = $pathWithoutQuery === $item['url'] || strpos($pathWithoutQuery, $item['url'] . '/') === 0;
+            }
             ?>
             <a href="<?= $item['url'] ?>" class="menu-item-modern <?= $isActive ? 'active' : '' ?>" 
                data-tooltip="<?= htmlspecialchars($item['label']) ?>">

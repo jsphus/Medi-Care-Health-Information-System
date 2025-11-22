@@ -50,6 +50,148 @@
     </div>
 </div>
 
+<!-- Recent and Pending Payments Cards -->
+<style>
+@media (max-width: 768px) {
+    .payments-cards-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+<div class="payments-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Recent Payments Card -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; max-height: 500px;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-clock" style="color: #3b82f6;"></i>
+                    Recent Payments
+                </h2>
+                <span style="font-size: 0.875rem; color: var(--text-secondary); background: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 12px;">
+                    <?= count($recent_payments ?? []) ?>
+                </span>
+            </div>
+        </div>
+        <div style="padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+            <?php if (empty($recent_payments)): ?>
+                <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                    <i class="fas fa-money-bill-wave" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.3;"></i>
+                    <p style="margin: 0; font-size: 0.875rem;">No recent payments</p>
+                </div>
+            <?php else: ?>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <?php foreach ($recent_payments as $recent): ?>
+                        <div style="padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.2s; cursor: pointer;" 
+                             onmouseover="this.style.background='#f3f4f6'; this.style.transform='translateX(2px)'" 
+                             onmouseout="this.style.background='#f9fafb'; this.style.transform='translateX(0)'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem; overflow: hidden; flex-shrink: 0;">
+                                            <?php if (!empty($recent['patient_profile_picture'])): ?>
+                                                <img src="<?= htmlspecialchars($recent['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <?= strtoupper(substr($recent['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <strong style="color: var(--text-primary); font-size: 0.875rem;">
+                                            <?= htmlspecialchars(($recent['pat_first_name'] ?? '') . ' ' . ($recent['pat_last_name'] ?? '')) ?>
+                                        </strong>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 2.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                            <i class="fas fa-calendar" style="width: 12px;"></i>
+                                            <span><?= $recent['payment_date'] ? date('M d, Y', strtotime($recent['payment_date'])) : 'N/A' ?></span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fas fa-credit-card" style="width: 12px;"></i>
+                                            <span><?= htmlspecialchars($recent['method_name'] ?? 'N/A') ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: var(--status-success); font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">
+                                        ₱<?= number_format($recent['payment_amount'] ?? 0, 2) ?>
+                                    </div>
+                                    <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                        <?= htmlspecialchars($recent['status_name'] ?? 'N/A') ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Pending Payments Card -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; max-height: 500px;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-exclamation-circle" style="color: #f59e0b;"></i>
+                    Pending Payments
+                </h2>
+                <span style="font-size: 0.875rem; color: var(--text-secondary); background: #fef3c7; padding: 0.25rem 0.75rem; border-radius: 12px;">
+                    <?= count($pending_payments ?? []) ?>
+                </span>
+            </div>
+        </div>
+        <div style="padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+            <?php if (empty($pending_payments)): ?>
+                <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.3; color: #10b981;"></i>
+                    <p style="margin: 0; font-size: 0.875rem;">No pending payments</p>
+                </div>
+            <?php else: ?>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <?php foreach ($pending_payments as $pending): ?>
+                        <div style="padding: 1rem; background: #fffbeb; border-radius: 8px; border-left: 3px solid #f59e0b; transition: all 0.2s; cursor: pointer;" 
+                             onmouseover="this.style.background='#fef3c7'; this.style.transform='translateX(2px)'" 
+                             onmouseout="this.style.background='#fffbeb'; this.style.transform='translateX(0)'">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem; overflow: hidden; flex-shrink: 0;">
+                                            <?php if (!empty($pending['patient_profile_picture'])): ?>
+                                                <img src="<?= htmlspecialchars($pending['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <?= strtoupper(substr($pending['pat_first_name'] ?? 'P', 0, 1)) ?>
+                                            <?php endif; ?>
+                                        </div>
+                                        <strong style="color: var(--text-primary); font-size: 0.875rem;">
+                                            <?= htmlspecialchars(($pending['pat_first_name'] ?? '') . ' ' . ($pending['pat_last_name'] ?? '')) ?>
+                                        </strong>
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 2.5rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                            <i class="fas fa-calendar" style="width: 12px;"></i>
+                                            <span><?= $pending['payment_date'] ? date('M d, Y', strtotime($pending['payment_date'])) : 'N/A' ?></span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <i class="fas fa-credit-card" style="width: 12px;"></i>
+                                            <span><?= htmlspecialchars($pending['method_name'] ?? 'N/A') ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: var(--status-warning, #f59e0b); font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">
+                                        ₱<?= number_format($pending['payment_amount'] ?? 0, 2) ?>
+                                    </div>
+                                    <span class="badge" style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                        <?= htmlspecialchars($pending['status_name'] ?? 'Pending') ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <!-- Table Container -->
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header with Add Button -->

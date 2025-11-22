@@ -8,8 +8,6 @@ class Schedule extends Entity {
     private $schedule_date;
     private $start_time;
     private $end_time;
-    private $max_appointments;
-    private $is_available;
     private $created_at;
     private $updated_at;
 
@@ -32,7 +30,7 @@ class Schedule extends Entity {
     protected function getColumns(): array {
         return [
             'schedule_id', 'doc_id', 'schedule_date', 'start_time', 'end_time',
-            'max_appointments', 'is_available', 'created_at', 'updated_at'
+            'created_at', 'updated_at'
         ];
     }
 
@@ -62,8 +60,6 @@ class Schedule extends Entity {
             'schedule_date' => $this->schedule_date,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
-            'max_appointments' => $this->max_appointments,
-            'is_available' => $this->is_available,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at
         ];
@@ -75,8 +71,6 @@ class Schedule extends Entity {
         $this->schedule_date = $data['schedule_date'] ?? null;
         $this->start_time = $data['start_time'] ?? null;
         $this->end_time = $data['end_time'] ?? null;
-        $this->max_appointments = $data['max_appointments'] ?? 10;
-        $this->is_available = $data['is_available'] ?? true;
         $this->created_at = $data['created_at'] ?? null;
         $this->updated_at = $data['updated_at'] ?? null;
         return $this;
@@ -88,8 +82,6 @@ class Schedule extends Entity {
     public function getScheduleDate() { return $this->schedule_date; }
     public function getStartTime() { return $this->start_time; }
     public function getEndTime() { return $this->end_time; }
-    public function getMaxAppointments() { return $this->max_appointments; }
-    public function getIsAvailable() { return $this->is_available; }
     public function getCreatedAt() { return $this->created_at; }
     public function getUpdatedAt() { return $this->updated_at; }
 
@@ -99,8 +91,6 @@ class Schedule extends Entity {
     public function setScheduleDate($value) { $this->schedule_date = $value; return $this; }
     public function setStartTime($value) { $this->start_time = $value; return $this; }
     public function setEndTime($value) { $this->end_time = $value; return $this; }
-    public function setMaxAppointments($value) { $this->max_appointments = $value; return $this; }
-    public function setIsAvailable($value) { $this->is_available = $value; return $this; }
     public function setCreatedAt($value) { $this->created_at = $value; return $this; }
     public function setUpdatedAt($value) { $this->updated_at = $value; return $this; }
 
@@ -115,7 +105,7 @@ class Schedule extends Entity {
     // Get available slots
     public function getAvailableSlots($docId, $date) {
         return $this->db->fetchAll(
-            "SELECT * FROM schedules WHERE doc_id = :doc_id AND schedule_date = :date AND is_available = TRUE ORDER BY start_time",
+            "SELECT * FROM schedules WHERE doc_id = :doc_id AND schedule_date = :date ORDER BY start_time",
             ['doc_id' => $docId, 'date' => $date]
         );
     }

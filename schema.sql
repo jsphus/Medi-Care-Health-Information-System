@@ -35,7 +35,6 @@ CREATE TABLE staff (
     staff_email VARCHAR(255) UNIQUE NOT NULL,
     staff_phone VARCHAR(20),
     staff_position VARCHAR(100),
-    staff_hire_date DATE,
     staff_salary DECIMAL(10,2),
     staff_status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -110,8 +109,6 @@ CREATE TABLE schedules (
     schedule_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    max_appointments INTEGER DEFAULT 10,
-    is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(doc_id, schedule_date, start_time)
@@ -132,20 +129,15 @@ CREATE TABLE appointments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Medical records table
+-- Medical records table (REVAMPED - linked to appointments)
 CREATE TABLE medical_records (
-    record_id SERIAL PRIMARY KEY,
-    pat_id INTEGER REFERENCES patients(pat_id),
-    doc_id INTEGER REFERENCES doctors(doc_id),
-    appointment_id VARCHAR(20) REFERENCES appointments(appointment_id),
-    record_date DATE NOT NULL,
-    diagnosis TEXT,
-    treatment TEXT,
-    prescription TEXT,
-    notes TEXT,
-    follow_up_date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    med_rec_id SERIAL PRIMARY KEY,
+    appt_id VARCHAR(20) NOT NULL REFERENCES appointments(appointment_id),
+    med_rec_diagnosis TEXT,
+    med_rec_prescription TEXT,
+    med_rec_visit_date DATE NOT NULL,
+    med_rec_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    med_rec_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Payment methods table
@@ -228,6 +220,8 @@ CREATE INDEX idx_users_email ON users(user_email);
 CREATE INDEX idx_patients_email ON patients(pat_email);
 CREATE INDEX idx_doctors_email ON doctors(doc_email);
 CREATE INDEX idx_staff_email ON staff(staff_email);
+CREATE INDEX idx_medical_records_appointment ON medical_records(appt_id);
+CREATE INDEX idx_medical_records_visit_date ON medical_records(med_rec_visit_date);
 
 -- Create triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()

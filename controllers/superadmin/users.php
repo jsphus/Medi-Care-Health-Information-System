@@ -351,7 +351,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             'staff_last_name' => isset($_POST['staff_last_name']) ? sanitize($_POST['staff_last_name']) : $existingStaff['staff_last_name'],
                                             'staff_phone' => isset($_POST['staff_phone']) ? sanitize($_POST['staff_phone']) : $existingStaff['staff_phone'],
                                             'staff_position' => isset($_POST['position']) ? sanitize($_POST['position']) : $existingStaff['staff_position'],
-                                            'staff_hire_date' => isset($_POST['hire_date']) ? $_POST['hire_date'] : $existingStaff['staff_hire_date'],
                                             'staff_salary' => isset($_POST['salary']) && $_POST['salary'] !== '' ? floatval($_POST['salary']) : $existingStaff['staff_salary'],
                                             'staff_status' => isset($_POST['status']) ? sanitize($_POST['status']) : $existingStaff['staff_status']
                                         ];
@@ -474,7 +473,7 @@ $filter_role = isset($_GET['role']) ? sanitize($_GET['role']) : '';
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch users with filters
@@ -527,6 +526,10 @@ try {
             WHEN u.pat_id IS NOT NULL THEN 'Patient'
             ELSE 'None'
         END $sort_order";
+    } elseif ($sort_column === 'created_at') {
+        // Use COALESCE to handle NULL values and add user_id DESC as secondary sort
+        // This ensures most recent users (by creation date, then by ID) appear first
+        $order_by = "COALESCE(u.created_at, '1970-01-01'::timestamp) $sort_order, u.user_id DESC";
     } else {
         $order_by = "u.$sort_column $sort_order";
     }
@@ -573,14 +576,14 @@ try {
                 ELSE 'inactive'
             END as status,
             -- Patient fields
-            p.pat_first_name, p.pat_last_name, p.pat_email, p.pat_phone, p.pat_date_of_birth,
+            p.pat_first_name, p.pat_middle_initial, p.pat_last_name, p.pat_email, p.pat_phone, p.pat_date_of_birth,
             p.pat_gender, p.pat_address, p.pat_emergency_contact, p.pat_emergency_phone,
             p.pat_medical_history, p.pat_allergies, p.pat_insurance_provider, p.pat_insurance_number,
             -- Staff fields
-            s.staff_first_name, s.staff_last_name, s.staff_email, s.staff_phone, s.staff_position,
-            s.staff_hire_date, s.staff_salary, s.staff_status,
+            s.staff_first_name, s.staff_middle_initial, s.staff_last_name, s.staff_email, s.staff_phone, s.staff_position,
+            s.staff_salary, s.staff_status,
             -- Doctor fields
-            d.doc_first_name, d.doc_last_name, d.doc_email, d.doc_phone, d.doc_specialization_id,
+            d.doc_first_name, d.doc_middle_initial, d.doc_last_name, d.doc_email, d.doc_phone, d.doc_specialization_id,
             d.doc_license_number, d.doc_experience_years, d.doc_consultation_fee, d.doc_qualification,
             d.doc_bio, d.doc_status
         FROM users u
@@ -645,6 +648,88 @@ try {
     $stats['patient'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 } catch (PDOException $e) {
     // Keep default values
+}
+
+// Fetch recently added users (all roles)
+$recently_added_users = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            u.user_id,
+            u.user_email,
+            u.user_is_superadmin,
+            u.created_at,
+            u.profile_picture_url,
+            COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
+                     s.staff_first_name || ' ' || s.staff_last_name,
+                     d.doc_first_name || ' ' || d.doc_last_name,
+                     'Super Admin') as full_name,
+            CASE 
+                WHEN u.user_is_superadmin = true THEN 'Super Admin'
+                WHEN u.staff_id IS NOT NULL THEN 'Staff'
+                WHEN u.doc_id IS NOT NULL THEN 'Doctor'
+                WHEN u.pat_id IS NOT NULL THEN 'Patient'
+                ELSE 'None'
+            END as role
+        FROM users u
+        LEFT JOIN patients p ON u.pat_id = p.pat_id
+        LEFT JOIN staff s ON u.staff_id = s.staff_id
+        LEFT JOIN doctors d ON u.doc_id = d.doc_id
+        ORDER BY COALESCE(u.created_at, '1970-01-01'::timestamp) DESC, u.user_id DESC
+        LIMIT 10
+    ");
+    $recently_added_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_users = [];
+}
+
+// Fetch recently added staff
+$recently_added_staff = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            s.staff_id,
+            s.staff_first_name,
+            s.staff_middle_initial,
+            s.staff_last_name,
+            s.staff_email,
+            s.staff_position,
+            s.created_at,
+            u.profile_picture_url
+        FROM staff s
+        LEFT JOIN users u ON s.staff_id = u.staff_id
+        ORDER BY COALESCE(s.created_at, '1970-01-01'::timestamp) DESC, s.staff_id DESC
+        LIMIT 10
+    ");
+    $recently_added_staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_staff = [];
+}
+
+// Fetch recently added patients
+$recently_added_patients = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            p.pat_id,
+            p.pat_first_name,
+            p.pat_middle_initial,
+            p.pat_last_name,
+            p.pat_email,
+            p.pat_gender,
+            p.created_at,
+            u.profile_picture_url
+        FROM patients p
+        LEFT JOIN users u ON p.pat_id = u.pat_id
+        ORDER BY COALESCE(p.created_at, '1970-01-01'::timestamp) DESC, p.pat_id DESC
+        LIMIT 10
+    ");
+    $recently_added_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_patients = [];
 }
 
 require_once __DIR__ . '/../../views/superadmin/users.view.php';

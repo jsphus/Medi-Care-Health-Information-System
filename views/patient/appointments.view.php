@@ -139,6 +139,27 @@
                         </div>
                     </div>
                     <?php endif; ?>
+                    
+                    <?php
+                    // Payment status
+                    $paymentStatusName = isset($apt['payment_status_name']) ? strtolower($apt['payment_status_name']) : '';
+                    $isPaid = $paymentStatusName === 'paid';
+                    $isPending = $paymentStatusName === 'pending';
+                    $isUnpaid = empty($paymentStatusName) || (!$isPaid && !$isPending);
+                    $paymentStatusColor = $apt['payment_status_color'] ?? '#6b7280';
+                    $paymentStatusDisplay = !empty($paymentStatusName) ? ucfirst($paymentStatusName) : 'Unpaid';
+                    ?>
+                    <div class="detail-item">
+                        <span class="icon"><i class="fas fa-credit-card"></i></span>
+                        <div>
+                            <div class="label">Payment Status</div>
+                            <div class="value">
+                                <span class="badge" style="background-color: <?= $isPaid ? '#10b981' : ($isPending ? '#f59e0b' : '#ef4444'); ?>; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;">
+                                    <?= htmlspecialchars($paymentStatusDisplay) ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <?php if (!$isCanceled && !$isCompleted): ?>
@@ -243,6 +264,27 @@
                         </div>
                     </div>
                     <?php endif; ?>
+                    
+                    <?php
+                    // Payment status for past appointments
+                    $paymentStatusName = isset($apt['payment_status_name']) ? strtolower($apt['payment_status_name']) : '';
+                    $isPaid = $paymentStatusName === 'paid';
+                    $isPending = $paymentStatusName === 'pending';
+                    $isUnpaid = empty($paymentStatusName) || (!$isPaid && !$isPending);
+                    $paymentStatusColor = $apt['payment_status_color'] ?? '#6b7280';
+                    $paymentStatusDisplay = !empty($paymentStatusName) ? ucfirst($paymentStatusName) : 'Unpaid';
+                    ?>
+                    <div class="detail-item">
+                        <span class="icon"><i class="fas fa-credit-card"></i></span>
+                        <div>
+                            <div class="label">Payment Status</div>
+                            <div class="value">
+                                <span class="badge" style="background-color: <?= $isPaid ? '#10b981' : ($isPending ? '#f59e0b' : '#ef4444'); ?>; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;">
+                                    <?= htmlspecialchars($paymentStatusDisplay) ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         <?php endforeach; ?>

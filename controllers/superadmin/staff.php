@@ -28,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $phone = formatPhoneNumber($phone);
         }
         $position = sanitize($_POST['position']);
-        $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : null;
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
         $status = sanitize($_POST['status'] ?? 'active');
         $password = $_POST['password'] ?? '';
@@ -55,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Insert staff
                     $stmt = $db->prepare("
                         INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
-                                          staff_hire_date, staff_salary, staff_status, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :hire_date, :salary, :status, NOW())
+                                          staff_salary, staff_status, created_at) 
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, :status, NOW())
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
@@ -65,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'email' => $email,
                         'phone' => $phone,
                         'position' => $position,
-                        'hire_date' => $hire_date,
                         'salary' => $salary,
                         'status' => $status
                     ]);
@@ -106,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $phone = formatPhoneNumber($phone);
         }
         $position = sanitize($_POST['position']);
-        $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : null;
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
         $status = sanitize($_POST['status'] ?? 'active');
         
@@ -188,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $db->prepare("
                     UPDATE staff 
                     SET staff_first_name = :first_name, staff_middle_initial = :middle_initial, staff_last_name = :last_name, staff_email = :email, 
-                        staff_phone = :phone, staff_position = :position, staff_hire_date = :hire_date,
+                        staff_phone = :phone, staff_position = :position,
                         staff_salary = :salary, staff_status = :status, updated_at = NOW()
                     WHERE staff_id = :id
                 ");
@@ -199,7 +196,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'email' => $email,
                     'phone' => $phone,
                     'position' => $position,
-                    'hire_date' => $hire_date,
                     'salary' => $salary,
                     'status' => $status,
                     'id' => $id
@@ -250,7 +246,7 @@ $filter_position = isset($_GET['position']) ? sanitize($_GET['position']) : '';
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch staff members with filters
@@ -259,17 +255,17 @@ try {
     $params = [];
     
     if (!empty($search_query)) {
-        $where_conditions[] = "(staff_first_name LIKE :search OR staff_middle_initial LIKE :search OR staff_last_name LIKE :search)";
+        $where_conditions[] = "(s.staff_first_name LIKE :search OR s.staff_middle_initial LIKE :search OR s.staff_last_name LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
     }
     
     if (!empty($filter_status)) {
-        $where_conditions[] = "staff_status = :status";
+        $where_conditions[] = "s.staff_status = :status";
         $params['status'] = $filter_status;
     }
     
     if (!empty($filter_position)) {
-        $where_conditions[] = "staff_position = :position";
+        $where_conditions[] = "s.staff_position = :position";
         $params['position'] = $filter_position;
     }
     
@@ -280,26 +276,41 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'staff_hire_date', 'created_at', 'updated_at'];
+    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'created_at', 'updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }
     
     // Special handling for name sorting (sort by first name, then last name)
     if ($sort_column === 'staff_first_name') {
-        $order_by = "staff_first_name $sort_order, staff_last_name $sort_order";
+        $order_by = "s.staff_first_name $sort_order, s.staff_last_name $sort_order";
     } else {
-        $order_by = "$sort_column $sort_order";
+        // For created_at, use COALESCE to handle NULL values and add staff_id DESC as secondary sort
+        // This ensures most recent staff (by creation date, then by ID) appear first
+        if ($sort_column === 'created_at') {
+            // Use COALESCE to handle NULL values - treat NULL as very old date
+            // Always add staff_id DESC as secondary to ensure consistent ordering
+            $order_by = "COALESCE(s.created_at, '1970-01-01'::timestamp) $sort_order, s.staff_id DESC";
+        } else {
+            $order_by = "s.$sort_column $sort_order";
+        }
     }
     
     // Get total count for pagination
-    $count_stmt = $db->prepare("SELECT COUNT(*) FROM staff $where_clause");
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM staff s $where_clause");
     $count_stmt->execute($params);
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
-    // Fetch paginated results
-    $stmt = $db->prepare("SELECT * FROM staff $where_clause ORDER BY $order_by LIMIT :limit OFFSET :offset");
+    // Fetch paginated results with profile pictures
+    $stmt = $db->prepare("
+        SELECT s.*, u.profile_picture_url
+        FROM staff s
+        LEFT JOIN users u ON s.staff_id = u.staff_id
+        $where_clause
+        ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
+    ");
     foreach ($params as $key => $value) {
         $stmt->bindValue(':' . $key, $value);
     }
@@ -353,6 +364,33 @@ try {
     $stats['pending'] = $result ? (int)$result['count'] : 0;
 } catch (PDOException $e) {
     // Keep default values
+}
+
+// Fetch recently added staff
+$recently_added_staff = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            s.staff_id,
+            s.staff_first_name,
+            s.staff_middle_initial,
+            s.staff_last_name,
+            s.staff_email,
+            s.staff_phone,
+            s.staff_position,
+            s.staff_status,
+            s.staff_salary,
+            s.created_at,
+            u.profile_picture_url
+        FROM staff s
+        LEFT JOIN users u ON s.staff_id = u.staff_id
+        ORDER BY COALESCE(s.created_at, '1970-01-01'::timestamp) DESC, s.staff_id DESC
+        LIMIT 10
+    ");
+    $recently_added_staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_staff = [];
 }
 
 require_once __DIR__ . '/../../views/superadmin/staff.view.php';

@@ -2,14 +2,6 @@
 
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/doctor/schedules">
-                <i class="fas fa-calendar"></i>
-                <span>My Schedules</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Doctors</span>
-        </div>
         <h1 class="page-title">Manage Doctors</h1>
     </div>
 </div>

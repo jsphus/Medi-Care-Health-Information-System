@@ -53,10 +53,7 @@
                 <i class="fas fa-filter"></i>
             </button>
         </div>
-        <button type="button" class="btn btn-primary" onclick="openAddMedicalRecordModal()" style="display: flex; align-items: center; gap: 0.5rem;">
-            <i class="fas fa-plus"></i>
-            <span>Add Medical Record</span>
-        </button>
+        <!-- Add Medical Record button removed - medical records are created through appointments -->
     </div>
 
     <!-- Filter Bar (Hidden by default) -->
@@ -115,11 +112,11 @@
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
                         <?php
-                        $current_sort = $_GET['sort'] ?? 'record_date';
+                        $current_sort = $_GET['sort'] ?? 'med_rec_visit_date';
                         $current_order = $_GET['order'] ?? 'DESC';
                         ?>
-                        <th class="sortable <?= $current_sort === 'record_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('record_id')" 
+                        <th class="sortable <?= $current_sort === 'med_rec_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_id')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Record ID
                             <span class="sort-indicator">
@@ -127,8 +124,8 @@
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
-                        <th class="sortable <?= $current_sort === 'record_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('record_date')" 
+                        <th class="sortable <?= $current_sort === 'med_rec_visit_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_visit_date')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Date
                             <span class="sort-indicator">
@@ -146,16 +143,7 @@
                             Diagnosis
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Treatment
-                        </th>
-                        <th class="sortable <?= $current_sort === 'follow_up_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('follow_up_date')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Follow-up
-                            <span class="sort-indicator">
-                                <i class="fas fa-arrow-up"></i>
-                                <i class="fas fa-arrow-down"></i>
-                            </span>
+                            Prescription
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
@@ -165,15 +153,15 @@
                         <tr class="table-row" 
                             data-patient="<?= htmlspecialchars(strtolower(($record['pat_first_name'] ?? '') . ' ' . ($record['pat_last_name'] ?? ''))) ?>"
                             data-doctor="<?= htmlspecialchars(strtolower(($record['doc_first_name'] ?? '') . ' ' . ($record['doc_last_name'] ?? ''))) ?>"
-                            data-diagnosis="<?= htmlspecialchars(strtolower($record['diagnosis'] ?? '')) ?>"
-                            data-date="<?= $record['record_date'] ? date('Y-m-d', strtotime($record['record_date'])) : '' ?>"
+                            data-diagnosis="<?= htmlspecialchars(strtolower($record['med_rec_diagnosis'] ?? '')) ?>"
+                            data-date="<?= $record['med_rec_visit_date'] ? date('Y-m-d', strtotime($record['med_rec_visit_date'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
                             <td style="padding: 1rem;">
-                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['record_id']) ?></strong>
+                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['med_rec_id']) ?></strong>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['record_date'] ? date('d M Y', strtotime($record['record_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['med_rec_visit_date'] ? date('d M Y', strtotime($record['med_rec_visit_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                                     <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
@@ -196,9 +184,8 @@
                                     <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars($record['doc_first_name'] . ' ' . $record['doc_last_name']) ?></span>
                                 </div>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['treatment'] ?? '', 0, 50)) ?><?= strlen($record['treatment'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['follow_up_date'] ? date('d M Y', strtotime($record['follow_up_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['med_rec_diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['med_rec_diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['med_rec_prescription'] ?? '', 0, 50)) ?><?= strlen($record['med_rec_prescription'] ?? '') > 50 ? '...' : '' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm view-record-btn" 
@@ -209,7 +196,7 @@
                                     </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this medical record? This action cannot be undone.');">
                                         <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="id" value="<?= $record['record_id'] ?>">
+                                        <input type="hidden" name="id" value="<?= $record['med_rec_id'] ?>">
                                         <button type="submit" class="btn btn-sm" title="Delete"
                                                 style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
                                             <i class="fas fa-trash"></i>
@@ -346,25 +333,26 @@ function viewRecord(record) {
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div>
-                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.record_id}</p>
-                    <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${record.record_date}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Record ID:</strong> ${record.med_rec_id}</p>
+                    <p style="margin: 0.5rem 0;"><strong>Visit Date:</strong> ${record.med_rec_visit_date || 'N/A'}</p>
                 </div>
                 <div>
                     <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${record.appointment_id || 'N/A'}</p>
                     <p style="margin: 0.5rem 0;"><strong>Appointment Date:</strong> ${record.appointment_date || 'N/A'}</p>
+                    ${record.appointment_time ? `<p style="margin: 0.5rem 0;"><strong>Appointment Time:</strong> ${record.appointment_time}</p>` : ''}
                 </div>
             </div>
             <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); display: flex; gap: 2rem; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.created_at)}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Created:</strong> ${formatDate(record.med_rec_created_at)}</p>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
                     <div>
-                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.updated_at)}</p>
+                        <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Updated:</strong> ${formatDate(record.med_rec_updated_at)}</p>
                     </div>
                 </div>
             </div>
@@ -374,35 +362,14 @@ function viewRecord(record) {
         
         <div style="margin-bottom: 1.5rem;">
             <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Diagnosis</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.diagnosis || 'N/A'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Treatment</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.treatment || 'N/A'}</p>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_diagnosis || 'N/A'}</p>
         </div>
         
         <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
         
         <div style="margin-bottom: 1.5rem;">
             <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Prescription</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.prescription || 'None'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="margin-bottom: 1.5rem;">
-            <h3 style="margin-bottom: 0.75rem; color: var(--primary-blue); font-size: 1.1rem;">Notes</h3>
-            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.notes || 'None'}</p>
-        </div>
-        
-        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
-        
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0;">
-            <i class="fas fa-calendar-check" style="color: var(--primary-blue);"></i>
-            <p style="margin: 0;"><strong>Follow-up Date:</strong> ${record.follow_up_date || 'Not scheduled'}</p>
+            <p style="white-space: pre-wrap; margin: 0; color: var(--text-primary);">${record.med_rec_prescription || 'None'}</p>
         </div>
     `;
     document.getElementById('viewContent').innerHTML = content;
@@ -442,11 +409,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function filterByCategory(category) {
+    const url = new URL(window.location.href);
     if (category === 'all') {
-        window.location.href = '/superadmin/medical-records';
+        url.searchParams.delete('filter');
     } else {
-        window.location.href = '/superadmin/medical-records?filter=' + category;
+        url.searchParams.set('filter', category);
     }
+    window.location.href = url.toString();
 }
 
 function applyMedicalRecordFilters() {
@@ -454,11 +423,13 @@ function applyMedicalRecordFilters() {
         doctor: document.querySelector('input[name="filter_doctor"]:checked')?.value || '',
         patient: document.querySelector('input[name="filter_patient"]:checked')?.value || ''
     };
-    const params = new URLSearchParams();
-    if (filters.doctor) params.append('doctor', filters.doctor);
-    if (filters.patient) params.append('patient', filters.patient);
-    const url = '/superadmin/medical-records' + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = url;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('doctor');
+    url.searchParams.delete('patient');
+    if (filters.doctor) url.searchParams.set('doctor', filters.doctor);
+    if (filters.patient) url.searchParams.set('patient', filters.patient);
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
+    window.location.href = url.toString();
 }
 
 function clearAllFilters() {
@@ -597,26 +568,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Table Filtering Functions
-function applyTableFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
+function loadAllResults() {
     const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
-    
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterPatient: document.getElementById('filterPatient')?.value || '',
-            filterDoctor: document.getElementById('filterDoctor')?.value || '',
-            filterDiagnosis: document.getElementById('filterDiagnosis')?.value || '',
-            filterDate: document.getElementById('filterDate')?.value || ''
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
-    }
-    
-    // Apply filters if already in all_results mode
+    url.searchParams.set('all_results', '1');
+    url.searchParams.delete('page'); // Reset to page 1
+    window.location.href = url.toString();
+}
+
+function resetToPaginatedView() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('all_results');
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+}
+
+function applyTableFilters() {
+    // Apply filters directly without requiring all_results mode
     filterTable();
 }
 
@@ -733,14 +700,24 @@ function sortTable(column) {
     const currentSort = url.searchParams.get('sort');
     const currentOrder = url.searchParams.get('order') || 'DESC';
     
+    // Map view column names to database column names
+    const columnMap = {
+        'med_rec_id': 'med_rec_id',
+        'med_rec_visit_date': 'med_rec_visit_date',
+        'med_rec_created_at': 'med_rec_created_at'
+    };
+    
+    // Use mapped column name or fallback to provided column
+    const dbColumn = columnMap[column] || column;
+    
     // Toggle order if clicking the same column, otherwise default to ASC
-    if (currentSort === column) {
+    if (currentSort === dbColumn) {
         url.searchParams.set('order', currentOrder === 'ASC' ? 'DESC' : 'ASC');
     } else {
         url.searchParams.set('order', 'ASC');
     }
     
-    url.searchParams.set('sort', column);
+    url.searchParams.set('sort', dbColumn);
     url.searchParams.delete('page'); // Reset to page 1 when sorting
     
     window.location.href = url.toString();

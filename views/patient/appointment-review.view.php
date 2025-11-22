@@ -305,15 +305,14 @@
                     Payment Summary
                 </h2>
                 <div class="amount-summary">
-                    <?php if ($service): ?>
-                    <div class="amount-row">
-                        <span class="amount-label">Service Fee</span>
-                        <span class="amount-value">₱<?= number_format($service['service_price'] ?? 0, 2) ?></span>
-                    </div>
-                    <?php else: ?>
                     <div class="amount-row">
                         <span class="amount-label">Consultation Fee</span>
-                        <span class="amount-value">₱<?= number_format($doctor['doc_consultation_fee'] ?? 0, 2) ?></span>
+                        <span class="amount-value">₱<?= number_format($consultation_fee, 2) ?></span>
+                    </div>
+                    <?php if ($service && $service_fee > 0): ?>
+                    <div class="amount-row">
+                        <span class="amount-label">Service Fee</span>
+                        <span class="amount-value">₱<?= number_format($service_fee, 2) ?></span>
                     </div>
                     <?php endif; ?>
                     <div class="amount-row">

@@ -41,6 +41,7 @@ return [
     'doctor/appointments/today' => 'controllers/doctor/appointments-today.php',
     'doctor/appointments/previous' => 'controllers/doctor/appointments-previous.php',
     'doctor/appointments/future' => 'controllers/doctor/appointments-future.php',
+    'doctor/appointment-actions' => 'controllers/doctor/appointment-actions.php',
     'doctor/profile' => 'controllers/doctor/profile.php',
     'doctor/schedules' => 'controllers/doctor/schedules.php',
     'doctor/schedules/manage' => 'controllers/doctor/schedules-manage.php',

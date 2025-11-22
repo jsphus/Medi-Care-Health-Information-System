@@ -55,8 +55,8 @@ try {
         SELECT 
             (SELECT COUNT(*) FROM appointments WHERE appointment_date >= :start_date AND appointment_date <= :end_date) as current_appointments,
             (SELECT COUNT(*) FROM appointments WHERE DATE_TRUNC('month', appointment_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) as last_month_appointments,
-            (SELECT COUNT(*) FROM medical_records WHERE record_date >= :start_date AND record_date <= :end_date) as current_records,
-            (SELECT COUNT(*) FROM medical_records WHERE DATE_TRUNC('month', record_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) as last_month_records
+            (SELECT COUNT(*) FROM medical_records WHERE med_rec_visit_date >= :start_date AND med_rec_visit_date <= :end_date) as current_records,
+            (SELECT COUNT(*) FROM medical_records WHERE DATE_TRUNC('month', med_rec_visit_date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')) as last_month_records
     ", ['start_date' => $start_date, 'end_date' => $end_date]);
     $current_appointments = (int)$appt_counts['current_appointments'];
     $last_month_appointments = (int)$appt_counts['last_month_appointments'];

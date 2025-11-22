@@ -10,7 +10,6 @@ class Staff extends Entity {
     private $staff_email;
     private $staff_phone;
     private $staff_position;
-    private $staff_hire_date;
     private $staff_salary;
     private $staff_status;
     private $created_at;
@@ -35,7 +34,7 @@ class Staff extends Entity {
     protected function getColumns(): array {
         return [
             'staff_id', 'staff_first_name', 'staff_middle_initial', 'staff_last_name', 'staff_email', 'staff_phone',
-            'staff_position', 'staff_hire_date', 'staff_salary', 'staff_status',
+            'staff_position', 'staff_salary', 'staff_status',
             'created_at', 'updated_at'
         ];
     }
@@ -79,7 +78,6 @@ class Staff extends Entity {
             'staff_email' => $this->staff_email,
             'staff_phone' => $this->staff_phone,
             'staff_position' => $this->staff_position,
-            'staff_hire_date' => $this->staff_hire_date,
             'staff_salary' => $this->staff_salary,
             'staff_status' => $this->staff_status,
             'created_at' => $this->created_at,
@@ -95,7 +93,6 @@ class Staff extends Entity {
         $this->staff_email = $data['staff_email'] ?? null;
         $this->staff_phone = $data['staff_phone'] ?? null;
         $this->staff_position = $data['staff_position'] ?? null;
-        $this->staff_hire_date = $data['staff_hire_date'] ?? null;
         $this->staff_salary = $data['staff_salary'] ?? null;
         $this->staff_status = $data['staff_status'] ?? 'active';
         $this->created_at = $data['created_at'] ?? null;
@@ -111,7 +108,6 @@ class Staff extends Entity {
     public function getStaffEmail() { return $this->staff_email; }
     public function getStaffPhone() { return $this->staff_phone; }
     public function getStaffPosition() { return $this->staff_position; }
-    public function getStaffHireDate() { return $this->staff_hire_date; }
     public function getStaffSalary() { return $this->staff_salary; }
     public function getStaffStatus() { return $this->staff_status; }
     public function getCreatedAt() { return $this->created_at; }
@@ -125,7 +121,6 @@ class Staff extends Entity {
     public function setStaffEmail($value) { $this->staff_email = $value; return $this; }
     public function setStaffPhone($value) { $this->staff_phone = $value; return $this; }
     public function setStaffPosition($value) { $this->staff_position = $value; return $this; }
-    public function setStaffHireDate($value) { $this->staff_hire_date = $value; return $this; }
     public function setStaffSalary($value) { $this->staff_salary = $value; return $this; }
     public function setStaffStatus($value) { $this->staff_status = $value; return $this; }
     public function setCreatedAt($value) { $this->created_at = $value; return $this; }
@@ -155,7 +150,6 @@ class Staff extends Entity {
             staff_email, 
             staff_phone, 
             staff_position, 
-            staff_hire_date, 
             staff_salary, 
             staff_status, 
             created_at, 
@@ -176,7 +170,7 @@ class Staff extends Entity {
                 
                 // If still not working, try without prepared statement
                 if ($result === false || count($result) < 5) {
-                    $raw_sql = "SELECT staff_id, staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position, staff_hire_date, staff_salary, staff_status, created_at, updated_at FROM staff WHERE staff_id = " . (int)$id;
+                    $raw_sql = "SELECT staff_id, staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position, staff_salary, staff_status, created_at, updated_at FROM staff WHERE staff_id = " . (int)$id;
                     $raw_result = $conn->query($raw_sql);
                     if ($raw_result) {
                         $result = $raw_result->fetch(PDO::FETCH_ASSOC);

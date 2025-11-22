@@ -89,7 +89,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_doctors' && isset($_GET['
             SELECT d.*
             FROM doctors d
             WHERE d.doc_specialization_id = :spec_id
-            ORDER BY d.doc_first_name, d.doc_last_name
+            ORDER BY d.created_at DESC, d.doc_first_name, d.doc_last_name
         ");
         $stmt->execute(['spec_id' => $spec_id]);
         $doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);

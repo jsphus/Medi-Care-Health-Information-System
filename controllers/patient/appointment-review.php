@@ -75,12 +75,20 @@ if ($appointment_data && !empty($appointment_data['service_id'])) {
 }
 
 // Calculate total amount
-$total_amount = 0;
-if ($service && !empty($service['service_price'])) {
-    $total_amount = floatval($service['service_price']);
-} elseif ($doctor && !empty($doctor['doc_consultation_fee'])) {
-    $total_amount = floatval($doctor['doc_consultation_fee']);
+// Consultation fee is always included
+$consultation_fee = 0;
+if ($doctor && !empty($doctor['doc_consultation_fee'])) {
+    $consultation_fee = floatval($doctor['doc_consultation_fee']);
 }
+
+// Service fee is added if a service is selected
+$service_fee = 0;
+if ($service && !empty($service['service_price'])) {
+    $service_fee = floatval($service['service_price']);
+}
+
+// Total is consultation fee + service fee
+$total_amount = $consultation_fee + $service_fee;
 
 require_once __DIR__ . '/../../views/patient/appointment-review.view.php';
 

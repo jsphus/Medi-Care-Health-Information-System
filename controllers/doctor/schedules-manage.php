@@ -23,8 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $schedule_date = $_POST['schedule_date'];
         $start_time = sanitize($_POST['start_time']);
         $end_time = sanitize($_POST['end_time']);
-        $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
-        $is_available = isset($_POST['is_available']) ? 1 : 0;
         
         if (empty($doc_id) || empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'All fields are required';
@@ -70,16 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'This schedule overlaps with an existing schedule for this doctor on this date. Please choose a different time.';
                     } else {
                         $stmt = $db->prepare("
-                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, max_appointments, is_available, created_at) 
-                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, :max_appointments, :is_available, NOW())
+                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
+                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
                         ");
                         $stmt->execute([
                             'doc_id' => $doc_id,
                             'schedule_date' => $schedule_date,
                             'start_time' => $start_time,
                             'end_time' => $end_time,
-                            'max_appointments' => $max_appointments,
-                            'is_available' => $is_available
                         ]);
                         $success = 'Schedule created successfully';
                     }
@@ -101,8 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $schedule_date = $_POST['schedule_date'];
         $start_time = sanitize($_POST['start_time']);
         $end_time = sanitize($_POST['end_time']);
-        $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
-        $is_available = isset($_POST['is_available']) ? 1 : 0;
         
         if (empty($doc_id) || empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'All fields are required';
@@ -136,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $db->prepare("
                         UPDATE schedules 
                         SET doc_id = :doc_id, schedule_date = :schedule_date, start_time = :start_time, 
-                            end_time = :end_time, max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
+                            end_time = :end_time, updated_at = NOW()
                         WHERE schedule_id = :id
                     ");
                     $stmt->execute([
@@ -145,8 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'schedule_date' => $schedule_date,
                         'start_time' => $start_time,
                         'end_time' => $end_time,
-                        'max_appointments' => $max_appointments,
-                        'is_available' => $is_available
                     ]);
                     $success = 'Schedule updated successfully';
                 }
@@ -211,7 +203,7 @@ try {
         FROM schedules s
         JOIN doctors d ON s.doc_id = d.doc_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
-        WHERE s.schedule_date = CURRENT_DATE AND s.is_available = true
+        WHERE s.schedule_date = CURRENT_DATE
         ORDER BY s.start_time
     ");
     $stmt->execute();
@@ -251,7 +243,7 @@ try {
     $stmt = $db->prepare("
         SELECT COUNT(*) as count 
         FROM schedules 
-        WHERE schedule_date = :today AND is_available = 1
+        WHERE schedule_date = :today
     ");
     $stmt->execute(['today' => $today]);
     $stats['schedules_today'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
@@ -260,7 +252,7 @@ try {
     $stmt = $db->prepare("
         SELECT COUNT(*) as count 
         FROM schedules 
-        WHERE schedule_date > :today AND is_available = 1
+        WHERE schedule_date > :today
     ");
     $stmt->execute(['today' => $today]);
     $stats['upcoming_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];

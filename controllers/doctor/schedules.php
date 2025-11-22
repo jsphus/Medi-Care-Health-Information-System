@@ -23,8 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $schedule_date = $_POST['schedule_date'];
         $start_time = $_POST['start_time'];
         $end_time = $_POST['end_time'];
-        $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
-        $is_available = isset($_POST['is_available']) ? 1 : 0;
         
         if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'Date, start time, and end time are required';
@@ -70,16 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'This schedule overlaps with an existing schedule for this date. Please choose a different time.';
                     } else {
                         $stmt = $db->prepare("
-                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, max_appointments, is_available, created_at) 
-                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, :max_appointments, :is_available, NOW())
+                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
+                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
                         ");
                         $stmt->execute([
                             'doc_id' => $doctor_id,
                             'schedule_date' => $schedule_date,
                             'start_time' => $start_time,
                             'end_time' => $end_time,
-                            'max_appointments' => $max_appointments,
-                            'is_available' => $is_available
                         ]);
                         $success = 'Schedule created successfully';
                     }
@@ -95,13 +91,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
+    if ($action === 'batch_create') {
+        $start_date = sanitize($_POST['start_date'] ?? '');
+        $end_date = sanitize($_POST['end_date'] ?? '');
+        $days_of_week = isset($_POST['days_of_week']) ? $_POST['days_of_week'] : [];
+        $start_time = sanitize($_POST['start_time'] ?? '');
+        $end_time = sanitize($_POST['end_time'] ?? '');
+        
+        if (empty($start_date) || empty($end_date) || empty($start_time) || empty($end_time)) {
+            $error = 'Start date, end date, start time, and end time are required';
+        } elseif ($start_time >= $end_time) {
+            $error = 'End time must be after start time';
+        } elseif (empty($days_of_week)) {
+            $error = 'Please select at least one day of the week';
+        } elseif ($start_date > $end_date) {
+            $error = 'End date must be after or equal to start date';
+        } else {
+            try {
+                $created_count = 0;
+                $skipped_count = 0;
+                $errors = [];
+                
+                // Convert start_date and end_date to DateTime objects
+                $start = new DateTime($start_date);
+                $end = new DateTime($end_date);
+                $end->modify('+1 day'); // Include end date
+                
+                // Map day names to numbers (0 = Sunday, 1 = Monday, etc.)
+                $day_map = [
+                    'sunday' => 0,
+                    'monday' => 1,
+                    'tuesday' => 2,
+                    'wednesday' => 3,
+                    'thursday' => 4,
+                    'friday' => 5,
+                    'saturday' => 6
+                ];
+                
+                $selected_days = [];
+                foreach ($days_of_week as $day) {
+                    if (isset($day_map[strtolower($day)])) {
+                        $selected_days[] = $day_map[strtolower($day)];
+                    }
+                }
+                
+                // Iterate through each day in the range
+                $current = clone $start;
+                while ($current < $end) {
+                    $day_of_week = (int)$current->format('w'); // 0 = Sunday, 6 = Saturday
+                    
+                    // Check if this day is in the selected days
+                    if (in_array($day_of_week, $selected_days)) {
+                        $schedule_date = $current->format('Y-m-d');
+                        
+                        // Check for exact duplicate
+                        $stmt = $db->prepare("
+                            SELECT schedule_id FROM schedules 
+                            WHERE doc_id = :doc_id 
+                            AND schedule_date = :schedule_date 
+                            AND start_time = :start_time
+                        ");
+                        $stmt->execute([
+                            'doc_id' => $doctor_id,
+                            'schedule_date' => $schedule_date,
+                            'start_time' => $start_time
+                        ]);
+                        
+                        if ($stmt->fetch()) {
+                            $skipped_count++;
+                        } else {
+                            // Check for overlapping schedules
+                            $stmt = $db->prepare("
+                                SELECT schedule_id FROM schedules 
+                                WHERE doc_id = :doc_id 
+                                AND schedule_date = :schedule_date 
+                                AND (
+                                    (start_time <= :start_time AND end_time > :start_time) OR
+                                    (start_time < :end_time AND end_time >= :end_time) OR
+                                    (start_time >= :start_time AND end_time <= :end_time)
+                                )
+                            ");
+                            $stmt->execute([
+                                'doc_id' => $doctor_id,
+                                'schedule_date' => $schedule_date,
+                                'start_time' => $start_time,
+                                'end_time' => $end_time
+                            ]);
+                            
+                            if ($stmt->fetch()) {
+                                $skipped_count++;
+                            } else {
+                                // Create the schedule
+                                $stmt = $db->prepare("
+                                    INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
+                                    VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
+                                ");
+                                $stmt->execute([
+                                    'doc_id' => $doctor_id,
+                                    'schedule_date' => $schedule_date,
+                                    'start_time' => $start_time,
+                                    'end_time' => $end_time
+                                ]);
+                                $created_count++;
+                            }
+                        }
+                    }
+                    
+                    $current->modify('+1 day');
+                }
+                
+                if ($created_count > 0) {
+                    $success = "Successfully created $created_count schedule(s)";
+                    if ($skipped_count > 0) {
+                        $success .= ". $skipped_count schedule(s) were skipped due to conflicts.";
+                    }
+                } else {
+                    $error = "No schedules were created. All dates either already have schedules or overlap with existing ones.";
+                }
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
+        }
+    }
+    
     if ($action === 'update') {
         $id = (int)$_POST['id'];
         $schedule_date = $_POST['schedule_date'];
         $start_time = $_POST['start_time'];
         $end_time = $_POST['end_time'];
-        $max_appointments = !empty($_POST['max_appointments']) ? (int)$_POST['max_appointments'] : 10;
-        $is_available = isset($_POST['is_available']) ? 1 : 0;
         
         if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'Date, start time, and end time are required';
@@ -152,16 +269,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $stmt = $db->prepare("
                             UPDATE schedules 
-                            SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time,
-                                max_appointments = :max_appointments, is_available = :is_available, updated_at = NOW()
+                            SET schedule_date = :schedule_date, start_time = :start_time, end_time = :end_time, updated_at = NOW()
                             WHERE schedule_id = :id AND doc_id = :doc_id
                         ");
                         $stmt->execute([
                             'schedule_date' => $schedule_date,
                             'start_time' => $start_time,
                             'end_time' => $end_time,
-                            'max_appointments' => $max_appointments,
-                            'is_available' => $is_available,
+,
                             'id' => $id,
                             'doc_id' => $doctor_id
                         ]);
@@ -252,14 +367,8 @@ try {
     $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
     $stats['today_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Available slots today (total max appointments - booked appointments)
-    $total_max_slots = 0;
-    foreach ($today_schedules as $sched) {
-        if ($sched['is_available']) {
-            $total_max_slots += (int)$sched['max_appointments'];
-        }
-    }
-    $stats['available_slots_today'] = max(0, $total_max_slots - $stats['today_appointments']);
+    // Available slots today (unlimited now, so we just show today's schedules count)
+    $stats['available_slots_today'] = count($today_schedules);
     
     // Next upcoming schedule
     $stmt = $db->prepare("
@@ -267,7 +376,6 @@ try {
         FROM schedules 
         WHERE doc_id = :doctor_id 
         AND (schedule_date > :today OR (schedule_date = :today AND start_time > TIME(NOW())))
-        AND is_available = 1
         ORDER BY schedule_date ASC, start_time ASC 
         LIMIT 1
     ");

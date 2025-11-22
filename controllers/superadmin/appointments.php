@@ -24,31 +24,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $duration = !empty($_POST['duration']) ? (int)$_POST['duration'] : 30;
         $notes = sanitize($_POST['notes'] ?? '');
         
-        if (empty($patient_id) || empty($doctor_id) || empty($appointment_date)) {
-            $error = 'Patient, doctor, and date are required';
+        if (empty($patient_id) || empty($doctor_id) || empty($appointment_date) || empty($appointment_time)) {
+            $error = 'Patient, doctor, date, and time are required';
         } else {
             try {
-                $appointment_id = Appointment::generateId($db);
-                
-                $stmt = $db->prepare("
-                    INSERT INTO appointments (appointment_id, pat_id, doc_id, service_id, status_id, 
-                                             appointment_date, appointment_time, appointment_duration, 
-                                             appointment_notes, created_at) 
-                    VALUES (:appointment_id, :patient_id, :doctor_id, :service_id, :status_id,
-                           :appointment_date, :appointment_time, :duration, :notes, NOW())
-                ");
-                $stmt->execute([
-                    'appointment_id' => $appointment_id,
-                    'patient_id' => $patient_id,
-                    'doctor_id' => $doctor_id,
+                // Use Appointment class to ensure validation (including schedule validation)
+                $appointmentModel = new Appointment();
+                $result = $appointmentModel->create([
+                    'pat_id' => $patient_id,
+                    'doc_id' => $doctor_id,
                     'service_id' => $service_id,
                     'status_id' => $status_id,
                     'appointment_date' => $appointment_date,
                     'appointment_time' => $appointment_time,
-                    'duration' => $duration,
-                    'notes' => $notes
+                    'appointment_duration' => $duration,
+                    'appointment_notes' => $notes
                 ]);
-                $success = 'Appointment created successfully with ID: ' . $appointment_id;
+                
+                if ($result['success']) {
+                    $success = 'Appointment created successfully with ID: ' . $result['id'];
+                } else {
+                    $error = implode(', ', $result['errors'] ?? ['Failed to create appointment.']);
+                }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -66,29 +63,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $duration = !empty($_POST['duration']) ? (int)$_POST['duration'] : 30;
         $notes = sanitize($_POST['notes'] ?? '');
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE appointments 
-                SET pat_id = :patient_id, doc_id = :doctor_id, service_id = :service_id, 
-                    status_id = :status_id, appointment_date = :appointment_date,
-                    appointment_time = :appointment_time, appointment_duration = :duration,
-                    appointment_notes = :notes, updated_at = NOW()
-                WHERE appointment_id = :id
-            ");
-            $stmt->execute([
-                'patient_id' => $patient_id,
-                'doctor_id' => $doctor_id,
-                'service_id' => $service_id,
-                'status_id' => $status_id,
-                'appointment_date' => $appointment_date,
-                'appointment_time' => $appointment_time,
-                'duration' => $duration,
-                'notes' => $notes,
-                'id' => $id
-            ]);
-            $success = 'Appointment updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
+        if (empty($appointment_date) || empty($appointment_time)) {
+            $error = 'Date and time are required';
+        } else {
+            try {
+                // Use Appointment class to ensure validation (including schedule validation)
+                $appointmentModel = new Appointment();
+                $result = $appointmentModel->updateAppointment([
+                    'appointment_id' => $id,
+                    'pat_id' => $patient_id,
+                    'doc_id' => $doctor_id,
+                    'service_id' => $service_id,
+                    'status_id' => $status_id,
+                    'appointment_date' => $appointment_date,
+                    'appointment_time' => $appointment_time,
+                    'appointment_duration' => $duration,
+                    'appointment_notes' => $notes
+                ]);
+                
+                if ($result['success']) {
+                    $success = 'Appointment updated successfully';
+                } else {
+                    $error = implode(', ', $result['errors'] ?? ['Failed to update appointment.']);
+                }
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
         }
     }
     
@@ -137,7 +137,7 @@ $filter_patient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch appointments with filters
@@ -179,19 +179,21 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
-    // Handle sorting
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'appointment_date';
+    // Handle sorting - default to showing newest appointments first by creation date
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id'];
+    $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id', 'created_at'];
     if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'appointment_date';
+        $sort_column = 'created_at';
     }
     
     // Special handling for date sorting (also sort by time)
     if ($sort_column === 'appointment_date') {
         $order_by = "a.appointment_date $sort_order, a.appointment_time $sort_order";
+    } elseif ($sort_column === 'created_at') {
+        $order_by = "COALESCE(a.created_at, '1970-01-01'::timestamp) $sort_order";
     } else {
         $order_by = "a.$sort_column $sort_order";
     }

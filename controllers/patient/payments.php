@@ -38,12 +38,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } elseif ($paymentModel->hasPaymentForAppointment($appointment_id)) {
             $error = 'Payment already exists for this appointment';
         } else {
-            $payment_amount = 0;
+            // Calculate payment amount: consultation fee + service fee (if any)
+            $consultation_fee = 0;
+            if (!empty($appointment['doc_consultation_fee'])) {
+                $consultation_fee = (float)$appointment['doc_consultation_fee'];
+            }
+            
+            $service_fee = 0;
             if (!empty($appointment['service_price'])) {
-                $payment_amount = (float)$appointment['service_price'];
-            } elseif (!empty($appointment['doc_consultation_fee'])) {
-                $payment_amount = (float)$appointment['doc_consultation_fee'];
-            } else {
+                $service_fee = (float)$appointment['service_price'];
+            }
+            
+            $payment_amount = $consultation_fee + $service_fee;
+            
+            if ($payment_amount <= 0) {
                 $error = 'Cannot determine payment amount. Please contact the clinic.';
             }
 

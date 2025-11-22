@@ -242,9 +242,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute(['id' => $id]);
             $appointments = $stmt->fetchAll(PDO::FETCH_COLUMN);
             
-            // Step 2: Delete medical records for this doctor
-            $stmt = $db->prepare("DELETE FROM medical_records WHERE doc_id = :id");
-            $stmt->execute(['id' => $id]);
+            // Step 2: Delete medical records for this doctor (via appointments)
+            if (!empty($appointments)) {
+                $placeholders = str_repeat('?,', count($appointments) - 1) . '?';
+                $stmt = $db->prepare("DELETE FROM medical_records WHERE appt_id IN ($placeholders)");
+                $stmt->execute($appointments);
+            }
             
             // Step 3: Delete payments for these appointments
             if (!empty($appointments)) {
@@ -290,7 +293,7 @@ $spec_name_filter = '';
 // Pagination - check if we should load all results (for client-side filtering)
 $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 10; // Load all if filtering, otherwise paginate
+$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
 $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
 
 // Fetch all doctors with filters
@@ -336,7 +339,15 @@ try {
     if ($sort_column === 'doc_first_name') {
         $order_by = "doc_first_name $sort_order, doc_last_name $sort_order";
     } else {
-        $order_by = "d.$sort_column $sort_order";
+        // For created_at, use COALESCE to handle NULL values and add doc_id DESC as secondary sort
+        // This ensures most recent doctors (by creation date, then by ID) appear first
+        if ($sort_column === 'created_at') {
+            // Use COALESCE to handle NULL values - treat NULL as very old date
+            // Always add doc_id DESC as secondary to ensure consistent ordering
+            $order_by = "COALESCE(d.created_at, '1970-01-01'::timestamp) $sort_order, d.doc_id DESC";
+        } else {
+            $order_by = "d.$sort_column $sort_order";
+        }
     }
     
     // Fetch paginated results with profile pictures
@@ -396,6 +407,31 @@ try {
 } catch (PDOException $e) {
     // Keep empty array if error
     $most_active_doctors = [];
+}
+
+// Fetch recently added doctors
+$recently_added_doctors = [];
+try {
+    $stmt = $db->query("
+        SELECT 
+            d.doc_id,
+            d.doc_first_name,
+            d.doc_middle_initial,
+            d.doc_last_name,
+            d.doc_email,
+            d.created_at,
+            s.spec_name,
+            u.profile_picture_url
+        FROM doctors d
+        LEFT JOIN specializations s ON d.doc_specialization_id = s.spec_id
+        LEFT JOIN users u ON d.doc_id = u.doc_id
+        ORDER BY COALESCE(d.created_at, '1970-01-01'::timestamp) DESC, d.doc_id DESC
+        LIMIT 10
+    ");
+    $recently_added_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Keep empty array if error
+    $recently_added_doctors = [];
 }
 
 // Include the view

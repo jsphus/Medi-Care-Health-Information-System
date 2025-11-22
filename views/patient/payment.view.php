@@ -218,8 +218,29 @@
             
             <!-- Payment Amount -->
             <div class="amount-section">
-                <div class="amount-label">Total Amount to Pay</div>
-                <div class="amount-value">₱<?= number_format($payment_amount, 2) ?></div>
+                <div class="amount-label">Payment Breakdown</div>
+                <?php
+                $consultation_fee = !empty($appointment['doc_consultation_fee']) ? (float)$appointment['doc_consultation_fee'] : 0;
+                $service_fee = !empty($appointment['service_price']) ? (float)$appointment['service_price'] : 0;
+                ?>
+                <div style="text-align: left; margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+                        <span>Consultation Fee:</span>
+                        <span style="font-weight: 600; color: #1f2937;">₱<?= number_format($consultation_fee, 2) ?></span>
+                    </div>
+                    <?php if ($service_fee > 0): ?>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+                        <span>Service Fee:</span>
+                        <span style="font-weight: 600; color: #1f2937;">₱<?= number_format($service_fee, 2) ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <div style="border-top: 2px solid #3b82f6; margin-top: 0.75rem; padding-top: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 700; color: #1f2937;">
+                            <span>Total Amount:</span>
+                            <span>₱<?= number_format($payment_amount, 2) ?></span>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Payment Form -->

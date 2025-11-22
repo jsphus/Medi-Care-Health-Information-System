@@ -1,19 +1,49 @@
 <?php require_once __DIR__ . '/../partials/header.php'; ?>
 
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.tab-link.active {
+    color: var(--primary-blue) !important;
+    border-bottom-color: var(--primary-blue) !important;
+}
+
+.tab-link:hover {
+    color: var(--primary-blue) !important;
+}
+</style>
+
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/doctor/dashboard">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Today's Appointments</span>
-        </div>
-        <h1 class="page-title">Today's Appointments</h1>
+        <h1 class="page-title">Today's Schedule</h1>
         <p style="color: var(--text-secondary); font-size: 0.9375rem; margin-top: 0.5rem;">
             <?= date('l, F d, Y') ?>
         </p>
+    </div>
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; border-bottom: 2px solid var(--border-light);">
+        <a href="/doctor/appointments/today" class="tab-link active" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--primary-blue); font-weight: 600; border-bottom: 2px solid var(--primary-blue); margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-calendar-day"></i>
+            <span>Today</span>
+            <?php if ($today_count > 0): ?>
+                <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem;"><?= $today_count ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="/doctor/appointments" class="tab-link" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-th-large"></i>
+            <span>All</span>
+        </a>
+        <a href="/doctor/appointments/future" class="tab-link" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-calendar-check"></i>
+            <span>Upcoming</span>
+        </a>
+        <a href="/doctor/appointments/previous" class="tab-link" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-history"></i>
+            <span>Past</span>
+        </a>
     </div>
 </div>
 
@@ -163,11 +193,14 @@
                     <th style="width: 50px;">
                         <i class="fas fa-sticky-note notes-header-icon" title="Notes - Hover over rows to view"></i>
                     </th>
+                    <th style="width: 180px;">Actions</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <?php foreach ($appointments as $apt): ?>
-                    <?php
+                <?php 
+                $currentTime = time();
+                $firstUpcoming = true;
+                foreach ($appointments as $index => $apt): 
                     $patInitial = strtoupper(substr($apt['pat_first_name'] ?? 'P', 0, 1));
                     $patName = htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''));
                     $statusName = strtolower($apt['status_name'] ?? 'scheduled');
@@ -175,13 +208,39 @@
                     $isCanceled = $statusName === 'canceled' || $statusName === 'cancelled';
                     $statusClass = $isCompleted ? 'badge-success' : ($isCanceled ? 'badge-error' : 'badge-warning');
                     $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';
+                    $appointmentTimeStr = isset($apt['appointment_time']) ? $apt['appointment_time'] : '';
                     $notes = !empty($apt['appointment_notes']) ? htmlspecialchars($apt['appointment_notes']) : 'No notes available';
-                    ?>
-                    <tr class="patient-row table-row" 
+                    
+                    // Priority indicators
+                    $isNext = false;
+                    $isOverdue = false;
+                    if (!$isCompleted && !$isCanceled && !empty($appointmentTimeStr)) {
+                        $appointmentTimestamp = strtotime(date('Y-m-d') . ' ' . $appointmentTimeStr);
+                        $timeDiff = $appointmentTimestamp - $currentTime;
+                        
+                        // Check if overdue (past time and not completed)
+                        if ($timeDiff < 0 && $timeDiff > -3600) { // Within last hour
+                            $isOverdue = true;
+                        }
+                        
+                        // Mark next upcoming appointment
+                        if ($firstUpcoming && $timeDiff > 0) {
+                            $isNext = true;
+                            $firstUpcoming = false;
+                        }
+                    }
+                    
+                    $rowClass = '';
+                    if ($isNext) $rowClass = 'next-appointment';
+                    if ($isOverdue) $rowClass = 'overdue-appointment';
+                ?>
+                    <tr class="patient-row table-row <?= $rowClass ?>" 
+                        data-appointment-id="<?= htmlspecialchars($apt['appointment_id'] ?? '') ?>"
                         data-patient="<?= htmlspecialchars(strtolower(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''))) ?>"
                         data-service="<?= htmlspecialchars(strtolower($apt['service_name'] ?? '')) ?>"
                         data-time="<?= isset($apt['appointment_time']) ? date('H:i', strtotime($apt['appointment_time'])) : '' ?>"
-                        data-status="<?= htmlspecialchars(strtolower($statusName)) ?>">
+                        data-status="<?= htmlspecialchars(strtolower($statusName)) ?>"
+                        style="<?= $isNext ? 'background: #fef3c7; border-left: 4px solid #f59e0b;' : ($isOverdue ? 'background: #fee2e2; border-left: 4px solid #ef4444;' : '') ?>">
                         <td><strong style="color: var(--text-primary);"><?= htmlspecialchars($apt['appointment_id'] ?? 'N/A') ?></strong></td>
                         <td>
                             <div class="patient-info">
@@ -194,6 +253,15 @@
                                 </div>
                                 <div>
                                     <div class="patient-name"><?= $patName ?></div>
+                                    <?php if ($isNext): ?>
+                                        <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 600;">
+                                            <i class="fas fa-clock"></i> Next Appointment
+                                        </span>
+                                    <?php elseif ($isOverdue): ?>
+                                        <span style="font-size: 0.75rem; color: #ef4444; font-weight: 600;">
+                                            <i class="fas fa-exclamation-triangle"></i> Overdue
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>
@@ -221,6 +289,39 @@
                                 <span style="color: var(--text-secondary);">-</span>
                             <?php endif; ?>
                         </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button onclick="viewAppointmentDetails('<?= htmlspecialchars($apt['appointment_id'] ?? '') ?>')" 
+                                        class="btn-action btn-sm" 
+                                        style="padding: 0.375rem 0.75rem; background: var(--primary-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                    <span>View</span>
+                                </button>
+                                <?php if (!$isCompleted && !$isCanceled): ?>
+                                    <button onclick="startAppointment('<?= htmlspecialchars($apt['appointment_id'] ?? '') ?>')" 
+                                            class="btn-action btn-sm" 
+                                            style="padding: 0.375rem 0.75rem; background: var(--status-success); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                            title="Start Appointment">
+                                        <i class="fas fa-play"></i>
+                                        <span>Start</span>
+                                    </button>
+                                    <button onclick="completeAppointment('<?= htmlspecialchars($apt['appointment_id'] ?? '') ?>')" 
+                                            class="btn-action btn-sm" 
+                                            style="padding: 0.375rem 0.75rem; background: #10b981; color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                            title="Complete Appointment">
+                                        <i class="fas fa-check"></i>
+                                        <span>Complete</span>
+                                    </button>
+                                <?php endif; ?>
+                                <button onclick="viewPatientRecord('<?= htmlspecialchars($apt['pat_id'] ?? '') ?>')" 
+                                        class="btn-action btn-sm" 
+                                        style="padding: 0.375rem 0.75rem; background: #8b5cf6; color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        title="View Patient Record">
+                                    <i class="fas fa-file-medical"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -228,7 +329,191 @@
     <?php endif; ?>
 </div>
 
+<!-- Appointment Detail Modal -->
+<div id="appointmentDetailModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1;">
+            <h2 style="margin: 0; color: var(--text-primary);">Appointment Details</h2>
+            <button onclick="closeAppointmentModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; line-height: 1;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="appointmentDetailContent" style="padding: 1.5rem;">
+            <div style="text-align: center; padding: 2rem;">
+                <div class="spinner" style="border: 3px solid #f3f4f6; border-top: 3px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+// Appointment Detail Modal Functions
+function viewAppointmentDetails(appointmentId) {
+    const modal = document.getElementById('appointmentDetailModal');
+    const content = document.getElementById('appointmentDetailContent');
+    
+    modal.style.display = 'flex';
+    content.innerHTML = `
+        <div style="text-align: center; padding: 2rem;">
+            <div class="spinner" style="border: 3px solid #f3f4f6; border-top: 3px solid var(--primary-blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">Loading appointment details...</p>
+        </div>
+    `;
+    
+    fetch(`/doctor/appointment-actions?action=get_details&appointment_id=${appointmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const apt = data.appointment;
+                const patName = (apt.pat_first_name || '') + ' ' + (apt.pat_last_name || '');
+                const appointmentDate = apt.appointment_date ? new Date(apt.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A';
+                const appointmentTime = apt.appointment_time ? new Date('2000-01-01 ' + apt.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'N/A';
+                
+                content.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; font-weight: 700;">
+                                ${(apt.pat_first_name || '').charAt(0).toUpperCase()}
+                            </div>
+                            <h4 style="margin: 0 0 0.5rem; color: var(--text-primary);">Patient</h4>
+                            <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${patName}</p>
+                            ${apt.pat_phone ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary);"><a href="tel:${apt.pat_phone}" style="color: var(--primary-blue); text-decoration: none;"><i class="fas fa-phone"></i> ${apt.pat_phone}</a></p>` : ''}
+                        </div>
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem;">
+                            <h4 style="margin: 0 0 1rem; color: var(--text-primary);">Appointment Information</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div><strong>ID:</strong> ${apt.appointment_id || 'N/A'}</div>
+                                <div><strong>Date:</strong> ${appointmentDate}</div>
+                                <div><strong>Time:</strong> ${appointmentTime}</div>
+                                <div><strong>Duration:</strong> ${apt.appointment_duration || 30} minutes</div>
+                                <div><strong>Service:</strong> ${apt.service_name || 'N/A'}</div>
+                                <div><strong>Status:</strong> 
+                                    <span class="badge" style="background: ${apt.status_color || '#3B82F6'}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        ${apt.status_name || 'N/A'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${apt.appointment_notes ? `
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                            <h4 style="margin: 0 0 1rem; color: var(--text-primary);"><i class="fas fa-sticky-note" style="margin-right: 0.5rem;"></i>Notes</h4>
+                            <p style="margin: 0; color: var(--text-secondary); white-space: pre-wrap;">${apt.appointment_notes || 'No notes available'}</p>
+                        </div>
+                    ` : ''}
+                    ${data.recent_records && data.recent_records.length > 0 ? `
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                            <h4 style="margin: 0 0 1rem; color: var(--text-primary);"><i class="fas fa-file-medical" style="margin-right: 0.5rem;"></i>Recent Medical Records</h4>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                ${data.recent_records.slice(0, 3).map(record => `
+                                    <div style="padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid var(--border-light);">
+                                        <div style="font-weight: 600; color: var(--text-primary);">${new Date(record.record_date).toLocaleDateString()}</div>
+                                        ${record.diagnosis ? `<div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">${record.diagnosis.substring(0, 100)}...</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+                        <button onclick="viewPatientRecord('${apt.pat_id}')" style="padding: 0.75rem 1.5rem; background: #8b5cf6; color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-file-medical"></i>
+                            <span>View Patient Record</span>
+                        </button>
+                        ${apt.status_name && apt.status_name.toLowerCase() !== 'completed' && apt.status_name.toLowerCase() !== 'canceled' && apt.status_name.toLowerCase() !== 'cancelled' ? `
+                            <button onclick="startAppointment('${apt.appointment_id}')" style="padding: 0.75rem 1.5rem; background: var(--status-success); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-play"></i>
+                                <span>Start Appointment</span>
+                            </button>
+                        ` : ''}
+                        <button onclick="closeAppointmentModal()" style="padding: 0.75rem 1.5rem; background: var(--bg-light); color: var(--text-primary); border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; font-weight: 500;">
+                            Close
+                        </button>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                        <p style="color: var(--text-secondary);">${data.error || 'Failed to load appointment details'}</p>
+                        <button onclick="closeAppointmentModal()" style="padding: 0.75rem 1.5rem; background: var(--primary-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; margin-top: 1rem;">
+                            Close
+                        </button>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p style="color: var(--text-secondary);">An error occurred while loading appointment details.</p>
+                    <button onclick="closeAppointmentModal()" style="padding: 0.75rem 1.5rem; background: var(--primary-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; margin-top: 1rem;">
+                        Close
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function closeAppointmentModal() {
+    document.getElementById('appointmentDetailModal').style.display = 'none';
+}
+
+function startAppointment(appointmentId) {
+    // Note: In the default schema, there's no "In Progress" status, so we'll keep it as Scheduled
+    // If you have an "In Progress" status, update this status_id accordingly
+    if (confirm('Start this appointment? The appointment will remain in "Scheduled" status.')) {
+        // Optionally, you could create an "In Progress" status and use its ID here
+        // For now, we'll just show a message that the appointment has started
+        alert('Appointment started! You can now proceed with the consultation.');
+        // If you want to update to a specific status, uncomment the line below and set the correct status_id
+        // updateAppointmentStatus(appointmentId, statusIdForInProgress, 'Appointment started');
+    }
+}
+
+function completeAppointment(appointmentId) {
+    // Completed status_id is typically 2 based on default schema
+    if (confirm('Mark this appointment as completed?')) {
+        updateAppointmentStatus(appointmentId, 2, 'Appointment completed');
+    }
+}
+
+function updateAppointmentStatus(appointmentId, statusId, message = '') {
+    const formData = new FormData();
+    formData.append('action', 'update_status');
+    formData.append('appointment_id', appointmentId);
+    formData.append('status_id', statusId);
+    
+    fetch('/doctor/appointment-actions', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(message || 'Appointment status updated successfully');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to update appointment status'));
+        }
+    })
+    .catch(error => {
+        alert('An error occurred while updating the appointment status.');
+    });
+}
+
+function viewPatientRecord(patientId) {
+    window.location.href = `/doctor/medical-records?patient_id=${patientId}`;
+}
+
+// Close modal when clicking outside
+document.getElementById('appointmentDetailModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAppointmentModal();
+    }
+});
+
 // Table Filtering Functions
 function applyTableFilters() {
     filterTable();

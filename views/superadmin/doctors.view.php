@@ -20,74 +20,171 @@
 
 <!-- Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Total Doctors</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Doctors</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-md"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['total'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Active Doctors</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Active Doctors</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-check-circle"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['active'] ?? 0 ?></div>
     </div>
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <div style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></div>
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">Inactive Doctors</span>
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Inactive Doctors</span>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0;">
+                <i class="fas fa-user-slash"></i>
+            </div>
         </div>
-        <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary);"><?= $stats['inactive'] ?? 0 ?></div>
     </div>
 </div>
 
-<!-- Most Active Doctors Section -->
-<?php if (!empty($most_active_doctors)): ?>
-<div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <div>
+<style>
+/* Scrollable sections styling */
+.doctors-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 500px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.doctors-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.doctors-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.doctors-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.doctors-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1024px) {
+    .doctors-sections-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+
+<!-- Doctors Sections Side by Side -->
+<?php if (!empty($most_active_doctors) || !empty($recently_added_doctors)): ?>
+<div class="doctors-sections-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Most Active Doctors Section -->
+    <?php if (!empty($most_active_doctors)): ?>
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+        <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
             <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Most Active Doctors</h2>
             <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Doctors with the most appointments</p>
         </div>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-        <?php foreach ($most_active_doctors as $index => $doctor): ?>
-            <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s;" 
-                 onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
-                 onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
-                <div style="position: relative; flex-shrink: 0;">
-                    <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <?php if (!empty($doctor['profile_picture_url'])): ?>
-                            <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-                        <?php else: ?>
-                            <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1)) ?>
-                        <?php endif; ?>
-                    </div>
-                    <?php if ($index < 3): ?>
-                        <div style="position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: <?= $index === 0 ? '#fbbf24' : ($index === 1 ? '#94a3b8' : '#cd7f32') ?>; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                            <?= $index + 1 ?>
+        <div class="doctors-scroll-container">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <?php foreach ($most_active_doctors as $index => $doctor): ?>
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                         onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                         onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <?php if (!empty($doctor['profile_picture_url'])): ?>
+                                    <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                <?php else: ?>
+                                    <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1)) ?>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($index < 3): ?>
+                                <div style="position: absolute; top: -4px; right: -4px; width: 20px; height: 20px; border-radius: 50%; background: <?= $index === 0 ? '#fbbf24' : ($index === 1 ? '#94a3b8' : '#cd7f32') ?>; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 700; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    <?= $index + 1 ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
-                </div>
-                <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        Dr. <?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?>
-                    </div>
-                    <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        <?= htmlspecialchars($doctor['spec_name'] ?? 'General Practice') ?>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                        <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                            <i class="fas fa-calendar-check"></i>
-                            <span><?= $doctor['appointment_count'] ?> <?= $doctor['appointment_count'] == 1 ? 'appointment' : 'appointments' ?></span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                Dr. <?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <?= htmlspecialchars($doctor['spec_name'] ?? 'General Practice') ?>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span><?= $doctor['appointment_count'] ?> <?= $doctor['appointment_count'] == 1 ? 'appointment' : 'appointments' ?></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                <?php endforeach; ?>
             </div>
-        <?php endforeach; ?>
+        </div>
     </div>
+    <?php endif; ?>
+
+    <!-- Recently Added Doctors Section -->
+    <?php if (!empty($recently_added_doctors)): ?>
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+        <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recently Added Doctors</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Doctors added to the system recently</p>
+        </div>
+        <div class="doctors-scroll-container">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <?php foreach ($recently_added_doctors as $doctor): ?>
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                         onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                         onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)';">
+                        <div style="position: relative; flex-shrink: 0;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <?php if (!empty($doctor['profile_picture_url'])): ?>
+                                    <img src="<?= htmlspecialchars($doctor['profile_picture_url']) ?>" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
+                                <?php else: ?>
+                                    <?= strtoupper(substr($doctor['doc_first_name'] ?? 'D', 0, 1) . substr($doctor['doc_last_name'] ?? 'D', 0, 1)) ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                Dr. <?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?>
+                            </div>
+                            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <?= htmlspecialchars($doctor['spec_name'] ?? 'General Practice') ?>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: #10b981; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <span><?= !empty($doctor['created_at']) ? date('M d, Y', strtotime($doctor['created_at'])) : 'Recently' ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

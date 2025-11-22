@@ -1,19 +1,55 @@
 <?php require_once __DIR__ . '/../partials/header.php'; ?>
 
+<style>
+.tab-link {
+    transition: all 0.2s;
+}
+
+.tab-link.active {
+    color: var(--primary-blue) !important;
+    border-bottom-color: var(--primary-blue) !important;
+    font-weight: 600 !important;
+}
+
+.tab-link:hover {
+    color: var(--primary-blue) !important;
+}
+</style>
+
 <div class="page-header">
     <div class="page-header-top">
-        <div class="breadcrumbs">
-            <a href="/doctor/dashboard">
-                <i class="fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <i class="fas fa-chevron-right"></i>
-            <span>Appointments</span>
-        </div>
-        <h1 class="page-title">My Appointments</h1>
+        <h1 class="page-title">Appointments Overview</h1>
         <p style="color: var(--text-secondary); font-size: 0.9375rem; margin-top: 0.5rem;">
             Manage all your appointments in one place
         </p>
+    </div>
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; border-bottom: 2px solid var(--border-light);">
+        <a href="/doctor/appointments/today" class="tab-link <?= strpos($_SERVER['REQUEST_URI'], '/today') !== false ? 'active' : '' ?>" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-calendar-day"></i>
+            <span>Today</span>
+            <?php if ($today_count > 0): ?>
+                <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem;"><?= $today_count ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="/doctor/appointments" class="tab-link <?= strpos($_SERVER['REQUEST_URI'], '/today') === false && strpos($_SERVER['REQUEST_URI'], '/future') === false && strpos($_SERVER['REQUEST_URI'], '/previous') === false ? 'active' : '' ?>" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-th-large"></i>
+            <span>All</span>
+        </a>
+        <a href="/doctor/appointments/future" class="tab-link <?= strpos($_SERVER['REQUEST_URI'], '/future') !== false ? 'active' : '' ?>" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-calendar-check"></i>
+            <span>Upcoming</span>
+            <?php if ($upcoming_count > 0): ?>
+                <span class="badge" style="background: var(--status-success); color: white; padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem;"><?= $upcoming_count ?></span>
+            <?php endif; ?>
+        </a>
+        <a href="/doctor/appointments/previous" class="tab-link <?= strpos($_SERVER['REQUEST_URI'], '/previous') !== false ? 'active' : '' ?>" style="padding: 0.75rem 1.5rem; text-decoration: none; color: var(--text-secondary); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-history"></i>
+            <span>Past</span>
+            <?php if ($previous_count > 0): ?>
+                <span class="badge" style="background: var(--text-secondary); color: white; padding: 0.125rem 0.5rem; border-radius: 10px; font-size: 0.75rem;"><?= $previous_count ?></span>
+            <?php endif; ?>
+        </a>
     </div>
 </div>
 
