@@ -23,7 +23,7 @@ if (isset($_SESSION['pat_first_name']) && isset($_SESSION['pat_last_name'])) {
     $userInitial = strtoupper(substr($_SESSION['doc_first_name'] ?? 'D', 0, 1));
     $userTitle = 'Doctor';
 } elseif (isset($_SESSION['staff_first_name']) && isset($_SESSION['staff_last_name'])) {
-    $userName = ($_SESSION['staff_first_name'] ?? '') . ' ' . ($_SESSION['staff_last_name'] ?? '');
+    $userName = formatFullName($_SESSION['staff_first_name'] ?? '', $_SESSION['staff_middle_initial'] ?? null, $_SESSION['staff_last_name'] ?? '');
     $userInitial = strtoupper(substr($_SESSION['staff_first_name'] ?? 'S', 0, 1));
     $userTitle = 'Staff';
 }
@@ -65,11 +65,11 @@ if ($userName === 'User' && isset($_SESSION['user_id'])) {
                 }
             }
         } elseif (isset($_SESSION['staff_id']) && $_SESSION['staff_id'] !== null) {
-            $stmt = $db->prepare("SELECT staff_first_name, staff_last_name FROM staff WHERE staff_id = :staff_id");
+            $stmt = $db->prepare("SELECT staff_first_name, staff_middle_initial, staff_last_name FROM staff WHERE staff_id = :staff_id");
             $stmt->execute(['staff_id' => $_SESSION['staff_id']]);
             $staff = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($staff) {
-                $userName = trim(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? ''));
+                $userName = formatFullName($staff['staff_first_name'] ?? '', $staff['staff_middle_initial'] ?? null, $staff['staff_last_name'] ?? '');
                 if (!empty($userName)) {
                     $userInitial = strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1));
                     $userTitle = 'Staff';

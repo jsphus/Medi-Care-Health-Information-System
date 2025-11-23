@@ -177,6 +177,11 @@ abstract class Entity {
         if (isset($updateData['user_is_superadmin'])) {
             unset($updateData['user_is_superadmin']);
         }
+        
+        // Exclude created_at from updates (should never be changed after creation)
+        if (array_key_exists('created_at', $updateData)) {
+            unset($updateData['created_at']);
+        }
 
         // Automatically set updated_at if column exists and not already set
         if (in_array('updated_at', $columns) && (!isset($updateData['updated_at']) || $updateData['updated_at'] === null)) {

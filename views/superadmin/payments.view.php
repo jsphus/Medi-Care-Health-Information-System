@@ -57,65 +57,103 @@
         grid-template-columns: 1fr !important;
     }
 }
+
+.payments-scroll-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 500px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.payments-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.payments-scroll-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.payments-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.payments-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Modern Status Dropdown */
+.status-dropdown-modern {
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--border-light);
+    background: white;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    transition: all 0.2s;
+    min-width: 140px;
+}
+
+.status-dropdown-modern:hover {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.status-dropdown-modern:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
 </style>
 <div class="payments-cards-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Recent Payments Card -->
-    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; max-height: 500px;">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); flex-shrink: 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-clock" style="color: #3b82f6;"></i>
-                    Recent Payments
-                </h2>
-                <span style="font-size: 0.875rem; color: var(--text-secondary); background: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 12px;">
-                    <?= count($recent_payments ?? []) ?>
-                </span>
-            </div>
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+        <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recent Payments</h2>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: var(--text-secondary);">Latest payment transactions</p>
         </div>
-        <div style="padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+        <div class="payments-scroll-container">
             <?php if (empty($recent_payments)): ?>
                 <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
                     <i class="fas fa-money-bill-wave" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.3;"></i>
                     <p style="margin: 0; font-size: 0.875rem;">No recent payments</p>
                 </div>
             <?php else: ?>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <?php foreach ($recent_payments as $recent): ?>
-                        <div style="padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 3px solid #3b82f6; transition: all 0.2s; cursor: pointer;" 
-                             onmouseover="this.style.background='#f3f4f6'; this.style.transform='translateX(2px)'" 
-                             onmouseout="this.style.background='#f9fafb'; this.style.transform='translateX(0)'">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem; overflow: hidden; flex-shrink: 0;">
-                                            <?php if (!empty($recent['patient_profile_picture'])): ?>
-                                                <img src="<?= htmlspecialchars($recent['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
-                                            <?php else: ?>
-                                                <?= strtoupper(substr($recent['pat_first_name'] ?? 'P', 0, 1)) ?>
-                                            <?php endif; ?>
-                                        </div>
-                                        <strong style="color: var(--text-primary); font-size: 0.875rem;">
-                                            <?= htmlspecialchars(($recent['pat_first_name'] ?? '') . ' ' . ($recent['pat_last_name'] ?? '')) ?>
-                                        </strong>
-                                    </div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 2.5rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                            <i class="fas fa-calendar" style="width: 12px;"></i>
-                                            <span><?= $recent['payment_date'] ? date('M d, Y', strtotime($recent['payment_date'])) : 'N/A' ?></span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <i class="fas fa-credit-card" style="width: 12px;"></i>
-                                            <span><?= htmlspecialchars($recent['method_name'] ?? 'N/A') ?></span>
-                                        </div>
-                                    </div>
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; flex-shrink: 0;" 
+                             onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='var(--primary-blue)';" 
+                             onmouseout="this.style.background='#f9fafb'; this.style.borderColor='var(--border-light)'">
+                            <div style="position: relative; flex-shrink: 0;">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <?php if (!empty($recent['patient_profile_picture'])): ?>
+                                        <img src="<?= htmlspecialchars($recent['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($recent['pat_first_name'] ?? 'P', 0, 1) . substr($recent['pat_last_name'] ?? 'P', 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
-                                <div style="text-align: right;">
-                                    <div style="color: var(--status-success); font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">
-                                        ₱<?= number_format($recent['payment_amount'] ?? 0, 2) ?>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= htmlspecialchars(($recent['pat_first_name'] ?? '') . ' ' . ($recent['pat_last_name'] ?? '')) ?>
+                                </div>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= $recent['payment_date'] ? date('M d, Y', strtotime($recent['payment_date'])) : 'N/A' ?>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: var(--primary-blue); color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>₱<?= number_format($recent['payment_amount'] ?? 0, 2) ?></span>
                                     </div>
-                                    <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
-                                        <?= htmlspecialchars($recent['status_name'] ?? 'N/A') ?>
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -126,62 +164,57 @@
     </div>
 
     <!-- Pending Payments Card -->
-    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; max-height: 500px;">
-        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); flex-shrink: 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <h2 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-exclamation-circle" style="color: #f59e0b;"></i>
-                    Pending Payments
-                </h2>
-                <span style="font-size: 0.875rem; color: var(--text-secondary); background: #fef3c7; padding: 0.25rem 0.75rem; border-radius: 12px;">
-                    <?= count($pending_payments ?? []) ?>
-                </span>
+    <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; display: flex; flex-direction: column; height: 100%;">
+        <div style="margin-bottom: 1.5rem; flex-shrink: 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Pending Payments</h2>
+                <?php 
+                // Get total pending count for the button
+                $total_pending_count = $stats['pending'] ?? 0;
+                if ($total_pending_count > 10): ?>
+                    <button type="button" onclick="viewAllPendingPayments()" style="padding: 0.375rem 0.75rem; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.25rem;" 
+                            onmouseover="this.style.background='#d97706';" 
+                            onmouseout="this.style.background='#f59e0b';">
+                        <i class="fas fa-eye"></i>
+                        <span>View All (<?= $total_pending_count ?>)</span>
+                    </button>
+                <?php endif; ?>
             </div>
+            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">Payments awaiting confirmation</p>
         </div>
-        <div style="padding: 1rem; overflow-y: auto; flex: 1; min-height: 0;">
+        <div class="payments-scroll-container">
             <?php if (empty($pending_payments)): ?>
                 <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
                     <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.3; color: #10b981;"></i>
                     <p style="margin: 0; font-size: 0.875rem;">No pending payments</p>
                 </div>
             <?php else: ?>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
                     <?php foreach ($pending_payments as $pending): ?>
-                        <div style="padding: 1rem; background: #fffbeb; border-radius: 8px; border-left: 3px solid #f59e0b; transition: all 0.2s; cursor: pointer;" 
-                             onmouseover="this.style.background='#fef3c7'; this.style.transform='translateX(2px)'" 
-                             onmouseout="this.style.background='#fffbeb'; this.style.transform='translateX(0)'">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #f59e0b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.75rem; overflow: hidden; flex-shrink: 0;">
-                                            <?php if (!empty($pending['patient_profile_picture'])): ?>
-                                                <img src="<?= htmlspecialchars($pending['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
-                                            <?php else: ?>
-                                                <?= strtoupper(substr($pending['pat_first_name'] ?? 'P', 0, 1)) ?>
-                                            <?php endif; ?>
-                                        </div>
-                                        <strong style="color: var(--text-primary); font-size: 0.875rem;">
-                                            <?= htmlspecialchars(($pending['pat_first_name'] ?? '') . ' ' . ($pending['pat_last_name'] ?? '')) ?>
-                                        </strong>
-                                    </div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 2.5rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                            <i class="fas fa-calendar" style="width: 12px;"></i>
-                                            <span><?= $pending['payment_date'] ? date('M d, Y', strtotime($pending['payment_date'])) : 'N/A' ?></span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <i class="fas fa-credit-card" style="width: 12px;"></i>
-                                            <span><?= htmlspecialchars($pending['method_name'] ?? 'N/A') ?></span>
-                                        </div>
-                                    </div>
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fffbeb; border-radius: 8px; border: 1px solid #fbbf24; transition: all 0.2s; flex-shrink: 0;" 
+                             onmouseover="this.style.background='#fef3c7'; this.style.borderColor='#f59e0b';" 
+                             onmouseout="this.style.background='#fffbeb'; this.style.borderColor='#fbbf24'">
+                            <div style="position: relative; flex-shrink: 0;">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.125rem; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <?php if (!empty($pending['patient_profile_picture'])): ?>
+                                        <img src="<?= htmlspecialchars($pending['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($pending['pat_first_name'] ?? 'P', 0, 1) . substr($pending['pat_last_name'] ?? 'P', 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
-                                <div style="text-align: right;">
-                                    <div style="color: var(--status-warning, #f59e0b); font-weight: 700; font-size: 1rem; margin-bottom: 0.25rem;">
-                                        ₱<?= number_format($pending['payment_amount'] ?? 0, 2) ?>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= htmlspecialchars(($pending['pat_first_name'] ?? '') . ' ' . ($pending['pat_last_name'] ?? '')) ?>
+                                </div>
+                                <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?= $pending['payment_date'] ? date('M d, Y', strtotime($pending['payment_date'])) : 'N/A' ?>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: #f59e0b; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <span>₱<?= number_format($pending['payment_amount'] ?? 0, 2) ?></span>
                                     </div>
-                                    <span class="badge" style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
-                                        <?= htmlspecialchars($pending['status_name'] ?? 'Pending') ?>
-                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -335,12 +368,10 @@
                                 <form method="POST" class="status-update-form" style="display: inline;" onchange="this.submit()">
                                     <input type="hidden" name="action" value="update_status">
                                     <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
-                                    <select name="payment_status_id" class="status-dropdown" 
-                                            style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: var(--primary-blue); color: white; border: 1px solid var(--primary-blue); cursor: pointer; min-width: 120px;">
+                                    <select name="payment_status_id" class="status-dropdown-modern">
                                         <?php foreach ($payment_statuses as $status): ?>
                                             <option value="<?= $status['payment_status_id'] ?>" 
-                                                    <?= ($payment['payment_status_id'] == $status['payment_status_id']) ? 'selected' : '' ?>
-                                                    style="background: white; color: var(--text-primary);">
+                                                    <?= ($payment['payment_status_id'] == $status['payment_status_id']) ? 'selected' : '' ?>>
                                                 <?= htmlspecialchars($status['status_name']) ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -598,6 +629,26 @@ function filterByCategory(category) {
     }
 }
 
+// View All Pending Payments - Filter table to show only pending payments
+function viewAllPendingPayments() {
+    // First, load all results to enable filtering
+    const url = new URL(window.location.href);
+    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    
+    if (!isAllResultsMode) {
+        // Store that we want to filter for pending
+        sessionStorage.setItem('pendingPaymentsFilter', 'true');
+        // Load all results first, then filter after page reloads
+        url.searchParams.set('all_results', '1');
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+        return;
+    }
+    
+    // If already in all_results mode, filter directly
+    filterTableByPendingStatus();
+}
+
 // Table Filtering Functions
 function applyTableFilters() {
     // Ensure we're in all_results mode for filtering to work properly
@@ -669,6 +720,71 @@ function filterTable() {
     }
 }
 
+function filterTableByPendingStatus() {
+    const rows = document.querySelectorAll('.table-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status') || '';
+        const isPending = status.toLowerCase() === 'pending';
+        
+        if (isPending) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show/hide pagination
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (paginationContainer) {
+        paginationContainer.style.display = 'none';
+    }
+    
+    // Show message that we're filtering
+    const tableBody = document.getElementById('tableBody');
+    const existingMsg = document.getElementById('pendingFilterMessage');
+    if (!existingMsg && tableBody && visibleCount > 0) {
+        const filterMsg = document.createElement('tr');
+        filterMsg.id = 'pendingFilterMessage';
+        const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 7;
+        filterMsg.innerHTML = `<td colspan="${colCount}" style="padding: 1rem; background: #fef3c7; border-bottom: 1px solid #fbbf24;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; color: #92400e;">
+                    <i class="fas fa-filter"></i>
+                    <span style="font-weight: 600;">Showing all pending payments (${visibleCount})</span>
+                </div>
+                <button type="button" onclick="clearPendingFilter()" style="padding: 0.375rem 0.75rem; background: #f59e0b; color: white; border: none; border-radius: 6px; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                    <i class="fas fa-times" style="margin-right: 0.25rem;"></i>Clear Filter
+                </button>
+            </div>
+        </td>`;
+        tableBody.insertBefore(filterMsg, tableBody.firstChild);
+    }
+}
+
+function clearPendingFilter() {
+    // Remove filter message
+    const filterMsg = document.getElementById('pendingFilterMessage');
+    if (filterMsg) filterMsg.remove();
+    
+    // Show all rows
+    const rows = document.querySelectorAll('.table-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Show pagination again
+    const paginationContainer = document.getElementById('paginationContainer');
+    if (paginationContainer) {
+        paginationContainer.style.display = 'flex';
+    }
+    
+    // Clear stored filter
+    sessionStorage.removeItem('pendingPaymentsFilter');
+}
+
 function resetTableFilters() {
     const inputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDate'];
     inputs.forEach(id => {
@@ -702,6 +818,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if we're in all_results mode and restore filters
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('all_results') === '1') {
+        // Check if we need to filter for pending payments
+        const pendingPaymentsFilter = sessionStorage.getItem('pendingPaymentsFilter');
+        if (pendingPaymentsFilter === 'true') {
+            // Remove the stored filter flag
+            sessionStorage.removeItem('pendingPaymentsFilter');
+            // Apply pending filter
+            setTimeout(() => {
+                filterTableByPendingStatus();
+            }, 100);
+        }
+        
         // Restore filter values from sessionStorage and apply them
         const pendingFilters = sessionStorage.getItem('pendingFilters');
         if (pendingFilters) {

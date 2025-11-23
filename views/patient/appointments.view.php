@@ -608,11 +608,6 @@ if ($currentTab === 'today') {
                 <button type="button" onclick="cancelAppointment('<?= htmlspecialchars($apt['appointment_id']) ?>')" class="btn btn-danger" style="padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #fee2e2; color: #991b1b; display: inline-flex; align-items: center; gap: 0.5rem;">
                     <i class="fas fa-times"></i> Cancel
                 </button>
-                <?php if ($isUnpaid || $isPending): ?>
-                <a href="/patient/payment?appointment_id=<?= htmlspecialchars($apt['appointment_id']) ?>" class="btn" style="padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #f59e0b; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-credit-card"></i> Pay Now
-                </a>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>

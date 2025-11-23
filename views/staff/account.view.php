@@ -273,7 +273,7 @@ require_once __DIR__ . '/../partials/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="profile-info">
-                    <div class="profile-name"><?= htmlspecialchars(($display_staff['staff_first_name'] ?? '') . ' ' . ($display_staff['staff_last_name'] ?? '')) ?></div>
+                    <div class="profile-name"><?= htmlspecialchars(formatFullName($display_staff['staff_first_name'] ?? '', $display_staff['staff_middle_initial'] ?? null, $display_staff['staff_last_name'] ?? '')) ?></div>
                     <div class="profile-email"><?= htmlspecialchars($display_staff['staff_email'] ?? '') ?></div>
                     <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem;">
                         <span class="profile-role">Staff</span>

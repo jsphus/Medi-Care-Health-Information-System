@@ -273,14 +273,28 @@ try {
     ");
     $stats['paid'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Pending payments
+    // Pending payments - use payment_status_id lookup for better reliability
+    $pending_status = $db->fetchOne("
+        SELECT payment_status_id 
+        FROM payment_statuses 
+        WHERE LOWER(TRIM(status_name)) = 'pending'
+        LIMIT 1
+    ");
+    if ($pending_status) {
+        $pending_status_id = $pending_status['payment_status_id'];
+        $stmt = $db->prepare("SELECT COUNT(*) as count FROM payments WHERE payment_status_id = :pending_status_id");
+        $stmt->execute(['pending_status_id' => $pending_status_id]);
+        $stats['pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    } else {
+        // Fallback to status name matching
     $stmt = $db->query("
         SELECT COUNT(*) as count 
         FROM payments p
         JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
-        WHERE LOWER(ps.status_name) = 'pending'
+            WHERE ps.status_name IS NOT NULL AND LOWER(TRIM(ps.status_name)) = 'pending'
     ");
     $stats['pending'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    }
     
     // Total amount
     $stmt = $db->query("SELECT COALESCE(SUM(payment_amount), 0) as total FROM payments");
@@ -318,6 +332,38 @@ try {
 // Fetch pending payments for the card (all pending payments, ordered by most recent)
 $pending_payments = [];
 try {
+    // First, get the payment_status_id for 'pending' status
+    $pending_status = $db->fetchOne("
+        SELECT payment_status_id 
+        FROM payment_statuses 
+        WHERE LOWER(TRIM(status_name)) = 'pending'
+        LIMIT 1
+    ");
+    
+    if ($pending_status) {
+        $pending_status_id = $pending_status['payment_status_id'];
+        
+        $stmt = $db->prepare("
+            SELECT p.*, 
+                   a.appointment_id, a.pat_id, a.doc_id,
+                   pat.pat_first_name, pat.pat_last_name,
+                   up.profile_picture_url as patient_profile_picture,
+                   pm.method_name,
+                   ps.status_name
+            FROM payments p
+            LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
+            LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+            LEFT JOIN users up ON up.pat_id = pat.pat_id
+            LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
+            LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+            WHERE p.payment_status_id = :pending_status_id
+            ORDER BY p.payment_id DESC
+            LIMIT 10
+        ");
+        $stmt->execute(['pending_status_id' => $pending_status_id]);
+        $pending_payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        // Fallback: try matching by status name if status_id lookup fails
     $stmt = $db->prepare("
         SELECT p.*, 
                a.appointment_id, a.pat_id, a.doc_id,
@@ -331,11 +377,13 @@ try {
         LEFT JOIN users up ON up.pat_id = pat.pat_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
-        WHERE LOWER(ps.status_name) = 'pending'
+            WHERE ps.status_name IS NOT NULL AND LOWER(TRIM(ps.status_name)) = 'pending'
         ORDER BY p.payment_id DESC
+            LIMIT 10
     ");
     $stmt->execute();
     $pending_payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) {
     error_log("Pending payments error: " . $e->getMessage());
 }

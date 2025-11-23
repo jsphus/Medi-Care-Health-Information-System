@@ -43,10 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: /staff/dashboard');
                     break;
                 case 'doctor':
-                    header('Location: /doctor/appointments/today');
+                    header('Location: /doctor/dashboard');
                     break;
                 case 'patient':
-                    header('Location: /patient/appointments');
+                    header('Location: /patient/dashboard');
                     break;
                 default:
                     header('Location: /');

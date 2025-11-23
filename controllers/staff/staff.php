@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'staff_salary' => $salary,
                     'staff_status' => $status
                 ];
-                $result = $staff->update($updateData);
+                $result = $staff->update($id, $updateData);
                 if ($result['success']) {
                     $success = 'Staff member updated successfully';
                 } else {
@@ -117,7 +117,6 @@ if (isset($_GET['search'])) {
     $search_query = sanitize($_GET['search']);
 }
 
-$filter_status = isset($_GET['status']) ? sanitize($_GET['status']) : '';
 $filter_position = isset($_GET['position']) ? sanitize($_GET['position']) : '';
 
 // Fetch staff members with filters
@@ -128,11 +127,6 @@ try {
     if (!empty($search_query)) {
         $where_conditions[] = "(staff_first_name LIKE :search OR staff_middle_initial LIKE :search OR staff_last_name LIKE :search)";
         $params['search'] = '%' . $search_query . '%';
-    }
-
-    if (!empty($filter_status)) {
-        $where_conditions[] = "staff_status = :status";
-        $params['status'] = $filter_status;
     }
 
     if (!empty($filter_position)) {
@@ -147,7 +141,7 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'staff_hire_date', 'created_at'];
+    $allowed_columns = ['staff_first_name', 'staff_last_name', 'staff_email', 'staff_phone', 'staff_hire_date', 'staff_salary', 'created_at', 'updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }

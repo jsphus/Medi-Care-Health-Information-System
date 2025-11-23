@@ -155,10 +155,8 @@
                             data-patient="<?= htmlspecialchars(strtolower(($record['pat_first_name'] ?? '') . ' ' . ($record['pat_last_name'] ?? ''))) ?>"
                             data-doctor="<?= htmlspecialchars(strtolower(($record['doc_first_name'] ?? '') . ' ' . ($record['doc_last_name'] ?? ''))) ?>"
                             data-diagnosis="<?= htmlspecialchars(strtolower($record['diagnosis'] ?? '')) ?>"
-                            data-date="<?= $record['record_date'] ? date('Y-m-d', strtotime($record['record_date'])) : '' ?>"
-                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
-                            onmouseover="this.style.background='#f9fafb'" 
-                            onmouseout="this.style.background='white'">
+                            data-date="<?= !empty($record['record_date']) ? htmlspecialchars(date('Y-m-d', strtotime($record['record_date']))) : '' ?>"
+                            style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;">
                             <td style="padding: 1rem;">
                                 <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['record_id']) ?></strong>
                             </td>
@@ -697,6 +695,14 @@ function sortTable(column) {
 .sortable.sort-desc .sort-indicator i.fa-arrow-down {
     opacity: 1;
     color: var(--primary-blue);
+}
+
+.table-row {
+    background: white;
+}
+
+.table-row:hover {
+    background: #f9fafb !important;
 }
 </style>
 

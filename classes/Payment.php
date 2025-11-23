@@ -58,8 +58,7 @@ class Payment extends Entity {
     }
 
     public function toArray(): array {
-        return [
-            'payment_id' => $this->payment_id,
+        $data = [
             'appointment_id' => $this->appointment_id,
             'payment_amount' => $this->payment_amount,
             'payment_method_id' => $this->payment_method_id,
@@ -70,6 +69,13 @@ class Payment extends Entity {
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at
         ];
+        
+        // Only include payment_id if it's not null (for updates)
+        if ($this->payment_id !== null) {
+            $data['payment_id'] = $this->payment_id;
+        }
+        
+        return $data;
     }
 
     public function fromArray(array $data): self {
@@ -176,6 +182,78 @@ class Payment extends Entity {
             ORDER BY p.payment_date DESC
             LIMIT 1
         ", ['appointment_id' => $appointmentId]);
+    }
+
+    /**
+     * Create a new payment (wrapper for save method)
+     * @param array $data Payment data
+     * @return array ['success' => bool, 'id' => mixed|null, 'message' => string, 'errors' => array]
+     */
+    public function create(array $data): array {
+        // Remove payment_id if present (should be auto-generated)
+        unset($data['payment_id']);
+        
+        // Set payment_date to current date if not provided
+        if (empty($data['payment_date'])) {
+            $data['payment_date'] = date('Y-m-d');
+        }
+        
+        // Create a fresh instance to avoid any state issues
+        $payment = new Payment();
+        
+        // Load data into the entity (without payment_id)
+        $payment->fromArray($data);
+        
+        // Use save() method from Entity
+        $result = $payment->save();
+        
+        if ($result['success']) {
+            return [
+                'success' => true,
+                'id' => $result['id'] ?? null,
+                'message' => 'Payment created successfully'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => implode(', ', $result['errors'] ?? ['Failed to create payment']),
+                'errors' => $result['errors'] ?? []
+            ];
+        }
+    }
+
+    /**
+     * Update an existing payment (wrapper for save method)
+     * @param array $data Payment data (must include payment_id)
+     * @return array ['success' => bool, 'message' => string, 'errors' => array]
+     */
+    public function update(array $data): array {
+        if (empty($data['payment_id'])) {
+            return [
+                'success' => false,
+                'message' => 'Payment ID is required for update',
+                'errors' => ['Payment ID is required']
+            ];
+        }
+        
+        // Load data into the entity
+        $this->fromArray($data);
+        
+        // Use save() method from Entity (will detect it's an update because payment_id is set)
+        $result = $this->save();
+        
+        if ($result['success']) {
+            return [
+                'success' => true,
+                'message' => 'Payment updated successfully'
+            ];
+        } else {
+            return [
+                'success' => false,
+                'message' => implode(', ', $result['errors'] ?? ['Failed to update payment']),
+                'errors' => $result['errors'] ?? []
+            ];
+        }
     }
 
     public function createPayment(array $data): array {

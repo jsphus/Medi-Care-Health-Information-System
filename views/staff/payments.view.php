@@ -212,14 +212,62 @@
                                 </form>
                             </td>
                             <td style="padding: 1rem;">
-                                <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this payment record?');">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
-                                    <button type="submit" class="btn btn-sm" title="Delete"
-                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--status-error); cursor: pointer;">
-                                        <i class="fas fa-trash"></i>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <?php if (!empty($payment['appointment_id'])): 
+                                        // Prepare appointment and payment data for embedding
+                                        $appointmentData = [
+                                            // Appointment data
+                                            'appointment_id' => $payment['appointment_id'] ?? null,
+                                            'appointment_date' => $payment['appointment_date'] ?? null,
+                                            'appointment_time' => $payment['appointment_time'] ?? null,
+                                            'appointment_notes' => $payment['appointment_notes'] ?? null,
+                                            'pat_id' => $payment['pat_id'] ?? null,
+                                            'pat_first_name' => $payment['pat_first_name'] ?? null,
+                                            'pat_last_name' => $payment['pat_last_name'] ?? null,
+                                            'doc_id' => $payment['doc_id'] ?? null,
+                                            'doc_first_name' => $payment['doc_first_name'] ?? null,
+                                            'doc_last_name' => $payment['doc_last_name'] ?? null,
+                                            'service_id' => $payment['service_id'] ?? null,
+                                            'service_name' => $payment['service_name'] ?? null,
+                                            'service_price' => $payment['service_price'] ?? null,
+                                            'spec_name' => $payment['spec_name'] ?? null,
+                                            'status_id' => $payment['status_id'] ?? null,
+                                            'status_name' => $payment['appointment_status_name'] ?? null,
+                                            'status_color' => $payment['appointment_status_color'] ?? null,
+                                            'patient_profile_picture' => $payment['patient_profile_picture'] ?? null,
+                                            'doctor_profile_picture' => $payment['doctor_profile_picture'] ?? null,
+                                            // Payment data
+                                            'payment_id' => $payment['payment_id'] ?? null,
+                                            'payment_amount' => $payment['payment_amount'] ?? null,
+                                            'payment_date' => $payment['payment_date'] ?? null,
+                                            'payment_method' => $payment['method_name'] ?? null,
+                                            'payment_status' => $payment['status_name'] ?? null,
+                                            'payment_notes' => $payment['payment_notes'] ?? null,
+                                            'created_at' => $payment['created_at'] ?? null,
+                                            'updated_at' => $payment['updated_at'] ?? null
+                                        ];
+                                    ?>
+                                        <button type="button" class="btn btn-sm view-payment-btn" 
+                                                title="View Payment Details"
+                                                data-payment="<?= base64_encode(json_encode($appointmentData)) ?>"
+                                                style="padding: 0.5rem; background: var(--primary-blue); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-sm" title="Edit Payment" 
+                                            onclick="openEditPaymentModal(<?= htmlspecialchars(json_encode([
+                                                'payment_id' => $payment['payment_id'],
+                                                'appointment_id' => $payment['appointment_id'] ?? '',
+                                                'amount' => $payment['payment_amount'] ?? 0,
+                                                'payment_method_id' => $payment['payment_method_id'] ?? '',
+                                                'payment_status_id' => $payment['payment_status_id'] ?? '',
+                                                'payment_date' => $payment['payment_date'] ?? date('Y-m-d'),
+                                                'notes' => $payment['payment_notes'] ?? ''
+                                            ])) ?>)"
+                                            style="padding: 0.5rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                </form>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -287,8 +335,19 @@
             <input type="hidden" name="action" value="create">
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Appointment ID: <span style="color: var(--status-error);">*</span></label>
-                    <input type="text" name="appointment_id" required placeholder="e.g., 2025-10-0000001" class="form-control">
+                    <label>Appointment: <span style="color: var(--status-error);">*</span></label>
+                    <select name="appointment_id" id="add_appointment_id" required class="form-control">
+                        <option value="">Select Appointment</option>
+                        <?php foreach ($appointments as $appointment): ?>
+                            <option value="<?= htmlspecialchars($appointment['appointment_id']) ?>">
+                                <?= htmlspecialchars($appointment['appointment_id']) ?> - 
+                                <?= htmlspecialchars(($appointment['pat_first_name'] ?? '') . ' ' . ($appointment['pat_last_name'] ?? '')) ?> - 
+                                Dr. <?= htmlspecialchars(($appointment['doc_first_name'] ?? '') . ' ' . ($appointment['doc_last_name'] ?? '')) ?> - 
+                                <?= $appointment['appointment_date'] ? date('M d, Y', strtotime($appointment['appointment_date'])) : '' ?> 
+                                <?= $appointment['appointment_time'] ? date('h:i A', strtotime($appointment['appointment_time'])) : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Amount (₱): <span style="color: var(--status-error);">*</span></label>
@@ -335,6 +394,98 @@
     </div>
 </div>
 
+<!-- View Payment & Appointment Details Modal -->
+<div id="viewPaymentModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Payment & Appointment Details</h2>
+            <button type="button" class="modal-close" onclick="closeViewPaymentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="paymentDetailsContent"></div>
+        <div class="action-buttons" style="margin-top: 1.5rem;">
+            <button type="button" onclick="closeViewPaymentModal()" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                <span>Close</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Payment Record</h2>
+            <button type="button" class="modal-close" onclick="closeEditPaymentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" id="edit_payment_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Appointment: <span style="color: var(--status-error);">*</span></label>
+                    <select name="appointment_id" id="edit_appointment_id" required class="form-control">
+                        <option value="">Select Appointment</option>
+                        <?php foreach ($appointments as $appointment): ?>
+                            <option value="<?= htmlspecialchars($appointment['appointment_id']) ?>">
+                                <?= htmlspecialchars($appointment['appointment_id']) ?> - 
+                                <?= htmlspecialchars(($appointment['pat_first_name'] ?? '') . ' ' . ($appointment['pat_last_name'] ?? '')) ?> - 
+                                Dr. <?= htmlspecialchars(($appointment['doc_first_name'] ?? '') . ' ' . ($appointment['doc_last_name'] ?? '')) ?> - 
+                                <?= $appointment['appointment_date'] ? date('M d, Y', strtotime($appointment['appointment_date'])) : '' ?> 
+                                <?= $appointment['appointment_time'] ? date('h:i A', strtotime($appointment['appointment_time'])) : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₱): <span style="color: var(--status-error);">*</span></label>
+                    <input type="number" name="amount" id="edit_amount" step="0.01" min="0" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Payment Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="payment_date" id="edit_payment_date" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Payment Method: <span style="color: var(--status-error);">*</span></label>
+                    <select name="payment_method_id" id="edit_payment_method_id" required class="form-control">
+                        <option value="">Select Method</option>
+                        <?php foreach ($payment_methods as $method): ?>
+                            <option value="<?= $method['method_id'] ?>"><?= htmlspecialchars($method['method_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Status: <span style="color: var(--status-error);">*</span></label>
+                    <select name="payment_status_id" id="edit_payment_status_id" required class="form-control">
+                        <option value="">Select Status</option>
+                        <?php foreach ($payment_statuses as $status): ?>
+                            <option value="<?= $status['payment_status_id'] ?>"><?= htmlspecialchars($status['status_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group form-grid-full">
+                <label>Notes:</label>
+                <textarea name="notes" id="edit_notes" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    <span>Update Payment Record</span>
+                </button>
+                <button type="button" onclick="closeEditPaymentModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddPaymentModal() {
     document.getElementById('addModal').classList.add('active');
@@ -343,6 +494,173 @@ function openAddPaymentModal() {
 function closeAddPaymentModal() {
     document.getElementById('addModal').classList.remove('active');
     document.querySelector('#addModal form').reset();
+}
+
+function openEditPaymentModal(paymentData) {
+    // Populate form fields with payment data
+    document.getElementById('edit_payment_id').value = paymentData.payment_id || '';
+    document.getElementById('edit_appointment_id').value = paymentData.appointment_id || '';
+    document.getElementById('edit_amount').value = paymentData.amount || 0;
+    
+    // Format payment_date - extract date part if it's a datetime string
+    let paymentDate = paymentData.payment_date || '';
+    if (paymentDate && paymentDate.includes(' ')) {
+        paymentDate = paymentDate.split(' ')[0];
+    }
+    document.getElementById('edit_payment_date').value = paymentDate;
+    
+    document.getElementById('edit_payment_method_id').value = paymentData.payment_method_id || '';
+    document.getElementById('edit_payment_status_id').value = paymentData.payment_status_id || '';
+    document.getElementById('edit_notes').value = paymentData.notes || '';
+    
+    // Show the modal
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditPaymentModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.querySelector('#editModal form').reset();
+}
+
+function closeViewPaymentModal() {
+    document.getElementById('viewPaymentModal').classList.remove('active');
+    document.getElementById('paymentDetailsContent').innerHTML = '';
+}
+
+function viewPaymentDetails(data) {
+    const appointmentDate = data.appointment_date ? new Date(data.appointment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    const appointmentTime = data.appointment_time ? new Date('1970-01-01T' + data.appointment_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A';
+    const paymentDate = data.payment_date ? new Date(data.payment_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+    
+    // Helper function to format date
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+    
+    // Helper function to escape HTML
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+    
+    // Format currency
+    const formatCurrency = (amount) => {
+        if (!amount) return '₱0.00';
+        return '₱' + parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    
+    // Patient profile picture or initial
+    const patientInitial = (data.pat_first_name ? data.pat_first_name.charAt(0) : '') || (data.pat_last_name ? data.pat_last_name.charAt(0) : '') || 'P';
+    const patientProfilePic = data.patient_profile_picture 
+        ? `<img src="${escapeHtml(data.patient_profile_picture)}" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${patientInitial.toUpperCase()}</span>`;
+    
+    // Doctor profile picture or initial
+    const doctorInitial = (data.doc_first_name ? data.doc_first_name.charAt(0) : '') || (data.doc_last_name ? data.doc_last_name.charAt(0) : '') || 'D';
+    const doctorProfilePic = data.doctor_profile_picture 
+        ? `<img src="${escapeHtml(data.doctor_profile_picture)}" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<span style="font-size: 1.5rem; font-weight: 700;">${doctorInitial.toUpperCase()}</span>`;
+    
+    const content = `
+        <div class="card">
+            <div class="card-body">
+                <!-- Appointment Information Section -->
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Appointment Information</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem;">
+                    <!-- Patient Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${patientProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Patient</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml((data.pat_first_name || '') + ' ' + (data.pat_last_name || ''))}</p>
+                    </div>
+                    
+                    <!-- Doctor Card -->
+                    <div style="background: #f9fafb; border-radius: 12px; padding: 1.5rem; text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            ${doctorProfilePic}
+                        </div>
+                        <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Doctor</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml((data.doc_first_name || '') + ' ' + (data.doc_last_name || ''))}</p>
+                        ${data.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(data.spec_name)}</p>` : ''}
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Appointment ID:</strong> ${data.appointment_id || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Date:</strong> ${appointmentDate}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Time:</strong> ${appointmentTime}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Status:</strong> 
+                            <span class="badge" style="background: ${data.status_color || '#3B82F6'}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                                ${data.status_name || 'N/A'}
+                            </span>
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Service:</strong> ${data.service_name || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Specialization:</strong> ${data.spec_name || 'N/A'}</p>
+                        ${data.service_price ? `<p style="margin: 0.5rem 0;"><strong>Service Price:</strong> <span style="color: var(--status-success); font-weight: 600;">${formatCurrency(data.service_price)}</span></p>` : ''}
+                    </div>
+                </div>
+                ${data.appointment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Notes:</strong> ${escapeHtml(data.appointment_notes)}</p></div>` : ''}
+                
+                <!-- Divider Line -->
+                <div style="margin: 2rem 0; border-top: 2px solid var(--border-light);"></div>
+                
+                <!-- Payment Information Section -->
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Payment Information</h3>
+                <div class="form-grid">
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Payment ID:</strong> ${data.payment_id || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Amount Paid:</strong> <span style="color: var(--status-success); font-weight: 700; font-size: 1.125rem;">${formatCurrency(data.payment_amount)}</span></p>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Date:</strong> ${paymentDate}</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Method:</strong> ${data.payment_method || 'N/A'}</p>
+                        <p style="margin: 0.5rem 0;"><strong>Payment Status:</strong> 
+                            <span class="badge" style="background: var(--primary-blue); color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                                ${data.payment_status || 'N/A'}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                ${data.payment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Payment Notes:</strong> ${escapeHtml(data.payment_notes)}</p></div>` : ''}
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus-circle" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Payment Created:</strong> ${formatDate(data.created_at)}</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-edit" style="color: var(--text-secondary); font-size: 0.875rem;"></i>
+                        <div>
+                            <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);"><strong>Payment Updated:</strong> ${formatDate(data.updated_at)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('paymentDetailsContent').innerHTML = content;
+    document.getElementById('viewPaymentModal').classList.add('active');
 }
 
 // Category tab functionality
@@ -357,11 +675,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Add event listeners for view payment buttons
+    document.querySelectorAll('.view-payment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-payment');
+                const decodedJson = atob(encodedData);
+                const paymentData = JSON.parse(decodedJson);
+                viewPaymentDetails(paymentData);
+            } catch (e) {
+                console.error('Error parsing payment data:', e);
+                alert('Error loading payment data. Please check the console for details.');
+            }
+        });
+    });
+    
     // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.remove('active');
+                if (this.id === 'addModal') {
+                    closeAddPaymentModal();
+                } else if (this.id === 'editModal') {
+                    closeEditPaymentModal();
+                } else if (this.id === 'viewPaymentModal') {
+                    closeViewPaymentModal();
+                }
             }
         });
     });
@@ -371,6 +711,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
+                if (modal.id === 'addModal') {
+                    closeAddPaymentModal();
+                } else if (modal.id === 'editModal') {
+                    closeEditPaymentModal();
+                } else if (modal.id === 'viewPaymentModal') {
+                    closeViewPaymentModal();
+                }
             });
         }
     });

@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'update') {
         $id = (int)$_POST['id'];
+        $appointment_id = sanitize($_POST['appointment_id'] ?? '');
         $amount = floatval($_POST['amount']);
         $payment_method_id = (int)$_POST['payment_method_id'];
         $payment_status_id = (int)$_POST['payment_status_id'];
@@ -66,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $payment = new Payment();
             $updateData = [
                 'payment_id' => $id,
+                'appointment_id' => $appointment_id,
                 'payment_amount' => $amount,
                 'payment_method_id' => $payment_method_id,
                 'payment_status_id' => $payment_status_id,
@@ -136,19 +138,22 @@ try {
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-    // Handle sorting
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'payment_date';
+    // Handle sorting - default to created_at DESC (most recent first)
+    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
     $allowed_columns = ['payment_date', 'payment_amount', 'payment_id', 'created_at'];
     if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'payment_date';
+        $sort_column = 'created_at';
     }
     
     // Special handling for date sorting
     if ($sort_column === 'payment_date') {
-        $order_by = "p.payment_date $sort_order, p.created_at $sort_order";
+        $order_by = "p.payment_date $sort_order, p.created_at DESC";
+    } elseif ($sort_column === 'created_at') {
+        // For created_at, always show most recent first by default
+        $order_by = "p.created_at $sort_order";
     } else {
         $order_by = "p.$sort_column $sort_order";
     }
@@ -173,15 +178,26 @@ try {
 
     $sql = "
         SELECT p.*, 
-               a.appointment_id, a.appointment_date,
+               a.appointment_id, a.appointment_date, a.appointment_time, a.appointment_notes,
+               a.pat_id, a.doc_id, a.service_id, a.status_id,
                pat.pat_first_name, pat.pat_last_name,
-               u.profile_picture_url as patient_profile_picture,
+               d.doc_first_name, d.doc_last_name,
+               srv.service_name, srv.service_price,
+               sp.spec_name,
+               st.status_name as appointment_status_name, st.status_color as appointment_status_color,
+               up.profile_picture_url as patient_profile_picture,
+               ud.profile_picture_url as doctor_profile_picture,
                pm.method_name,
                ps.status_name, ps.payment_status_id
         FROM payments p
         LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
-        LEFT JOIN users u ON pat.pat_id = u.pat_id
+        LEFT JOIN users up ON pat.pat_id = up.pat_id
+        LEFT JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
+        LEFT JOIN services srv ON a.service_id = srv.service_id
+        LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         $where_clause
@@ -197,7 +213,6 @@ try {
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $payments = $db->fetchAll($sql, $params);
 } catch (PDOException $e) {
     $error = 'Failed to fetch payments: ' . $e->getMessage();
     $payments = [];
@@ -219,6 +234,27 @@ try {
 } catch (PDOException $e) {
     $payment_methods = [];
     $payment_statuses = [];
+}
+
+// Fetch appointments for dropdown (only appointments that don't have payments yet, or all for edit)
+try {
+    $appointments = $db->fetchAll("
+        SELECT a.appointment_id, 
+               a.appointment_date, 
+               a.appointment_time,
+               pat.pat_first_name, 
+               pat.pat_last_name,
+               d.doc_first_name,
+               d.doc_last_name,
+               s.service_name
+        FROM appointments a
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN services s ON a.service_id = s.service_id
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    ");
+} catch (PDOException $e) {
+    $appointments = [];
 }
 
 // Calculate statistics for summary cards

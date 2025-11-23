@@ -97,19 +97,48 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Status
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created - Day
                 </label>
-                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                <select id="filterDay" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Days</option>
+                    <?php for ($i = 1; $i <= 31; $i++): ?>
+                        <option value="<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>"><?= str_pad($i, 2, '0', STR_PAD_LEFT) ?></option>
+                    <?php endfor; ?>
                 </select>
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created - Month
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterMonth" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Months</option>
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created - Year
+                </label>
+                <select id="filterYear" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Years</option>
+                    <?php 
+                    $current_year = date('Y');
+                    for ($i = $current_year; $i >= $current_year - 10; $i--): 
+                    ?>
+                        <option value="<?= $i ?>"><?= $i ?></option>
+                    <?php endfor; ?>
+                </select>
             </div>
         </div>
     </div>
@@ -156,21 +185,28 @@
                             </span>
                         </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Position</th>
-                        <th class="sortable <?= $current_sort === 'staff_hire_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('staff_hire_date')" 
+                        <th class="sortable <?= $current_sort === 'staff_salary' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('staff_salary')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
-                            Hire Date
+                            Salary
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
                                 <i class="fas fa-arrow-down"></i>
                             </span>
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Salary</th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Status</th>
                         <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('created_at')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
-                            Date Registered
+                            Date Created
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
+                            Date Updated
                             <span class="sort-indicator">
                                 <i class="fas fa-arrow-up"></i>
                                 <i class="fas fa-arrow-down"></i>
@@ -182,12 +218,13 @@
                 <tbody id="tableBody">
                     <?php foreach ($staff_members as $staff): ?>
                         <tr class="table-row" 
-                            data-name="<?= htmlspecialchars(strtolower(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? ''))) ?>"
+                            data-name="<?= htmlspecialchars(strtolower(formatFullName($staff['staff_first_name'] ?? '', $staff['staff_middle_initial'] ?? null, $staff['staff_last_name'] ?? ''))) ?>"
                             data-email="<?= htmlspecialchars(strtolower($staff['staff_email'] ?? '')) ?>"
                             data-phone="<?= htmlspecialchars(strtolower($staff['staff_phone'] ?? '')) ?>"
                             data-position="<?= htmlspecialchars(strtolower($staff['staff_position'] ?? '')) ?>"
-                            data-status="<?= htmlspecialchars(strtolower($staff['staff_status'] ?? '')) ?>"
-                            data-date="<?= !empty($staff['created_at']) ? date('Y-m-d', strtotime($staff['created_at'])) : '' ?>"
+                            data-date-day="<?= !empty($staff['created_at']) ? date('d', strtotime($staff['created_at'])) : '' ?>"
+                            data-date-month="<?= !empty($staff['created_at']) ? date('m', strtotime($staff['created_at'])) : '' ?>"
+                            data-date-year="<?= !empty($staff['created_at']) ? date('Y', strtotime($staff['created_at'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
@@ -200,24 +237,15 @@
                                             <?= strtoupper(substr($staff['staff_first_name'] ?? 'S', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(($staff['staff_first_name'] ?? '') . ' ' . ($staff['staff_last_name'] ?? '')) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($staff['staff_first_name'] ?? '', $staff['staff_middle_initial'] ?? null, $staff['staff_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($staff['staff_email']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($staff['staff_phone'] ?? 'N/A') ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($staff['staff_position'] ?? 'N/A') ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $staff['staff_hire_date'] ? date('d M Y', strtotime($staff['staff_hire_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary); font-weight: 600;">₱<?= number_format($staff['staff_salary'] ?? 0, 2) ?></td>
-                            <td style="padding: 1rem;">
-                                <?php
-                                $status = $staff['staff_status'] ?? 'active';
-                                $statusColor = $status === 'active' ? '#10b981' : '#ef4444';
-                                ?>
-                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $statusColor ?>; color: white;">
-                                    <?= htmlspecialchars(ucfirst($status)) ?>
-                                </span>
-                            </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $staff['created_at'] ? date('d M Y', strtotime($staff['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= !empty($staff['created_at']) ? date('d M Y', strtotime($staff['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= !empty($staff['updated_at']) ? date('d M Y', strtotime($staff['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-staff-btn" data-staff="<?= htmlspecialchars(base64_encode(json_encode($staff))) ?>" title="Edit" style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
@@ -316,10 +344,6 @@
                     <input type="text" name="position" placeholder="e.g., Receptionist, Nurse" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label>Hire Date:</label>
-                    <input type="date" name="hire_date" class="form-control">
-                </div>
-                <div class="form-group">
                     <label>Salary:</label>
                     <input type="number" name="salary" step="0.01" min="0" class="form-control">
                 </div>
@@ -381,10 +405,6 @@
                 <div class="form-group">
                     <label>Position:</label>
                     <input type="text" name="position" id="edit_position" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Hire Date:</label>
-                    <input type="date" name="hire_date" id="edit_hire_date" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Salary:</label>
@@ -457,12 +477,12 @@ function formatPhoneInput(inputId) {
 
 function editStaff(staff) {
     document.getElementById('edit_id').value = staff.staff_id;
-    document.getElementById('edit_first_name').value = staff.staff_first_name;
-    document.getElementById('edit_last_name').value = staff.staff_last_name;
-    document.getElementById('edit_email').value = staff.staff_email;
+    document.getElementById('edit_first_name').value = staff.staff_first_name || '';
+    document.getElementById('edit_middle_initial').value = staff.staff_middle_initial || '';
+    document.getElementById('edit_last_name').value = staff.staff_last_name || '';
+    document.getElementById('edit_email').value = staff.staff_email || '';
     document.getElementById('edit_phone').value = staff.staff_phone ? formatPhoneNumber(staff.staff_phone) : '';
     document.getElementById('edit_position').value = staff.staff_position || '';
-    document.getElementById('edit_hire_date').value = staff.staff_hire_date || '';
     document.getElementById('edit_salary').value = staff.staff_salary || '';
     document.getElementById('edit_status').value = staff.staff_status || 'active';
     document.getElementById('editModal').classList.add('active');
@@ -531,11 +551,9 @@ function filterByCategory(category) {
 
 function applyStaffFilters() {
     const filters = {
-        status: document.querySelector('input[name="filter_status"]:checked')?.value || '',
         position: document.querySelector('input[name="filter_position"]:checked')?.value || ''
     };
     const params = new URLSearchParams();
-    if (filters.status) params.append('status', filters.status);
     if (filters.position) params.append('position', filters.position);
     const url = '/staff/staff' + (params.toString() ? '?' + params.toString() : '');
     window.location.href = url;
@@ -547,6 +565,7 @@ function clearAllFilters() {
     });
     const positionSearch = document.getElementById('positionSearch');
     if (positionSearch) positionSearch.value = '';
+    resetTableFilters();
 }
 
 function toggleFilterSidebar() {
@@ -606,28 +625,31 @@ function filterTable() {
     const filterEmail = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
     const filterPhone = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
     const filterPosition = document.getElementById('filterPosition')?.value.toLowerCase().trim() || '';
-    const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
-    const filterDate = document.getElementById('filterDate')?.value || '';
+    const filterDay = document.getElementById('filterDay')?.value || '';
+    const filterMonth = document.getElementById('filterMonth')?.value || '';
+    const filterYear = document.getElementById('filterYear')?.value || '';
     
     let visibleCount = 0;
-    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterStatus || filterDate;
+    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterDay || filterMonth || filterYear;
     
     rows.forEach(row => {
         const name = row.getAttribute('data-name') || '';
         const email = row.getAttribute('data-email') || '';
         const phone = row.getAttribute('data-phone') || '';
         const position = row.getAttribute('data-position') || '';
-        const status = row.getAttribute('data-status') || '';
-        const date = row.getAttribute('data-date') || '';
+        const dateDay = row.getAttribute('data-date-day') || '';
+        const dateMonth = row.getAttribute('data-date-month') || '';
+        const dateYear = row.getAttribute('data-date-year') || '';
         
         const matchesName = !filterName || name.includes(filterName);
         const matchesEmail = !filterEmail || email.includes(filterEmail);
         const matchesPhone = !filterPhone || phone.includes(filterPhone);
         const matchesPosition = !filterPosition || position.includes(filterPosition);
-        const matchesStatus = !filterStatus || status === filterStatus;
-        const matchesDate = !filterDate || date === filterDate;
+        const matchesDay = !filterDay || dateDay === filterDay;
+        const matchesMonth = !filterMonth || dateMonth === filterMonth;
+        const matchesYear = !filterYear || dateYear === filterYear;
         
-        if (matchesName && matchesEmail && matchesPhone && matchesPosition && matchesStatus && matchesDate) {
+        if (matchesName && matchesEmail && matchesPhone && matchesPosition && matchesDay && matchesMonth && matchesYear) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -666,8 +688,9 @@ function resetTableFilters() {
     document.getElementById('filterEmail').value = '';
     document.getElementById('filterPhone').value = '';
     document.getElementById('filterPosition').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterDate').value = '';
+    document.getElementById('filterDay').value = '';
+    document.getElementById('filterMonth').value = '';
+    document.getElementById('filterYear').value = '';
     
     filterTable();
     resetToPaginatedView();
@@ -709,7 +732,7 @@ function resetToPaginatedView() {
 
 // Initialize filter event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterPosition', 'filterStatus', 'filterDate'];
+    const filterInputs = ['filterName', 'filterEmail', 'filterPhone', 'filterPosition', 'filterDay', 'filterMonth', 'filterYear'];
     filterInputs.forEach(id => {
         const input = document.getElementById(id);
         if (input) {
@@ -773,27 +796,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="filter-sidebar-close" onclick="toggleFilterSidebar()">
             <i class="fas fa-times"></i>
         </button>
-    </div>
-    
-    <div class="filter-section">
-        <div class="filter-section-header" onclick="toggleFilterSection('status')">
-            <h4 class="filter-section-title">Status</h4>
-            <button type="button" class="filter-section-toggle" id="statusToggle">
-                <i class="fas fa-chevron-up"></i>
-            </button>
-        </div>
-        <div class="filter-section-content" id="statusContent">
-            <div class="filter-radio-group">
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_status" id="status_active" value="active">
-                    <label for="status_active">Active</label>
-                </div>
-                <div class="filter-radio-item">
-                    <input type="radio" name="filter_status" id="status_inactive" value="inactive">
-                    <label for="status_inactive">Inactive</label>
-                </div>
-            </div>
-        </div>
     </div>
     
     <?php if (!empty($filter_positions)): ?>

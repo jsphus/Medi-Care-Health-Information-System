@@ -70,7 +70,7 @@ class Staff extends Entity {
     }
 
     public function toArray(): array {
-        return [
+        $data = [
             'staff_id' => $this->staff_id,
             'staff_first_name' => $this->staff_first_name,
             'staff_middle_initial' => $this->staff_middle_initial,
@@ -80,9 +80,15 @@ class Staff extends Entity {
             'staff_position' => $this->staff_position,
             'staff_salary' => $this->staff_salary,
             'staff_status' => $this->staff_status,
-            'created_at' => $this->created_at,
             'updated_at' => $this->updated_at
         ];
+        
+        // Only include created_at if it has a value (prevents null from being included)
+        if ($this->created_at !== null) {
+            $data['created_at'] = $this->created_at;
+        }
+        
+        return $data;
     }
 
     public function fromArray(array $data): self {
@@ -95,7 +101,15 @@ class Staff extends Entity {
         $this->staff_position = $data['staff_position'] ?? null;
         $this->staff_salary = $data['staff_salary'] ?? null;
         $this->staff_status = $data['staff_status'] ?? 'active';
-        $this->created_at = $data['created_at'] ?? null;
+        
+        // Only set created_at if explicitly provided (for new records)
+        // When updating, preserve existing value by not setting it
+        if (isset($data['created_at'])) {
+            $this->created_at = $data['created_at'];
+        }
+        // If not provided and we're updating (staff_id is set), keep existing value
+        // If not provided and we're creating (staff_id is null), it will be set by the database
+        
         $this->updated_at = $data['updated_at'] ?? null;
         return $this;
     }
@@ -193,6 +207,18 @@ class Staff extends Entity {
     // Update staff (maintains backward compatibility)
     public function update($id, $data) {
         $data['staff_id'] = $id;
+        
+        // Never include created_at in update data - it should never be changed
+        unset($data['created_at']);
+        
+        // Fetch existing record to preserve created_at value
+        $existing = $this->getById($id);
+        if ($existing && array_key_exists('created_at', $existing) && $existing['created_at'] !== null) {
+            // Set created_at on the object so toArray() includes the correct value
+            // (it will still be excluded from SQL update in updateEntity())
+            $this->created_at = $existing['created_at'];
+        }
+        
         $this->fromArray($data);
         return $this->save();
     }
