@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $stmt = $db->prepare("
-                    INSERT INTO payment_statuses (status_name, status_description, created_at) 
-                    VALUES (:status_name, :status_description, NOW())
+                    INSERT INTO payment_statuses (status_name, status_description, created_at, updated_at) 
+                    VALUES (:status_name, :status_description, NOW(), NOW())
                 ");
                 $stmt->execute([
                     'status_name' => $status_name,

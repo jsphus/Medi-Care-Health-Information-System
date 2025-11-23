@@ -144,7 +144,7 @@
                             </div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    <?= htmlspecialchars(($recent['pat_first_name'] ?? '') . ' ' . ($recent['pat_last_name'] ?? '')) ?>
+                                    <?= htmlspecialchars(formatFullName($recent['pat_first_name'] ?? '', $recent['pat_middle_initial'] ?? null, $recent['pat_last_name'] ?? '')) ?>
                                 </div>
                                 <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     <?= $recent['payment_date'] ? date('M d, Y', strtotime($recent['payment_date'])) : 'N/A' ?>
@@ -205,7 +205,7 @@
                             </div>
                             <div style="flex: 1; min-width: 0;">
                                 <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    <?= htmlspecialchars(($pending['pat_first_name'] ?? '') . ' ' . ($pending['pat_last_name'] ?? '')) ?>
+                                    <?= htmlspecialchars(formatFullName($pending['pat_first_name'] ?? '', $pending['pat_middle_initial'] ?? null, $pending['pat_last_name'] ?? '')) ?>
                                 </div>
                                 <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     <?= $pending['payment_date'] ? date('M d, Y', strtotime($pending['payment_date'])) : 'N/A' ?>
@@ -385,7 +385,7 @@
                                             <?= strtoupper(substr($payment['pat_first_name'] ?? 'P', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(($payment['pat_first_name'] ?? '') . ' ' . ($payment['pat_last_name'] ?? '')) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($payment['pat_first_name'] ?? '', $payment['pat_middle_initial'] ?? null, $payment['pat_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--status-success); font-weight: 600;">₱<?= number_format($payment['payment_amount'] ?? 0, 2) ?></td>
@@ -588,6 +588,68 @@
     </div>
 </div>
 
+<!-- Edit Payment Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Payment Record</h2>
+            <button type="button" class="modal-close" onclick="closeEditPaymentModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" id="edit_payment_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Appointment ID:</label>
+                    <input type="text" id="edit_appointment_id" readonly class="form-control" style="background: #f3f4f6; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₱): <span style="color: var(--status-error);">*</span></label>
+                    <input type="number" name="amount" id="edit_amount" step="0.01" min="0" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Payment Date: <span style="color: var(--status-error);">*</span></label>
+                    <input type="date" name="payment_date" id="edit_payment_date" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Payment Method: <span style="color: var(--status-error);">*</span></label>
+                    <select name="payment_method_id" id="edit_payment_method_id" required class="form-control">
+                        <option value="">Select Method</option>
+                        <?php foreach ($payment_methods as $method): ?>
+                            <option value="<?= $method['method_id'] ?>"><?= htmlspecialchars($method['method_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Status: <span style="color: var(--status-error);">*</span></label>
+                    <select name="payment_status_id" id="edit_payment_status_id" required class="form-control">
+                        <option value="">Select Status</option>
+                        <?php foreach ($payment_statuses as $status): ?>
+                            <option value="<?= $status['payment_status_id'] ?>"><?= htmlspecialchars($status['status_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group form-grid-full">
+                <label>Notes:</label>
+                <textarea name="notes" id="edit_payment_notes" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i>
+                    <span>Update Payment Record</span>
+                </button>
+                <button type="button" onclick="closeEditPaymentModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddPaymentModal() {
     document.getElementById('addModal').classList.add('active');
@@ -596,6 +658,38 @@ function openAddPaymentModal() {
 function closeAddPaymentModal() {
     document.getElementById('addModal').classList.remove('active');
     document.querySelector('#addModal form').reset();
+}
+
+function openEditPaymentModal(payment) {
+    document.getElementById('edit_payment_id').value = payment.payment_id || '';
+    document.getElementById('edit_appointment_id').value = payment.appointment_id || '';
+    document.getElementById('edit_amount').value = payment.payment_amount || '';
+    document.getElementById('edit_payment_date').value = payment.payment_date ? payment.payment_date.split(' ')[0] : '';
+    document.getElementById('edit_payment_method_id').value = payment.payment_method_id || '';
+    document.getElementById('edit_payment_status_id').value = payment.payment_status_id || '';
+    document.getElementById('edit_payment_notes').value = payment.payment_notes || '';
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditPaymentModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.querySelector('#editModal form').reset();
+}
+
+function openEditPaymentModal(payment) {
+    document.getElementById('edit_payment_id').value = payment.payment_id || '';
+    document.getElementById('edit_appointment_id').value = payment.appointment_id || '';
+    document.getElementById('edit_amount').value = payment.payment_amount || '';
+    document.getElementById('edit_payment_date').value = payment.payment_date ? payment.payment_date.split(' ')[0] : '';
+    document.getElementById('edit_payment_method_id').value = payment.payment_method_id || '';
+    document.getElementById('edit_payment_status_id').value = payment.payment_status_id || '';
+    document.getElementById('edit_payment_notes').value = payment.payment_notes || '';
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditPaymentModal() {
+    document.getElementById('editModal').classList.remove('active');
+    document.querySelector('#editModal form').reset();
 }
 
 // Category tab functionality
@@ -621,6 +715,21 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) {
                 console.error('Error parsing appointment data:', e);
                 alert('Error loading appointment data. Please check the console for details.');
+            }
+        });
+    });
+    
+    // Add event listeners for edit payment buttons
+    document.querySelectorAll('.edit-payment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-payment');
+                const decodedJson = atob(encodedData);
+                const paymentData = JSON.parse(decodedJson);
+                openEditPaymentModal(paymentData);
+            } catch (e) {
+                console.error('Error parsing payment data:', e);
+                alert('Error loading payment data. Please check the console for details.');
             }
         });
     });
@@ -906,6 +1015,18 @@ function viewAppointmentDetails(data) {
         return div.innerHTML;
     };
     
+    // Helper function to format full name with middle initial
+    const formatFullNameJS = (firstName, middleInitial, lastName) => {
+        let name = firstName || '';
+        if (middleInitial) {
+            name += ' ' + middleInitial.toUpperCase() + '.';
+        }
+        if (lastName) {
+            name += ' ' + lastName;
+        }
+        return name.trim();
+    };
+    
     // Format currency
     const formatCurrency = (amount) => {
         if (!amount) return '₱0.00';
@@ -936,7 +1057,7 @@ function viewAppointmentDetails(data) {
                             ${patientProfilePic}
                         </div>
                         <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Patient</h4>
-                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml((data.pat_first_name || '') + ' ' + (data.pat_last_name || ''))}</p>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(formatFullNameJS(data.pat_first_name || '', data.pat_middle_initial || null, data.pat_last_name || ''))}</p>
                     </div>
                     
                     <!-- Doctor Card -->
@@ -945,7 +1066,7 @@ function viewAppointmentDetails(data) {
                             ${doctorProfilePic}
                         </div>
                         <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Doctor</h4>
-                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml((data.doc_first_name || '') + ' ' + (data.doc_last_name || ''))}</p>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml(formatFullNameJS(data.doc_first_name || '', data.doc_middle_initial || null, data.doc_last_name || ''))}</p>
                         ${data.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(data.spec_name)}</p>` : ''}
                     </div>
                 </div>

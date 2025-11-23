@@ -77,13 +77,15 @@ try {
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['med_rec_visit_date', 'med_rec_id', 'med_rec_created_at'];
+    $allowed_columns = ['med_rec_visit_date', 'med_rec_id', 'med_rec_created_at', 'med_rec_updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'med_rec_created_at';
     }
     
     if ($sort_column === 'med_rec_created_at') {
         $order_by = "COALESCE(mr.med_rec_created_at, '1970-01-01'::timestamp) $sort_order, mr.med_rec_id DESC";
+    } elseif ($sort_column === 'med_rec_updated_at') {
+        $order_by = "COALESCE(mr.med_rec_updated_at, '1970-01-01'::timestamp) $sort_order";
     } else {
         $order_by = "mr.$sort_column $sort_order";
     }
@@ -146,11 +148,11 @@ $filter_doctors = [];
 $filter_patients = [];
 try {
     // Get unique doctors from medical records (via appointments)
-    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
+    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_middle_initial, d.doc_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
     $filter_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
     // Get unique patients from medical records (via appointments)
-    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
+    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_middle_initial, p.pat_last_name FROM medical_records mr JOIN appointments a ON mr.appt_id = a.appointment_id JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
     $filter_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $filter_doctors = [];

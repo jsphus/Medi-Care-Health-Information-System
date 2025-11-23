@@ -479,11 +479,25 @@ try {
     $params = [];
 
     if (!empty($filter_name)) {
-        // Case-insensitive search in full name (patient, staff, doctor names)
-        $where_conditions[] = "(LOWER(COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
-                     s.staff_first_name || ' ' || s.staff_last_name,
-                     d.doc_first_name || ' ' || d.doc_last_name,
-                     'Super Admin')) LIKE :name)";
+        // Case-insensitive search in full name (patient, staff, doctor names) including middle initials
+        $where_conditions[] = "(LOWER(COALESCE(
+                CASE 
+                    WHEN p.pat_middle_initial IS NOT NULL AND p.pat_middle_initial != '' 
+                    THEN p.pat_first_name || ' ' || UPPER(p.pat_middle_initial) || '. ' || p.pat_last_name
+                    ELSE p.pat_first_name || ' ' || p.pat_last_name
+                END,
+                CASE 
+                    WHEN s.staff_middle_initial IS NOT NULL AND s.staff_middle_initial != '' 
+                    THEN s.staff_first_name || ' ' || UPPER(s.staff_middle_initial) || '. ' || s.staff_last_name
+                    ELSE s.staff_first_name || ' ' || s.staff_last_name
+                END,
+                CASE 
+                    WHEN d.doc_middle_initial IS NOT NULL AND d.doc_middle_initial != '' 
+                    THEN d.doc_first_name || ' ' || UPPER(d.doc_middle_initial) || '. ' || d.doc_last_name
+                    ELSE d.doc_first_name || ' ' || d.doc_last_name
+                END,
+                'Super Admin'
+            )) LIKE :name)";
         $params['name'] = '%' . strtolower($filter_name) . '%';
     }
 
@@ -577,15 +591,48 @@ try {
             u.created_at,
             u.updated_at,
             u.profile_picture_url,
-            COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
-                     s.staff_first_name || ' ' || s.staff_last_name,
-                     d.doc_first_name || ' ' || d.doc_last_name,
-                     'Super Admin') as full_name,
+            -- Individual name fields for proper formatting
+            p.pat_first_name, p.pat_middle_initial as pat_middle_initial, p.pat_last_name,
+            s.staff_first_name, s.staff_middle_initial as staff_middle_initial, s.staff_last_name,
+            d.doc_first_name, d.doc_middle_initial as doc_middle_initial, d.doc_last_name,
+            -- Full name with middle initials
+            COALESCE(
+                CASE 
+                    WHEN p.pat_middle_initial IS NOT NULL AND p.pat_middle_initial != '' 
+                    THEN p.pat_first_name || ' ' || UPPER(p.pat_middle_initial) || '. ' || p.pat_last_name
+                    ELSE p.pat_first_name || ' ' || p.pat_last_name
+                END,
+                CASE 
+                    WHEN s.staff_middle_initial IS NOT NULL AND s.staff_middle_initial != '' 
+                    THEN s.staff_first_name || ' ' || UPPER(s.staff_middle_initial) || '. ' || s.staff_last_name
+                    ELSE s.staff_first_name || ' ' || s.staff_last_name
+                END,
+                CASE 
+                    WHEN d.doc_middle_initial IS NOT NULL AND d.doc_middle_initial != '' 
+                    THEN d.doc_first_name || ' ' || UPPER(d.doc_middle_initial) || '. ' || d.doc_last_name
+                    ELSE d.doc_first_name || ' ' || d.doc_last_name
+                END,
+                'Super Admin'
+            ) as full_name,
             COALESCE(p.pat_phone, s.staff_phone, d.doc_phone, NULL) as phone_number,
-            COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
-                     s.staff_first_name || ' ' || s.staff_last_name,
-                     d.doc_first_name || ' ' || d.doc_last_name,
-                     'Super Admin') as status_name,
+            COALESCE(
+                CASE 
+                    WHEN p.pat_middle_initial IS NOT NULL AND p.pat_middle_initial != '' 
+                    THEN p.pat_first_name || ' ' || UPPER(p.pat_middle_initial) || '. ' || p.pat_last_name
+                    ELSE p.pat_first_name || ' ' || p.pat_last_name
+                END,
+                CASE 
+                    WHEN s.staff_middle_initial IS NOT NULL AND s.staff_middle_initial != '' 
+                    THEN s.staff_first_name || ' ' || UPPER(s.staff_middle_initial) || '. ' || s.staff_last_name
+                    ELSE s.staff_first_name || ' ' || s.staff_last_name
+                END,
+                CASE 
+                    WHEN d.doc_middle_initial IS NOT NULL AND d.doc_middle_initial != '' 
+                    THEN d.doc_first_name || ' ' || UPPER(d.doc_middle_initial) || '. ' || d.doc_last_name
+                    ELSE d.doc_first_name || ' ' || d.doc_last_name
+                END,
+                'Super Admin'
+            ) as status_name,
             CASE 
                 WHEN u.user_is_superadmin = true THEN 'Super Admin'
                 WHEN u.staff_id IS NOT NULL THEN 'Staff'

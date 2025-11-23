@@ -86,7 +86,8 @@ CREATE TABLE appointment_statuses (
     status_name VARCHAR(50) UNIQUE NOT NULL,
     status_description TEXT,
     status_color VARCHAR(20) DEFAULT '#3B82F6',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Services table
@@ -154,7 +155,8 @@ CREATE TABLE payment_statuses (
     status_name VARCHAR(50) UNIQUE NOT NULL,
     status_description TEXT,
     status_color VARCHAR(20) DEFAULT '#3B82F6',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Payments table

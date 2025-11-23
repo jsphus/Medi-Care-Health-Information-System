@@ -134,7 +134,7 @@
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
                         <?php
-                        $current_sort = $_GET['sort'] ?? 'appointment_date';
+                        $current_sort = $_GET['sort'] ?? 'created_at';
                         $current_order = $_GET['order'] ?? 'DESC';
                         ?>
                         <th class="sortable <?= $current_sort === 'appointment_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
@@ -176,6 +176,24 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Status
                         </th>
+                        <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('created_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Created At
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated At
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -202,7 +220,7 @@
                                             <?= strtoupper(substr($apt['pat_first_name'] ?? 'P', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? '')) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($apt['pat_first_name'] ?? '', $apt['pat_middle_initial'] ?? null, $apt['pat_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem;">
@@ -212,7 +230,7 @@
                                             <img src="<?= htmlspecialchars($apt['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
                                         </div>
                                     <?php endif; ?>
-                                    <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars(($apt['doc_first_name'] ?? '') . ' ' . ($apt['doc_last_name'] ?? '')) ?></span>
+                                    <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars(formatFullName($apt['doc_first_name'] ?? '', $apt['doc_middle_initial'] ?? null, $apt['doc_last_name'] ?? '')) ?></span>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($apt['service_name'] ?? 'N/A') ?></td>
@@ -230,6 +248,22 @@
                                         <?php endforeach; ?>
                                     </select>
                                 </form>
+                            </td>
+                            <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                                <?php if (!empty($apt['created_at'])): ?>
+                                    <?= date('M d, Y', strtotime($apt['created_at'])) ?><br>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;"><?= date('g:i A', strtotime($apt['created_at'])) ?></span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">N/A</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                                <?php if (!empty($apt['updated_at'])): ?>
+                                    <?= date('M d, Y', strtotime($apt['updated_at'])) ?><br>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;"><?= date('g:i A', strtotime($apt['updated_at'])) ?></span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">N/A</span>
+                                <?php endif; ?>
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -342,7 +376,7 @@
                     <select name="patient_id" required class="form-control">
                         <option value="">Select Patient</option>
                         <?php foreach ($patients as $patient): ?>
-                            <option value="<?= $patient['pat_id'] ?>"><?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?></option>
+                            <option value="<?= $patient['pat_id'] ?>"><?= htmlspecialchars(formatFullName($patient['pat_first_name'] ?? '', $patient['pat_middle_initial'] ?? null, $patient['pat_last_name'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -351,7 +385,7 @@
                     <select name="doctor_id" required class="form-control">
                         <option value="">Select Doctor</option>
                         <?php foreach ($doctors as $doctor): ?>
-                            <option value="<?= $doctor['doc_id'] ?>"><?= htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']) ?></option>
+                            <option value="<?= $doctor['doc_id'] ?>"><?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -421,7 +455,7 @@
                     <select name="patient_id" id="edit_patient_id" required class="form-control">
                         <option value="">Select Patient</option>
                         <?php foreach ($patients as $patient): ?>
-                            <option value="<?= $patient['pat_id'] ?>"><?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?></option>
+                            <option value="<?= $patient['pat_id'] ?>"><?= htmlspecialchars(formatFullName($patient['pat_first_name'] ?? '', $patient['pat_middle_initial'] ?? null, $patient['pat_last_name'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -430,7 +464,7 @@
                     <select name="doctor_id" id="edit_doctor_id" required class="form-control">
                         <option value="">Select Doctor</option>
                         <?php foreach ($doctors as $doctor): ?>
-                            <option value="<?= $doctor['doc_id'] ?>"><?= htmlspecialchars($doctor['doc_first_name'] . ' ' . $doctor['doc_last_name']) ?></option>
+                            <option value="<?= $doctor['doc_id'] ?>"><?= htmlspecialchars(formatFullName($doctor['doc_first_name'] ?? '', $doctor['doc_middle_initial'] ?? null, $doctor['doc_last_name'] ?? '')) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -539,6 +573,18 @@ function viewAppointmentDetails(appointment) {
         return div.innerHTML;
     };
     
+    // Helper function to format full name with middle initial
+    const formatFullNameJS = (firstName, middleInitial, lastName) => {
+        let name = firstName || '';
+        if (middleInitial) {
+            name += ' ' + middleInitial.toUpperCase() + '.';
+        }
+        if (lastName) {
+            name += ' ' + lastName;
+        }
+        return name.trim();
+    };
+    
     // Patient profile picture or initial
     const patientInitial = (appointment.pat_first_name ? appointment.pat_first_name.charAt(0) : '') || (appointment.pat_last_name ? appointment.pat_last_name.charAt(0) : '') || 'P';
     const patientProfilePic = appointment.patient_profile_picture 
@@ -562,7 +608,7 @@ function viewAppointmentDetails(appointment) {
                             ${patientProfilePic}
                         </div>
                         <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Patient</h4>
-                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml((appointment.pat_first_name || '') + ' ' + (appointment.pat_last_name || ''))}</p>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">${escapeHtml(formatFullNameJS(appointment.pat_first_name || '', appointment.pat_middle_initial || null, appointment.pat_last_name || ''))}</p>
                     </div>
                     
                     <!-- Doctor Card -->
@@ -571,7 +617,7 @@ function viewAppointmentDetails(appointment) {
                             ${doctorProfilePic}
                         </div>
                         <h4 style="margin: 0 0 0.5rem; color: var(--text-primary); font-size: 1rem;">Doctor</h4>
-                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml((appointment.doc_first_name || '') + ' ' + (appointment.doc_last_name || ''))}</p>
+                        <p style="margin: 0; color: var(--text-secondary); font-weight: 600;">Dr. ${escapeHtml(formatFullNameJS(appointment.doc_first_name || '', appointment.doc_middle_initial || null, appointment.doc_last_name || ''))}</p>
                         ${appointment.spec_name ? `<p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 0.875rem;">${escapeHtml(appointment.spec_name)}</p>` : ''}
                     </div>
                 </div>

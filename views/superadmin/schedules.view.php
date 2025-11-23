@@ -230,40 +230,15 @@ function formatTimeToAMPM($time) {
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
-                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Days</option>
-                        <?php for ($i = 1; $i <= 31; $i++): ?>
-                            <option value="<?= $i ?>"><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Years</option>
-                        <?php 
-                        $current_year = (int)date('Y');
-                        for ($year = $current_year; $year >= 2020; $year--): 
-                        ?>
-                            <option value="<?= $year ?>"><?= $year ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
@@ -372,23 +347,43 @@ function formatTimeToAMPM($time) {
         
         <!-- Pagination -->
         <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div id="paginationContainer" class="pagination">
-            <div class="pagination-controls">
-                <button class="pagination-btn" disabled>
-                    <i class="fas fa-angle-double-left"></i>
-                </button>
-                <button class="pagination-btn" disabled>
-                    <i class="fas fa-angle-left"></i>
-                </button>
-                <button class="pagination-btn active">1</button>
-                <button class="pagination-btn">2</button>
-                <button class="pagination-btn">3</button>
-                <button class="pagination-btn">
-                    <i class="fas fa-angle-right"></i>
-                </button>
-                <button class="pagination-btn">
-                    <i class="fas fa-angle-double-right"></i>
-                </button>
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => max(1, $page - 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page <= 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    < Previous
+                </a>
+                <?php
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                if ($start_page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" class="btn btn-sm">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                       class="btn btn-sm <?= $i == $page ? 'btn-primary' : '' ?>" 
+                       style="<?= $i == $page ? 'background: var(--primary-blue); color: white;' : '' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" class="btn btn-sm"><?= $total_pages ?></a>
+                <?php endif; ?>
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => min($total_pages, $page + 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    Next >
+                </a>
             </div>
         </div>
         <?php endif; ?>
@@ -651,128 +646,48 @@ function sortTable(column) {
     window.location.href = url.toString();
 }
 
-// Filtering Functions
+// URL-based Filtering Functions
 function applyTableFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
-    const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    const params = new URLSearchParams();
     
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterDoctor: document.getElementById('filterDoctor')?.value || '',
-            filterSpecialization: document.getElementById('filterSpecialization')?.value || '',
-            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
-            filterDateDay: document.getElementById('filterDateDay')?.value || '',
-            filterDateYear: document.getElementById('filterDateYear')?.value || '',
-            filterStartTime: document.getElementById('filterStartTime')?.value || '',
-            filterEndTime: document.getElementById('filterEndTime')?.value || '',
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
-    }
-    
-    // Apply filters if already in all_results mode
-    filterTable();
-}
-
-function filterTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
-    
-    const rows = tbody.querySelectorAll('.table-row');
-    const filterDoctor = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
-    const filterSpecialization = document.getElementById('filterSpecialization')?.value.toLowerCase().trim() || '';
-    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
-    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
-    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
+    const filterDoctor = document.getElementById('filterDoctor')?.value.trim() || '';
+    const filterSpecialization = document.getElementById('filterSpecialization')?.value.trim() || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
     const filterStartTime = document.getElementById('filterStartTime')?.value || '';
     const filterEndTime = document.getElementById('filterEndTime')?.value || '';
-    let visibleCount = 0;
-    let hasActiveFilters = filterDoctor || filterSpecialization || dateMonthFilter || dateDayFilter || dateYearFilter || filterStartTime || filterEndTime;
     
-    rows.forEach(row => {
-        const doctor = row.getAttribute('data-doctor') || '';
-        const specialization = row.getAttribute('data-specialization') || '';
-        const dateStr = row.getAttribute('data-date') || '';
-        const startTime = row.getAttribute('data-start-time') || '';
-        const endTime = row.getAttribute('data-end-time') || '';
-        const matchesDoctor = !filterDoctor || doctor.includes(filterDoctor);
-        const matchesSpecialization = !filterSpecialization || specialization.includes(filterSpecialization);
-        
-        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
-        let matchesDate = true;
-        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
-            if (dateStr) {
-                const dateParts = dateStr.split('-');
-                if (dateParts.length === 3) {
-                    const year = dateParts[0];
-                    const month = dateParts[1];
-                    const day = dateParts[2];
-                    
-                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
-                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
-                    const matchesYear = !dateYearFilter || year === dateYearFilter;
-                    
-                    matchesDate = matchesMonth && matchesDay && matchesYear;
-                } else {
-                    matchesDate = false;
-                }
-            } else {
-                matchesDate = false;
-            }
-        }
-        
-        const matchesStartTime = !filterStartTime || startTime === filterStartTime;
-        const matchesEndTime = !filterEndTime || endTime === filterEndTime;
-        
-        if (matchesDoctor && matchesSpecialization && matchesDate && matchesStartTime && matchesEndTime) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    // Show/hide pagination and filter message
-    const paginationContainer = document.getElementById('paginationContainer');
-    let filterActiveMessage = document.getElementById('filterActiveMessage');
+    if (filterDoctor) params.set('filter_doctor', filterDoctor);
+    if (filterSpecialization) params.set('filter_specialization', filterSpecialization);
+    if (filterDateFrom) params.set('filter_date_from', filterDateFrom);
+    if (filterDateTo) params.set('filter_date_to', filterDateTo);
+    if (filterStartTime) params.set('filter_start_time', filterStartTime);
+    if (filterEndTime) params.set('filter_end_time', filterEndTime);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
     
-    if (hasActiveFilters) {
-        if (paginationContainer) paginationContainer.style.display = 'none';
-        
-        if (!filterActiveMessage) {
-            filterActiveMessage = document.createElement('div');
-            filterActiveMessage.id = 'filterActiveMessage';
-            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
-            tbody.parentElement.parentElement.appendChild(filterActiveMessage);
-        }
-        
-        if (visibleCount === 0) {
-            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No schedules match the applied filters.';
-        } else {
-            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} schedule(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
-        }
-        filterActiveMessage.style.display = 'block';
-    } else {
-        if (paginationContainer) paginationContainer.style.display = '';
-        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
-    }
+    // Reset to page 1 when applying filters
+    params.set('page', '1');
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function resetTableFilters() {
-    document.getElementById('filterDoctor').value = '';
-    document.getElementById('filterSpecialization').value = '';
-    document.getElementById('filterDateMonth').value = '';
-    document.getElementById('filterDateDay').value = '';
-    document.getElementById('filterDateYear').value = '';
-    document.getElementById('filterStartTime').value = '';
-    document.getElementById('filterEndTime').value = '';
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    filterTable();
-    resetToPaginatedView();
+    const params = new URLSearchParams();
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function toggleTableFilters() {
@@ -784,29 +699,12 @@ function toggleTableFilters() {
         toggleBtn.classList.add('active');
         toggleBtn.style.background = 'var(--primary-blue)';
         toggleBtn.style.color = 'white';
-        loadAllResults();
     } else {
         filterBar.style.display = 'none';
         toggleBtn.classList.remove('active');
         toggleBtn.style.background = 'var(--bg-light)';
         toggleBtn.style.color = 'var(--text-secondary)';
-        resetTableFilters();
-        resetToPaginatedView();
     }
-}
-
-function loadAllResults() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('all_results', '1');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-function resetToPaginatedView() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('all_results');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
 }
 
 // Edit and View Schedule Functions
@@ -976,9 +874,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Check if filters are active on page load
+    // Initialize filter values from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
+    
+    if (urlParams.get('filter_doctor') && document.getElementById('filterDoctor')) {
+        document.getElementById('filterDoctor').value = urlParams.get('filter_doctor');
+    }
+    if (urlParams.get('filter_specialization') && document.getElementById('filterSpecialization')) {
+        document.getElementById('filterSpecialization').value = urlParams.get('filter_specialization');
+    }
+    if (urlParams.get('filter_date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('filter_date_from');
+    }
+    if (urlParams.get('filter_date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('filter_date_to');
+    }
+    if (urlParams.get('filter_start_time') && document.getElementById('filterStartTime')) {
+        document.getElementById('filterStartTime').value = urlParams.get('filter_start_time');
+    }
+    if (urlParams.get('filter_end_time') && document.getElementById('filterEndTime')) {
+        document.getElementById('filterEndTime').value = urlParams.get('filter_end_time');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.get('filter_doctor') || urlParams.get('filter_specialization') || urlParams.get('filter_date_from') || urlParams.get('filter_date_to') || urlParams.get('filter_start_time') || urlParams.get('filter_end_time')) {
         const filterBar = document.getElementById('tableFilterBar');
         const toggleBtn = document.getElementById('toggleFilterBtn');
         if (filterBar) {
@@ -986,42 +905,6 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
             toggleBtn.style.color = 'white';
-        }
-        
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                if (filterValues.filterDoctor && document.getElementById('filterDoctor')) {
-                    document.getElementById('filterDoctor').value = filterValues.filterDoctor;
-                }
-                if (filterValues.filterSpecialization && document.getElementById('filterSpecialization')) {
-                    document.getElementById('filterSpecialization').value = filterValues.filterSpecialization;
-                }
-                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
-                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
-                }
-                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
-                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
-                }
-                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
-                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
-                }
-                if (filterValues.filterStartTime && document.getElementById('filterStartTime')) {
-                    document.getElementById('filterStartTime').value = filterValues.filterStartTime;
-                }
-                if (filterValues.filterEndTime && document.getElementById('filterEndTime')) {
-                    document.getElementById('filterEndTime').value = filterValues.filterEndTime;
-                }
-                // Apply the filters
-                filterTable();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
         }
     }
 });

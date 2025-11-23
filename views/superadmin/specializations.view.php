@@ -97,40 +97,15 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
-                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Days</option>
-                        <?php for ($i = 1; $i <= 31; $i++): ?>
-                            <option value="<?= $i ?>"><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Years</option>
-                        <?php 
-                        $current_year = (int)date('Y');
-                        for ($year = $current_year; $year >= 2020; $year--): 
-                        ?>
-                            <option value="<?= $year ?>"><?= $year ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -188,10 +163,6 @@
                 <tbody id="tableBody">
                     <?php foreach ($specializations as $spec): ?>
                         <tr class="table-row" 
-                            data-name="<?= htmlspecialchars(strtolower($spec['spec_name'] ?? '')) ?>"
-                            data-description="<?= htmlspecialchars(strtolower($spec['spec_description'] ?? '')) ?>"
-                            data-doctors="<?= (int)($spec['doctor_count'] ?? 0) ?>"
-                            data-date="<?= !empty($spec['created_at']) ? date('Y-m-d', strtotime($spec['created_at'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
@@ -237,6 +208,49 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => max(1, $page - 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page <= 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    < Previous
+                </a>
+                <?php
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                if ($start_page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" class="btn btn-sm">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                       class="btn btn-sm <?= $i == $page ? 'btn-primary' : '' ?>" 
+                       style="<?= $i == $page ? 'background: var(--primary-blue); color: white;' : '' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" class="btn btn-sm"><?= $total_pages ?></a>
+                <?php endif; ?>
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => min($total_pages, $page + 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    Next >
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
@@ -425,120 +439,46 @@ function sortTable(column) {
     window.location.href = url.toString();
 }
 
-// Filtering Functions
+// URL-based Filtering Functions
 function applyTableFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
-    const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    const params = new URLSearchParams();
     
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterName: document.getElementById('filterName')?.value || '',
-            filterDescription: document.getElementById('filterDescription')?.value || '',
-            filterMinDoctors: document.getElementById('filterMinDoctors')?.value || '',
-            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
-            filterDateDay: document.getElementById('filterDateDay')?.value || '',
-            filterDateYear: document.getElementById('filterDateYear')?.value || ''
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
-    }
+    const filterName = document.getElementById('filterName')?.value.trim() || '';
+    const filterDescription = document.getElementById('filterDescription')?.value.trim() || '';
+    const filterMinDoctors = document.getElementById('filterMinDoctors')?.value.trim() || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
     
-    // Apply filters if already in all_results mode
-    filterTable();
-}
-
-function filterTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    const rows = tbody.querySelectorAll('.table-row');
-    const filterName = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
-    const filterDescription = document.getElementById('filterDescription')?.value.toLowerCase().trim() || '';
-    const filterMinDoctors = document.getElementById('filterMinDoctors')?.value ? parseInt(document.getElementById('filterMinDoctors').value) : null;
-    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
-    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
-    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
+    if (filterName) params.set('filter_name', filterName);
+    if (filterDescription) params.set('filter_description', filterDescription);
+    if (filterMinDoctors) params.set('filter_min_doctors', filterMinDoctors);
+    if (filterDateFrom) params.set('filter_date_from', filterDateFrom);
+    if (filterDateTo) params.set('filter_date_to', filterDateTo);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
     
-    let visibleCount = 0;
-    let hasActiveFilters = filterName || filterDescription || filterMinDoctors !== null || dateMonthFilter || dateDayFilter || dateYearFilter;
+    // Reset to page 1 when applying filters
+    params.set('page', '1');
     
-    rows.forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        const description = row.getAttribute('data-description') || '';
-        const doctors = parseInt(row.getAttribute('data-doctors') || '0');
-        const dateStr = row.getAttribute('data-date') || '';
-        
-        const matchesName = !filterName || name.includes(filterName);
-        const matchesDescription = !filterDescription || description.includes(filterDescription);
-        const matchesMinDoctors = filterMinDoctors === null || doctors >= filterMinDoctors;
-        
-        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
-        let matchesDate = true;
-        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
-            if (dateStr) {
-                const dateParts = dateStr.split('-');
-                if (dateParts.length === 3) {
-                    const year = dateParts[0];
-                    const month = dateParts[1];
-                    const day = dateParts[2];
-                    
-                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
-                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
-                    const matchesYear = !dateYearFilter || year === dateYearFilter;
-                    
-                    matchesDate = matchesMonth && matchesDay && matchesYear;
-                } else {
-                    matchesDate = false;
-                }
-            } else {
-                matchesDate = false;
-            }
-        }
-        
-        if (matchesName && matchesDescription && matchesMinDoctors && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Show/hide filter message
-    let filterActiveMessage = document.getElementById('filterActiveMessage');
-    
-    if (hasActiveFilters) {
-        if (!filterActiveMessage) {
-            filterActiveMessage = document.createElement('div');
-            filterActiveMessage.id = 'filterActiveMessage';
-            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
-            tbody.parentElement.parentElement.appendChild(filterActiveMessage);
-        }
-        
-        if (visibleCount === 0) {
-            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No specializations match the applied filters.';
-        } else {
-            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} specialization(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
-        }
-        filterActiveMessage.style.display = 'block';
-    } else {
-        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
-    }
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function resetTableFilters() {
-    document.getElementById('filterName').value = '';
-    document.getElementById('filterDescription').value = '';
-    document.getElementById('filterMinDoctors').value = '';
-    document.getElementById('filterDateMonth').value = '';
-    document.getElementById('filterDateDay').value = '';
-    document.getElementById('filterDateYear').value = '';
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    filterTable();
-    resetToPaginatedView();
+    const params = new URLSearchParams();
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function toggleTableFilters() {
@@ -550,29 +490,12 @@ function toggleTableFilters() {
         toggleBtn.classList.add('active');
         toggleBtn.style.background = 'var(--primary-blue)';
         toggleBtn.style.color = 'white';
-        loadAllResults();
     } else {
         filterBar.style.display = 'none';
         toggleBtn.classList.remove('active');
         toggleBtn.style.background = 'var(--bg-light)';
         toggleBtn.style.color = 'var(--text-secondary)';
-        resetTableFilters();
-        resetToPaginatedView();
     }
-}
-
-function loadAllResults() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('all_results', '1');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-function resetToPaginatedView() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('all_results');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
 }
 
 // View Doctors Function
@@ -625,13 +548,28 @@ function closeViewDoctorsModal() {
     document.getElementById('viewDoctorsModal').classList.remove('active');
 }
 
-// Initialize filter event listeners
+// Initialize filter values from URL parameters
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
-    
-    // Check if filters are active on page load
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
+    
+    if (urlParams.get('filter_name') && document.getElementById('filterName')) {
+        document.getElementById('filterName').value = urlParams.get('filter_name');
+    }
+    if (urlParams.get('filter_description') && document.getElementById('filterDescription')) {
+        document.getElementById('filterDescription').value = urlParams.get('filter_description');
+    }
+    if (urlParams.get('filter_min_doctors') && document.getElementById('filterMinDoctors')) {
+        document.getElementById('filterMinDoctors').value = urlParams.get('filter_min_doctors');
+    }
+    if (urlParams.get('filter_date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('filter_date_from');
+    }
+    if (urlParams.get('filter_date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('filter_date_to');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.get('filter_name') || urlParams.get('filter_description') || urlParams.get('filter_min_doctors') || urlParams.get('filter_date_from') || urlParams.get('filter_date_to')) {
         const filterBar = document.getElementById('tableFilterBar');
         const toggleBtn = document.getElementById('toggleFilterBtn');
         if (filterBar) {
@@ -639,39 +577,6 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
             toggleBtn.style.color = 'white';
-        }
-        
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                if (filterValues.filterName && document.getElementById('filterName')) {
-                    document.getElementById('filterName').value = filterValues.filterName;
-                }
-                if (filterValues.filterDescription && document.getElementById('filterDescription')) {
-                    document.getElementById('filterDescription').value = filterValues.filterDescription;
-                }
-                if (filterValues.filterMinDoctors && document.getElementById('filterMinDoctors')) {
-                    document.getElementById('filterMinDoctors').value = filterValues.filterMinDoctors;
-                }
-                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
-                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
-                }
-                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
-                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
-                }
-                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
-                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
-                }
-                // Apply the filters
-                filterTable();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
         }
     }
 });

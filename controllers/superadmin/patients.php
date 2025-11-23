@@ -355,7 +355,7 @@ try {
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
     
     // Get total count for pagination
-    $count_stmt = $db->prepare("SELECT COUNT(*) FROM patients $where_clause");
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM patients p $where_clause");
     $count_stmt->execute($params);
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);

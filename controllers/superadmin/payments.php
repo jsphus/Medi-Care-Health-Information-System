@@ -75,28 +75,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $amount = floatval($_POST['amount']);
         $payment_method_id = (int)$_POST['payment_method_id'];
         $payment_status_id = (int)$_POST['payment_status_id'];
-        $payment_date = $_POST['payment_date'];
+        $payment_date = sanitize($_POST['payment_date'] ?? '');
         $notes = sanitize($_POST['notes'] ?? '');
         
-        try {
-            $stmt = $db->prepare("
-                UPDATE payments 
-                SET payment_amount = :payment_amount, payment_method_id = :payment_method_id, 
-                    payment_status_id = :payment_status_id, payment_date = :payment_date,
-                    payment_notes = :payment_notes, updated_at = NOW()
-                WHERE payment_id = :id
-            ");
-            $stmt->execute([
-                'payment_amount' => $amount,
-                'payment_method_id' => $payment_method_id,
-                'payment_status_id' => $payment_status_id,
-                'payment_date' => $payment_date,
-                'payment_notes' => $notes,
-                'id' => $id
-            ]);
-            $success = 'Payment record updated successfully';
-        } catch (PDOException $e) {
-            $error = 'Database error: ' . $e->getMessage();
+        if (empty($id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id) || empty($payment_date)) {
+            $error = 'Payment ID, amount, payment method, status, and date are required';
+        } else {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE payments 
+                    SET payment_amount = :payment_amount, payment_method_id = :payment_method_id, 
+                        payment_status_id = :payment_status_id, payment_date = :payment_date,
+                        payment_notes = :payment_notes, updated_at = NOW()
+                    WHERE payment_id = :id
+                ");
+                $stmt->execute([
+                    'payment_amount' => $amount,
+                    'payment_method_id' => $payment_method_id,
+                    'payment_status_id' => $payment_status_id,
+                    'payment_date' => $payment_date,
+                    'payment_notes' => $notes,
+                    'id' => $id
+                ]);
+                $success = 'Payment record updated successfully';
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
         }
     }
     
@@ -261,8 +265,8 @@ try {
         SELECT p.*, 
                a.appointment_id, a.pat_id, a.doc_id, a.service_id, a.status_id,
                a.appointment_date, a.appointment_time, a.appointment_notes,
-               pat.pat_first_name, pat.pat_last_name,
-               d.doc_first_name, d.doc_last_name,
+               pat.pat_first_name, pat.pat_middle_initial, pat.pat_last_name,
+               d.doc_first_name, d.doc_middle_initial, d.doc_last_name,
                srv.service_name, srv.service_price,
                sp.spec_name,
                st.status_name as appointment_status_name, st.status_color as appointment_status_color,

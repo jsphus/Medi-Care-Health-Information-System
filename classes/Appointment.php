@@ -56,7 +56,8 @@ class Appointment extends Entity {
         }
 
         // Validate that appointment date/time matches doctor's schedule
-        if (!empty($data['doc_id']) && !empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+        // Skip validation for superadmin
+        if (!$this->isSuperAdmin() && !empty($data['doc_id']) && !empty($data['appointment_date']) && !empty($data['appointment_time'])) {
             $scheduleValidation = $this->validateScheduleAvailability(
                 $data['doc_id'],
                 $data['appointment_date'],
@@ -446,6 +447,28 @@ class Appointment extends Entity {
     }
 
     /**
+     * Check if the current user is a superadmin
+     * @return bool True if user is superadmin (including when viewing as another role)
+     */
+    private function isSuperAdmin(): bool {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Check if current user is superadmin
+        if (isset($_SESSION['is_superadmin']) && $_SESSION['is_superadmin'] === true) {
+            return true;
+        }
+        
+        // Check if viewing as another role but original user is superadmin
+        if (isset($_SESSION['original_is_superadmin']) && $_SESSION['original_is_superadmin'] === true) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
      * Validate that appointment date/time matches an available doctor schedule
      * @param int $docId Doctor ID
      * @param string $appointmentDate Appointment date (Y-m-d format)
@@ -536,7 +559,8 @@ class Appointment extends Entity {
             }
 
             // Validate that new date/time matches doctor's schedule
-            if (!empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+            // Skip validation for superadmin
+            if (!$this->isSuperAdmin() && !empty($data['appointment_date']) && !empty($data['appointment_time'])) {
                 $scheduleValidation = $this->validateScheduleAvailability(
                     (int)$appointment['doc_id'],
                     $data['appointment_date'],

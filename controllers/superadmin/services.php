@@ -87,13 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
-
-$filter_category = isset($_GET['category']) ? sanitize($_GET['category']) : '';
+// Handle filters from URL parameters
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_description = isset($_GET['filter_description']) ? sanitize($_GET['filter_description']) : '';
+$filter_price_min = isset($_GET['filter_price_min']) && $_GET['filter_price_min'] !== '' ? floatval($_GET['filter_price_min']) : null;
+$filter_price_max = isset($_GET['filter_price_max']) && $_GET['filter_price_max'] !== '' ? floatval($_GET['filter_price_max']) : null;
+$filter_duration_min = isset($_GET['filter_duration_min']) && $_GET['filter_duration_min'] !== '' ? (int)$_GET['filter_duration_min'] : null;
+$filter_duration_max = isset($_GET['filter_duration_max']) && $_GET['filter_duration_max'] !== '' ? (int)$_GET['filter_duration_max'] : null;
+$filter_category = isset($_GET['filter_category']) ? sanitize($_GET['filter_category']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
 // Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
@@ -105,14 +108,49 @@ try {
     $where_conditions = [];
     $params = [];
 
-    if (!empty($search_query)) {
-        $where_conditions[] = "service_name LIKE :search";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_name)) {
+        $where_conditions[] = "LOWER(service_name) LIKE LOWER(:filter_name)";
+        $params['filter_name'] = '%' . $filter_name . '%';
+    }
+
+    if (!empty($filter_description)) {
+        $where_conditions[] = "LOWER(service_description) LIKE LOWER(:filter_description)";
+        $params['filter_description'] = '%' . $filter_description . '%';
+    }
+
+    if ($filter_price_min !== null) {
+        $where_conditions[] = "service_price >= :filter_price_min";
+        $params['filter_price_min'] = $filter_price_min;
+    }
+
+    if ($filter_price_max !== null) {
+        $where_conditions[] = "service_price <= :filter_price_max";
+        $params['filter_price_max'] = $filter_price_max;
+    }
+
+    if ($filter_duration_min !== null) {
+        $where_conditions[] = "service_duration_minutes >= :filter_duration_min";
+        $params['filter_duration_min'] = $filter_duration_min;
+    }
+
+    if ($filter_duration_max !== null) {
+        $where_conditions[] = "service_duration_minutes <= :filter_duration_max";
+        $params['filter_duration_max'] = $filter_duration_max;
     }
 
     if (!empty($filter_category)) {
-        $where_conditions[] = "service_category = :category";
-        $params['category'] = $filter_category;
+        $where_conditions[] = "service_category = :filter_category";
+        $params['filter_category'] = $filter_category;
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(created_at) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(created_at) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';

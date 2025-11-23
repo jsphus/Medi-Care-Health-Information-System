@@ -66,6 +66,12 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Payments
                         </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Created At
+                        </th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated At
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -79,6 +85,8 @@
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($status['status_description'] ?? 'N/A') ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= isset($status['payment_count']) ? $status['payment_count'] : 0 ?> payment(s)</td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= !empty($status['created_at']) ? date('d M Y', strtotime($status['created_at'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= !empty($status['updated_at']) ? date('d M Y', strtotime($status['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm edit-status-btn" 

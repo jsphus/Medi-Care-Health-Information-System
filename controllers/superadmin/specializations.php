@@ -102,8 +102,12 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_doctors' && isset($_GET['
     }
 }
 
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Handle filters from URL parameters
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_description = isset($_GET['filter_description']) ? sanitize($_GET['filter_description']) : '';
+$filter_min_doctors = isset($_GET['filter_min_doctors']) && $_GET['filter_min_doctors'] !== '' ? (int)$_GET['filter_min_doctors'] : null;
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
 // Handle sorting
 $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'spec_name';
@@ -117,19 +121,91 @@ if (!in_array($sort_column, $allowed_columns)) {
 
 $order_by = "s.$sort_column $sort_order";
 
-// Fetch all specializations with doctor count
+// Pagination
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$items_per_page = 25;
+$offset = ($page - 1) * $items_per_page;
+
+// Fetch specializations with filters
 try {
-    $stmt = $db->query("
+    $where_conditions = [];
+    $params = [];
+
+    if (!empty($filter_name)) {
+        $where_conditions[] = "LOWER(s.spec_name) LIKE LOWER(:filter_name)";
+        $params['filter_name'] = '%' . $filter_name . '%';
+    }
+
+    if (!empty($filter_description)) {
+        $where_conditions[] = "LOWER(s.spec_description) LIKE LOWER(:filter_description)";
+        $params['filter_description'] = '%' . $filter_description . '%';
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(s.created_at) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(s.created_at) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
+    }
+
+    $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
+    // Get total count for pagination (need to account for HAVING clause)
+    $count_having = '';
+    if ($filter_min_doctors !== null) {
+        $count_having = 'HAVING COUNT(d.doc_id) >= :count_min_doctors';
+    }
+    $count_params = $params;
+    if ($filter_min_doctors !== null) {
+        $count_params['count_min_doctors'] = $filter_min_doctors;
+    }
+    $count_stmt = $db->prepare("
+        SELECT COUNT(*) FROM (
+            SELECT s.spec_id
+            FROM specializations s
+            LEFT JOIN doctors d ON s.spec_id = d.doc_specialization_id
+            $where_clause
+            GROUP BY s.spec_id
+            $count_having
+        ) as filtered_specs
+    ");
+    $count_stmt->execute($count_params);
+    $total_items = $count_stmt->fetchColumn();
+    $total_pages = ceil($total_items / $items_per_page);
+
+    // Build HAVING clause for min_doctors filter
+    $having_clause = '';
+    if ($filter_min_doctors !== null) {
+        $having_clause = 'HAVING COUNT(d.doc_id) >= :filter_min_doctors';
+        $params['filter_min_doctors'] = $filter_min_doctors;
+    }
+
+    // Fetch paginated results with doctor count
+    $stmt = $db->prepare("
         SELECT s.*, COUNT(d.doc_id) as doctor_count
         FROM specializations s
         LEFT JOIN doctors d ON s.spec_id = d.doc_specialization_id
+        $where_clause
         GROUP BY s.spec_id
+        $having_clause
         ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
     ");
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $specializations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch specializations: ' . $e->getMessage();
     $specializations = [];
+    $total_items = 0;
+    $total_pages = 0;
 }
 
 // Calculate statistics for summary cards

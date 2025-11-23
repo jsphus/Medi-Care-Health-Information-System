@@ -51,10 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 if (empty($error)) {
                     // Insert staff
+                    // Use PHP's date() to ensure correct timezone (Asia/Manila from config.php)
+                    $current_timestamp = date('Y-m-d H:i:s');
                     $stmt = $db->prepare("
                         INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
                                           staff_salary, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, NOW())
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, :created_at)
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
@@ -63,7 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'email' => $email,
                         'phone' => $phone,
                         'position' => $position,
-                        'salary' => $salary
+                        'salary' => $salary,
+                        'created_at' => $current_timestamp
                     ]);
                     
                     $staff_id = $db->lastInsertId();
@@ -84,6 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $success = 'Staff member created successfully (no user account created)';
                     }
+                    
+                    // Redirect to prevent form resubmission and refresh the data
+                    // Preserve filters but reset to page 1 and ensure sort by created_at DESC so new staff appears first
+                    $redirect_params = $_GET;
+                    $redirect_params['success'] = $success;
+                    $redirect_params['page'] = 1;
+                    $redirect_params['sort'] = 'created_at';
+                    $redirect_params['order'] = 'DESC';
+                    header('Location: /superadmin/staff?' . http_build_query($redirect_params));
+                    exit;
                 }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
@@ -197,6 +210,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id' => $id
                 ]);
                 $success = 'Staff member updated successfully';
+                
+                // Redirect to prevent form resubmission and refresh the data
+                // Preserve filters and current page
+                $redirect_params = $_GET;
+                $redirect_params['success'] = $success;
+                header('Location: /superadmin/staff?' . http_build_query($redirect_params));
+                exit;
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -220,6 +240,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Commit the transaction
             $db->commit();
             $success = 'Staff member and associated user account deleted successfully';
+            
+            // Redirect to prevent form resubmission and refresh the data
+            // Preserve filters but reset to page 1
+            $redirect_params = $_GET;
+            $redirect_params['success'] = $success;
+            $redirect_params['page'] = 1;
+            header('Location: /superadmin/staff?' . http_build_query($redirect_params));
+            exit;
         } catch (PDOException $e) {
             // Rollback on error
             if ($db->inTransaction()) {
@@ -228,6 +256,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Failed to delete staff member: ' . $e->getMessage();
         }
     }
+}
+
+// Handle success message from URL parameter (after redirect)
+if (isset($_GET['success']) && !empty($_GET['success'])) {
+    $success = sanitize($_GET['success']);
 }
 
 // Handle filters from URL
@@ -300,12 +333,11 @@ try {
     if ($sort_column === 'staff_first_name') {
         $order_by = "s.staff_first_name $sort_order, s.staff_last_name $sort_order";
     } else {
-        // For created_at, use COALESCE to handle NULL values and add staff_id DESC as secondary sort
-        // This ensures most recent staff (by creation date, then by ID) appear first
+        // For created_at, order by full timestamp (date and time) with staff_id as tiebreaker
+        // This ensures most recent staff (by creation timestamp, then by ID) appear first
         if ($sort_column === 'created_at') {
-            // Use COALESCE to handle NULL values - treat NULL as very old date
-            // Always add staff_id DESC as secondary to ensure consistent ordering
-            $order_by = "COALESCE(s.created_at, '1970-01-01'::timestamp) $sort_order, s.staff_id DESC";
+            // Order by full timestamp including time, with staff_id DESC as secondary sort for records with same timestamp
+            $order_by = "s.created_at $sort_order NULLS LAST, s.staff_id DESC";
         } else {
             $order_by = "s.$sort_column $sort_order";
         }
@@ -396,7 +428,7 @@ try {
             u.profile_picture_url
         FROM staff s
         LEFT JOIN users u ON s.staff_id = u.staff_id
-        ORDER BY COALESCE(s.created_at, '1970-01-01'::timestamp) DESC, s.staff_id DESC
+        ORDER BY s.created_at DESC NULLS LAST, s.staff_id DESC
         LIMIT 10
     ");
     $recently_added_staff = $stmt->fetchAll(PDO::FETCH_ASSOC);

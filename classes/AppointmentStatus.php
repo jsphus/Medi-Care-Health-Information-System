@@ -8,6 +8,7 @@ class AppointmentStatus extends Entity {
     private $status_description;
     private $status_color;
     private $created_at;
+    private $updated_at;
 
     public function __construct($data = []) {
         parent::__construct();
@@ -27,7 +28,7 @@ class AppointmentStatus extends Entity {
 
     protected function getColumns(): array {
         return [
-            'status_id', 'status_name', 'status_description', 'status_color', 'created_at'
+            'status_id', 'status_name', 'status_description', 'status_color', 'created_at', 'updated_at'
         ];
     }
 
@@ -59,7 +60,8 @@ class AppointmentStatus extends Entity {
             'status_name' => $this->status_name,
             'status_description' => $this->status_description,
             'status_color' => $this->status_color,
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at
         ];
     }
 
@@ -69,6 +71,7 @@ class AppointmentStatus extends Entity {
         $this->status_description = $data['status_description'] ?? null;
         $this->status_color = $data['status_color'] ?? '#3B82F6';
         $this->created_at = $data['created_at'] ?? null;
+        $this->updated_at = $data['updated_at'] ?? null;
         return $this;
     }
 
@@ -78,6 +81,7 @@ class AppointmentStatus extends Entity {
     public function getStatusDescription() { return $this->status_description; }
     public function getStatusColor() { return $this->status_color; }
     public function getCreatedAt() { return $this->created_at; }
+    public function getUpdatedAt() { return $this->updated_at; }
 
     // Setters - Encapsulation
     public function setStatusId($value) { $this->status_id = $value; return $this; }
@@ -85,6 +89,7 @@ class AppointmentStatus extends Entity {
     public function setStatusDescription($value) { $this->status_description = $value; return $this; }
     public function setStatusColor($value) { $this->status_color = $value; return $this; }
     public function setCreatedAt($value) { $this->created_at = $value; return $this; }
+    public function setUpdatedAt($value) { $this->updated_at = $value; return $this; }
 
     public function getById($id) {
         return $this->db->fetchOne("SELECT * FROM appointment_statuses WHERE status_id = :id", ['id' => $id]);

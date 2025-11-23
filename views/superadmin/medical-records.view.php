@@ -118,7 +118,7 @@
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 1px solid var(--border-light);">
                         <?php
-                        $current_sort = $_GET['sort'] ?? 'med_rec_visit_date';
+                        $current_sort = $_GET['sort'] ?? 'med_rec_created_at';
                         $current_order = $_GET['order'] ?? 'DESC';
                         ?>
                         <th class="sortable <?= $current_sort === 'med_rec_id' ? 'sort-' . strtolower($current_order) : '' ?>" 
@@ -151,6 +151,24 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Prescription
                         </th>
+                        <th class="sortable <?= $current_sort === 'med_rec_created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_created_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Created At
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
+                        <th class="sortable <?= $current_sort === 'med_rec_updated_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
+                            onclick="sortTable('med_rec_updated_at')" 
+                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
+                            Updated At
+                            <span class="sort-indicator">
+                                <i class="fas fa-arrow-up"></i>
+                                <i class="fas fa-arrow-down"></i>
+                            </span>
+                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -177,7 +195,7 @@
                                             <?= strtoupper(substr($record['pat_first_name'] ?? 'P', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars($record['pat_first_name'] . ' ' . $record['pat_last_name']) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($record['pat_first_name'] ?? '', $record['pat_middle_initial'] ?? null, $record['pat_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem;">
@@ -187,11 +205,27 @@
                                             <img src="<?= htmlspecialchars($record['doctor_profile_picture']) ?>" alt="Doctor" style="width: 100%; height: 100%; object-fit: cover;">
                                         </div>
                                     <?php endif; ?>
-                                    <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars($record['doc_first_name'] . ' ' . $record['doc_last_name']) ?></span>
+                                    <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars(formatFullName($record['doc_first_name'] ?? '', $record['doc_middle_initial'] ?? null, $record['doc_last_name'] ?? '')) ?></span>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['med_rec_diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['med_rec_diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['med_rec_prescription'] ?? '', 0, 50)) ?><?= strlen($record['med_rec_prescription'] ?? '') > 50 ? '...' : '' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                                <?php if (!empty($record['med_rec_created_at'])): ?>
+                                    <?= date('M d, Y', strtotime($record['med_rec_created_at'])) ?><br>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;"><?= date('g:i A', strtotime($record['med_rec_created_at'])) ?></span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">N/A</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                                <?php if (!empty($record['med_rec_updated_at'])): ?>
+                                    <?= date('M d, Y', strtotime($record['med_rec_updated_at'])) ?><br>
+                                    <span style="color: var(--text-secondary); font-size: 0.75rem;"><?= date('g:i A', strtotime($record['med_rec_updated_at'])) ?></span>
+                                <?php else: ?>
+                                    <span style="color: var(--text-secondary);">N/A</span>
+                                <?php endif; ?>
+                            </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm view-record-btn" 
@@ -734,7 +768,8 @@ function sortTable(column) {
     const columnMap = {
         'med_rec_id': 'med_rec_id',
         'med_rec_visit_date': 'med_rec_visit_date',
-        'med_rec_created_at': 'med_rec_created_at'
+        'med_rec_created_at': 'med_rec_created_at',
+        'med_rec_updated_at': 'med_rec_updated_at'
     };
     
     // Use mapped column name or fallback to provided column

@@ -261,34 +261,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
+// Handle filters from URL parameters
+$filter_doctor = isset($_GET['filter_doctor']) ? sanitize($_GET['filter_doctor']) : '';
+$filter_specialization = isset($_GET['filter_specialization']) ? sanitize($_GET['filter_specialization']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
+$filter_start_time = isset($_GET['filter_start_time']) ? sanitize($_GET['filter_start_time']) : '';
+$filter_end_time = isset($_GET['filter_end_time']) ? sanitize($_GET['filter_end_time']) : '';
 
-$filter_doctor = isset($_GET['doctor']) ? (int)$_GET['doctor'] : null;
-$filter_available = isset($_GET['available']) ? $_GET['available'] : '';
-
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = ($page - 1) * $items_per_page;
 
 // Fetch schedules with filters
 try {
     $where_conditions = [];
     $params = [];
 
-    if (!empty($search_query)) {
-        $where_conditions[] = "(d.doc_first_name LIKE :search OR d.doc_middle_initial LIKE :search OR d.doc_last_name LIKE :search)";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_doctor)) {
+        $where_conditions[] = "(LOWER(d.doc_first_name) LIKE LOWER(:filter_doctor) OR LOWER(d.doc_middle_initial) LIKE LOWER(:filter_doctor) OR LOWER(d.doc_last_name) LIKE LOWER(:filter_doctor) OR LOWER(CONCAT(d.doc_first_name, ' ', COALESCE(d.doc_middle_initial, ''), ' ', d.doc_last_name)) LIKE LOWER(:filter_doctor))";
+        $params['filter_doctor'] = '%' . $filter_doctor . '%';
     }
 
-    if ($filter_doctor) {
-        $where_conditions[] = "s.doc_id = :doctor";
-        $params['doctor'] = $filter_doctor;
+    if (!empty($filter_specialization)) {
+        $where_conditions[] = "LOWER(sp.spec_name) LIKE LOWER(:filter_specialization)";
+        $params['filter_specialization'] = '%' . $filter_specialization . '%';
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(s.schedule_date) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(s.schedule_date) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
+    }
+
+    if (!empty($filter_start_time)) {
+        $where_conditions[] = "s.start_time >= :filter_start_time";
+        $params['filter_start_time'] = $filter_start_time;
+    }
+
+    if (!empty($filter_end_time)) {
+        $where_conditions[] = "s.end_time <= :filter_end_time";
+        $params['filter_end_time'] = $filter_end_time;
     }
 
 

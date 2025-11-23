@@ -124,40 +124,15 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Created
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
-                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Days</option>
-                        <?php for ($i = 1; $i <= 31; $i++): ?>
-                            <option value="<?= $i ?>"><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Years</option>
-                        <?php 
-                        $current_year = (int)date('Y');
-                        for ($year = $current_year; $year >= 2020; $year--): 
-                        ?>
-                            <option value="<?= $year ?>"><?= $year ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -199,12 +174,6 @@
                 <tbody id="servicesTableBody">
                     <?php foreach ($services as $service): ?>
                         <tr class="service-row" 
-                            data-service-name="<?= htmlspecialchars(strtolower($service['service_name'])) ?>"
-                            data-description="<?= htmlspecialchars(strtolower($service['service_description'] ?? '')) ?>"
-                            data-date="<?= !empty($service['created_at']) ? date('Y-m-d', strtotime($service['created_at'])) : '' ?>"
-                            data-price="<?= floatval($service['service_price'] ?? 0) ?>"
-                            data-duration="<?= intval($service['service_duration_minutes'] ?? 30) ?>"
-                            data-category="<?= htmlspecialchars($service['service_category'] ?? '') ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
                             onmouseout="this.style.background='white'">
@@ -286,13 +255,6 @@
                    style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
                     Next >
                 </a>
-            </div>
-        </div>
-        <!-- Filter Active Message -->
-        <div id="filterActiveMessage" style="display: none; padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); background: var(--primary-blue-bg);">
-            <div style="display: flex; align-items: center; gap: 0.75rem; color: var(--primary-blue-dark); font-size: 0.875rem;">
-                <i class="fas fa-info-circle"></i>
-                <span>Filters are applied to the current page. Clear filters to see all results across all pages.</span>
             </div>
         </div>
         <?php endif; ?>
@@ -395,150 +357,38 @@
 </div>
 
 <script>
-// Dynamic Filtering System for Services Table
+// URL-based Filtering System for Services Table
 function applyServiceFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
-    const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
+    const params = new URLSearchParams();
     
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterServiceName: document.getElementById('filterServiceName')?.value || '',
-            filterDescription: document.getElementById('filterDescription')?.value || '',
-            filterPriceMin: document.getElementById('filterPriceMin')?.value || '',
-            filterPriceMax: document.getElementById('filterPriceMax')?.value || '',
-            filterDurationMin: document.getElementById('filterDurationMin')?.value || '',
-            filterDurationMax: document.getElementById('filterDurationMax')?.value || '',
-            filterCategory: document.getElementById('filterCategory')?.value || '',
-            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
-            filterDateDay: document.getElementById('filterDateDay')?.value || '',
-            filterDateYear: document.getElementById('filterDateYear')?.value || ''
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
-    }
+    const filterName = document.getElementById('filterServiceName')?.value.trim() || '';
+    const filterDescription = document.getElementById('filterDescription')?.value.trim() || '';
+    const filterPriceMin = document.getElementById('filterPriceMin')?.value.trim() || '';
+    const filterPriceMax = document.getElementById('filterPriceMax')?.value.trim() || '';
+    const filterDurationMin = document.getElementById('filterDurationMin')?.value.trim() || '';
+    const filterDurationMax = document.getElementById('filterDurationMax')?.value.trim() || '';
+    const filterCategory = document.getElementById('filterCategory')?.value || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
     
-    // Apply filters if already in all_results mode
-    filterServices();
-}
-
-function filterServices() {
-    const serviceNameFilter = document.getElementById('filterServiceName').value.toLowerCase().trim();
-    const descriptionFilter = document.getElementById('filterDescription').value.toLowerCase().trim();
-    const priceMin = parseFloat(document.getElementById('filterPriceMin').value) || 0;
-    const priceMax = parseFloat(document.getElementById('filterPriceMax').value) || Infinity;
-    const durationMin = parseInt(document.getElementById('filterDurationMin').value) || 0;
-    const durationMax = parseInt(document.getElementById('filterDurationMax').value) || Infinity;
-    const categoryFilter = document.getElementById('filterCategory').value;
-    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
-    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
-    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
+    if (filterName) params.set('filter_name', filterName);
+    if (filterDescription) params.set('filter_description', filterDescription);
+    if (filterPriceMin) params.set('filter_price_min', filterPriceMin);
+    if (filterPriceMax) params.set('filter_price_max', filterPriceMax);
+    if (filterDurationMin) params.set('filter_duration_min', filterDurationMin);
+    if (filterDurationMax) params.set('filter_duration_max', filterDurationMax);
+    if (filterCategory) params.set('filter_category', filterCategory);
+    if (filterDateFrom) params.set('filter_date_from', filterDateFrom);
+    if (filterDateTo) params.set('filter_date_to', filterDateTo);
     
-    const rows = document.querySelectorAll('.service-row');
-    let visibleCount = 0;
+    // Reset to page 1 when applying filters
+    params.set('page', '1');
     
-    rows.forEach(row => {
-        const serviceName = row.getAttribute('data-service-name') || '';
-        const description = row.getAttribute('data-description') || '';
-        const price = parseFloat(row.getAttribute('data-price')) || 0;
-        const duration = parseInt(row.getAttribute('data-duration')) || 0;
-        const category = row.getAttribute('data-category') || '';
-        const dateStr = row.getAttribute('data-date') || '';
-        
-        // Apply filters
-        const matchesServiceName = !serviceNameFilter || serviceName.includes(serviceNameFilter);
-        const matchesDescription = !descriptionFilter || description.includes(descriptionFilter);
-        const matchesPrice = price >= priceMin && price <= priceMax;
-        const matchesDuration = duration >= durationMin && duration <= durationMax;
-        const matchesCategory = !categoryFilter || category === categoryFilter;
-        
-        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
-        let matchesDate = true;
-        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
-            if (dateStr) {
-                const dateParts = dateStr.split('-');
-                if (dateParts.length === 3) {
-                    const year = dateParts[0];
-                    const month = dateParts[1];
-                    const day = dateParts[2];
-                    
-                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
-                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
-                    const matchesYear = !dateYearFilter || year === dateYearFilter;
-                    
-                    matchesDate = matchesMonth && matchesDay && matchesYear;
-                } else {
-                    matchesDate = false;
-                }
-            } else {
-                matchesDate = false;
-            }
-        }
-        
-        // Show row if all filters match
-        if (matchesServiceName && matchesDescription && matchesPrice && matchesDuration && matchesCategory && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Show/hide "no results" message (only if filters are active)
-    const hasActiveFilters = serviceNameFilter || descriptionFilter || 
-                             document.getElementById('filterPriceMin').value || 
-                             document.getElementById('filterPriceMax').value ||
-                             document.getElementById('filterDurationMin').value ||
-                             document.getElementById('filterDurationMax').value ||
-                             categoryFilter || dateMonthFilter || dateDayFilter || dateYearFilter;
-    
-    const tableBody = document.getElementById('servicesTableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
-    const paginationContainer = document.getElementById('paginationContainer');
-    const filterActiveMessage = document.getElementById('filterActiveMessage');
-    
-    // Show/hide pagination based on filter state
-    if (paginationContainer) {
-        if (hasActiveFilters) {
-            paginationContainer.style.display = 'none';
-            if (filterActiveMessage) {
-                filterActiveMessage.style.display = 'block';
-            }
-        } else {
-            paginationContainer.style.display = 'flex';
-            if (filterActiveMessage) {
-                filterActiveMessage.style.display = 'none';
-            }
-        }
-    }
-    
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            msg.innerHTML = '<td colspan="6" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No services match the current filters on this page.</p><p style="margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-light);">Try clearing filters or navigate to another page.</p></td>';
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function resetServiceFilters() {
-    document.getElementById('filterServiceName').value = '';
-    document.getElementById('filterDescription').value = '';
-    document.getElementById('filterPriceMin').value = '';
-    document.getElementById('filterPriceMax').value = '';
-    document.getElementById('filterDurationMin').value = '';
-    document.getElementById('filterDurationMax').value = '';
-    document.getElementById('filterCategory').value = '';
-    document.getElementById('filterDateMonth').value = '';
-    document.getElementById('filterDateDay').value = '';
-    document.getElementById('filterDateYear').value = '';
-    filterServices(); // This will restore pagination visibility
+    window.location.href = window.location.pathname;
 }
 
 function toggleServiceFilters() {
@@ -556,70 +406,36 @@ function toggleServiceFilters() {
     }
 }
 
-// Add event listeners for real-time filtering
+// Initialize filter values from URL parameters
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = [
-        'filterServiceName',
-        'filterDescription',
-        'filterPriceMin',
-        'filterPriceMax',
-        'filterDurationMin',
-        'filterDurationMax',
-        'filterCategory'
-    ];
-    
-    filterInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        // Filters only apply when "Apply Filters" button is clicked
-    });
-    
-    // Check if we're in all_results mode and restore filters
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                if (filterValues.filterServiceName && document.getElementById('filterServiceName')) {
-                    document.getElementById('filterServiceName').value = filterValues.filterServiceName;
-                }
-                if (filterValues.filterDescription && document.getElementById('filterDescription')) {
-                    document.getElementById('filterDescription').value = filterValues.filterDescription;
-                }
-                if (filterValues.filterPriceMin && document.getElementById('filterPriceMin')) {
-                    document.getElementById('filterPriceMin').value = filterValues.filterPriceMin;
-                }
-                if (filterValues.filterPriceMax && document.getElementById('filterPriceMax')) {
-                    document.getElementById('filterPriceMax').value = filterValues.filterPriceMax;
-                }
-                if (filterValues.filterDurationMin && document.getElementById('filterDurationMin')) {
-                    document.getElementById('filterDurationMin').value = filterValues.filterDurationMin;
-                }
-                if (filterValues.filterDurationMax && document.getElementById('filterDurationMax')) {
-                    document.getElementById('filterDurationMax').value = filterValues.filterDurationMax;
-                }
-                if (filterValues.filterCategory && document.getElementById('filterCategory')) {
-                    document.getElementById('filterCategory').value = filterValues.filterCategory;
-                }
-                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
-                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
-                }
-                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
-                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
-                }
-                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
-                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
-                }
-                // Apply the filters
-                filterServices();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
-        }
+    
+    if (urlParams.get('filter_name') && document.getElementById('filterServiceName')) {
+        document.getElementById('filterServiceName').value = urlParams.get('filter_name');
+    }
+    if (urlParams.get('filter_description') && document.getElementById('filterDescription')) {
+        document.getElementById('filterDescription').value = urlParams.get('filter_description');
+    }
+    if (urlParams.get('filter_price_min') && document.getElementById('filterPriceMin')) {
+        document.getElementById('filterPriceMin').value = urlParams.get('filter_price_min');
+    }
+    if (urlParams.get('filter_price_max') && document.getElementById('filterPriceMax')) {
+        document.getElementById('filterPriceMax').value = urlParams.get('filter_price_max');
+    }
+    if (urlParams.get('filter_duration_min') && document.getElementById('filterDurationMin')) {
+        document.getElementById('filterDurationMin').value = urlParams.get('filter_duration_min');
+    }
+    if (urlParams.get('filter_duration_max') && document.getElementById('filterDurationMax')) {
+        document.getElementById('filterDurationMax').value = urlParams.get('filter_duration_max');
+    }
+    if (urlParams.get('filter_category') && document.getElementById('filterCategory')) {
+        document.getElementById('filterCategory').value = urlParams.get('filter_category');
+    }
+    if (urlParams.get('filter_date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('filter_date_from');
+    }
+    if (urlParams.get('filter_date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('filter_date_to');
     }
 });
 
@@ -680,15 +496,6 @@ function filterByCategory(category) {
     }
 }
 
-function applyServiceFilters() {
-    const filters = {
-        category: document.querySelector('input[name="filter_category"]:checked')?.value || ''
-    };
-    const params = new URLSearchParams();
-    if (filters.category) params.append('category', filters.category);
-    const url = '/superadmin/services' + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = url;
-}
 
 function clearAllFilters() {
     document.querySelectorAll('.filter-sidebar input[type="radio"]').forEach(radio => {

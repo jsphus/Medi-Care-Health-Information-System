@@ -189,12 +189,12 @@ try {
     $total_items = $count_stmt->fetchColumn();
     $total_pages = ceil($total_items / $items_per_page);
     
-    // Handle sorting - default to showing newest appointments first by creation date
+    // Handle sorting - default to showing most recently added appointments first by creation date
     $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'created_at';
     $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
     
     // Validate sort column to prevent SQL injection
-    $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id', 'created_at'];
+    $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id', 'created_at', 'updated_at'];
     if (!in_array($sort_column, $allowed_columns)) {
         $sort_column = 'created_at';
     }
@@ -204,6 +204,8 @@ try {
         $order_by = "a.appointment_date $sort_order, a.appointment_time $sort_order";
     } elseif ($sort_column === 'created_at') {
         $order_by = "COALESCE(a.created_at, '1970-01-01'::timestamp) $sort_order";
+    } elseif ($sort_column === 'updated_at') {
+        $order_by = "COALESCE(a.updated_at, '1970-01-01'::timestamp) $sort_order";
     } else {
         $order_by = "a.$sort_column $sort_order";
     }
@@ -211,8 +213,8 @@ try {
     // Fetch paginated results
     $stmt = $db->prepare("
         SELECT a.*, 
-               p.pat_first_name, p.pat_last_name,
-               d.doc_first_name, d.doc_last_name,
+               p.pat_first_name, p.pat_middle_initial, p.pat_last_name,
+               d.doc_first_name, d.doc_middle_initial, d.doc_last_name,
                s.service_name,
                st.status_name, st.status_color,
                up.profile_picture_url as patient_profile_picture,
@@ -244,8 +246,8 @@ try {
 
 // Fetch patients, doctors, services, and statuses for dropdowns
 try {
-    $patients = $db->query("SELECT pat_id, pat_first_name, pat_last_name FROM patients ORDER BY pat_first_name")->fetchAll(PDO::FETCH_ASSOC);
-    $doctors = $db->query("SELECT doc_id, doc_first_name, doc_last_name FROM doctors ORDER BY doc_first_name")->fetchAll(PDO::FETCH_ASSOC);
+    $patients = $db->query("SELECT pat_id, pat_first_name, pat_middle_initial, pat_last_name FROM patients ORDER BY pat_first_name")->fetchAll(PDO::FETCH_ASSOC);
+    $doctors = $db->query("SELECT doc_id, doc_first_name, doc_middle_initial, doc_last_name FROM doctors ORDER BY doc_first_name")->fetchAll(PDO::FETCH_ASSOC);
     $services = $db->query("SELECT service_id, service_name FROM services ORDER BY service_name")->fetchAll(PDO::FETCH_ASSOC);
     $statuses = $db->query("SELECT status_id, status_name, status_color FROM appointment_statuses ORDER BY status_id")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -261,11 +263,11 @@ $filter_patients = [];
 $filter_statuses = [];
 try {
     // Get unique doctors from appointments
-    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM appointments a JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
+    $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_middle_initial, d.doc_last_name FROM appointments a JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
     $filter_doctors = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get unique patients from appointments
-    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM appointments a JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
+    $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_middle_initial, p.pat_last_name FROM appointments a JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
     $filter_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Get all appointment statuses

@@ -283,17 +283,6 @@
             </div>
         </div>
     </div>
-                        <?php 
-                        $current_year = (int)date('Y');
-                        for ($year = $current_year; $year >= 2020; $year--): 
-                        ?>
-                            <option value="<?= $year ?>"><?= $year ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <?php if (empty($patients)): ?>
         <div style="padding: 3rem; text-align: center; color: var(--text-secondary);">
@@ -397,7 +386,7 @@
                                             <?= strtoupper(substr($patient['pat_first_name'] ?? 'P', 0, 1)) ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars($patient['pat_first_name'] . ' ' . $patient['pat_last_name']) ?></strong>
+                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars(formatFullName($patient['pat_first_name'] ?? '', $patient['pat_middle_initial'] ?? null, $patient['pat_last_name'] ?? '')) ?></strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($patient['pat_email']) ?></td>

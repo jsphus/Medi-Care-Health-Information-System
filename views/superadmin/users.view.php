@@ -137,7 +137,18 @@
                     </div>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            <?= htmlspecialchars($user['full_name']) ?>
+                            <?php
+                            // Use formatFullName if individual fields are available, otherwise use full_name
+                            if (!empty($user['pat_first_name'])) {
+                                echo htmlspecialchars(formatFullName($user['pat_first_name'] ?? '', $user['pat_middle_initial'] ?? null, $user['pat_last_name'] ?? ''));
+                            } elseif (!empty($user['staff_first_name'])) {
+                                echo htmlspecialchars(formatFullName($user['staff_first_name'] ?? '', $user['staff_middle_initial'] ?? null, $user['staff_last_name'] ?? ''));
+                            } elseif (!empty($user['doc_first_name'])) {
+                                echo htmlspecialchars(formatFullName($user['doc_first_name'] ?? '', $user['doc_middle_initial'] ?? null, $user['doc_last_name'] ?? ''));
+                            } else {
+                                echo htmlspecialchars($user['full_name'] ?? 'N/A');
+                            }
+                            ?>
                         </div>
                         <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             <?= htmlspecialchars($user['user_email']) ?>
@@ -149,7 +160,7 @@
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: #6366f1; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
                                 <i class="fas fa-calendar-plus"></i>
-                                <span><?= !empty($user['created_at']) ? date('M d, Y', strtotime($user['created_at'])) : 'Recently' ?></span>
+                                <span><?= !empty($user['created_at']) ? date('d M Y', strtotime($user['created_at'])) : 'Recently' ?></span>
                             </div>
                         </div>
                     </div>
@@ -347,7 +358,20 @@
                                             <?= $firstLetter ?>
                                         <?php endif; ?>
                                     </div>
-                                    <strong style="color: var(--text-primary);"><?= htmlspecialchars($user['full_name'] ?? 'N/A') ?></strong>
+                                    <strong style="color: var(--text-primary);">
+                                        <?php
+                                        // Use formatFullName if individual fields are available, otherwise use full_name
+                                        if (!empty($user['pat_first_name'])) {
+                                            echo htmlspecialchars(formatFullName($user['pat_first_name'] ?? '', $user['pat_middle_initial'] ?? null, $user['pat_last_name'] ?? ''));
+                                        } elseif (!empty($user['staff_first_name'])) {
+                                            echo htmlspecialchars(formatFullName($user['staff_first_name'] ?? '', $user['staff_middle_initial'] ?? null, $user['staff_last_name'] ?? ''));
+                                        } elseif (!empty($user['doc_first_name'])) {
+                                            echo htmlspecialchars(formatFullName($user['doc_first_name'] ?? '', $user['doc_middle_initial'] ?? null, $user['doc_last_name'] ?? ''));
+                                        } else {
+                                            echo htmlspecialchars($user['full_name'] ?? 'N/A');
+                                        }
+                                        ?>
+                                    </strong>
                                 </div>
                             </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($user['user_email']) ?></td>

@@ -29,6 +29,8 @@ class Database {
             $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             // For PostgreSQL, ensure we get all column data
             $this->conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            // Set timezone to match application timezone (Asia/Manila)
+            $this->conn->exec("SET timezone = 'Asia/Manila'");
         } catch (PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
         }
