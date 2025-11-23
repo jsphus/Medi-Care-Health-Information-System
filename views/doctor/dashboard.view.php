@@ -88,67 +88,67 @@
                 </div>
             </div>
         </div>
-    <?php else: ?>
-        <!-- Pending Tasks Card (if no next appointment) -->
-        <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="document.getElementById('pending-tasks-section').scrollIntoView({behavior: 'smooth'})">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-tasks" style="color: #f59e0b;"></i>
-                        <span>Pending Tasks</span>
-                    </div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                        <?= number_format(($stats['pending_records'] ?? 0) + ($stats['follow_up_count'] ?? 0)) ?>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                        <?= $stats['pending_records'] ?? 0 ?> records, <?= $stats['follow_up_count'] ?? 0 ?> follow-ups
-                    </div>
-                </div>
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-tasks" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                </div>
-            </div>
-        </div>
     <?php endif; ?>
 
-    <!-- Pending Tasks Card -->
-    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="document.getElementById('pending-tasks-section').scrollIntoView({behavior: 'smooth'})">
+    <!-- Upcoming Appointments (3 Days) Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/doctor/appointments/future'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="flex: 1;">
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-clipboard-list" style="color: #f59e0b;"></i>
-                    <span>Pending Tasks</span>
+                    <i class="fas fa-calendar-alt" style="color: #10b981;"></i>
+                    <span>Upcoming (3 Days)</span>
                 </div>
                 <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?= number_format(($stats['pending_records'] ?? 0) + ($stats['follow_up_count'] ?? 0)) ?>
+                    <?= number_format($stats['upcoming_3_days'] ?? 0) ?>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    Records & follow-ups
+                    Next 3 days
                 </div>
             </div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="fas fa-clipboard-list" style="font-size: 1.5rem; color: #f59e0b;"></i>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-calendar-alt" style="font-size: 1.5rem; color: #10b981;"></i>
             </div>
         </div>
     </div>
 
-    <!-- This Week Overview Card -->
-    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <!-- This Month's Appointments Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/doctor/appointments'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="flex: 1;">
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-calendar-week" style="color: #8b5cf6;"></i>
-                    <span>This Week</span>
+                    <i class="fas fa-calendar" style="color: #8b5cf6;"></i>
+                    <span>This Month</span>
                 </div>
                 <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?= number_format($stats['this_week_appointments'] ?? 0) ?>
+                    <?= number_format($stats['this_month_appointments'] ?? 0) ?>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    <?= $stats['this_week_completed'] ?? 0 ?> completed
+                    <?= date('F Y') ?> appointments
                 </div>
             </div>
             <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="fas fa-calendar-week" style="font-size: 1.5rem; color: #8b5cf6;"></i>
+                <i class="fas fa-calendar" style="font-size: 1.5rem; color: #8b5cf6;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Future Appointments Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/doctor/appointments/future'">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-calendar-check" style="color: #3b82f6;"></i>
+                    <span>Future Appointments</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['future_appointments'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    All upcoming
+                </div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-calendar-check" style="font-size: 1.5rem; color: #3b82f6;"></i>
             </div>
         </div>
     </div>
@@ -314,45 +314,54 @@
             <?php endif; ?>
         </div>
 
-        <!-- Pending Tasks Section -->
-        <div id="pending-tasks-section" class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 1.5rem 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
-                <i class="fas fa-clipboard-list" style="margin-right: 0.5rem; color: #f59e0b;"></i>
-                Pending Tasks
-            </h3>
-            
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <?php if (($stats['pending_records'] ?? 0) > 0): ?>
-                    <a href="/doctor/medical-records" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #fef3c7; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.875rem;">Medical Records</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);"><?= $stats['pending_records'] ?> appointments need records</div>
-                        </div>
-                        <span class="badge" style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;">
-                            <?= $stats['pending_records'] ?>
-                        </span>
-                    </a>
-                <?php endif; ?>
-                
-                <?php if (($stats['follow_up_count'] ?? 0) > 0): ?>
-                    <a href="/doctor/appointments/future" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #fef3c7; border-radius: 8px; text-decoration: none; color: var(--text-primary);">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.875rem;">Follow-up Appointments</div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Scheduled follow-ups</div>
-                        </div>
-                        <span class="badge" style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;">
-                            <?= $stats['follow_up_count'] ?>
-                        </span>
-                    </a>
-                <?php endif; ?>
-                
-                <?php if (($stats['pending_records'] ?? 0) == 0 && ($stats['follow_up_count'] ?? 0) == 0): ?>
-                    <div style="text-align: center; padding: 1rem; color: var(--text-secondary);">
-                        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--status-success); opacity: 0.5;"></i>
-                        <p style="margin: 0; font-size: 0.875rem;">All caught up!</p>
-                    </div>
-                <?php endif; ?>
+        <!-- Tomorrow's Appointments Section -->
+        <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                    <i class="fas fa-calendar-day" style="margin-right: 0.5rem; color: var(--primary-blue);"></i>
+                    Tomorrow's Appointments
+                </h3>
+                <a href="/doctor/appointments/future" style="color: var(--primary-blue); text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+                    View All <i class="fas fa-arrow-right" style="margin-left: 0.25rem;"></i>
+                </a>
             </div>
+            
+            <?php if (empty($tomorrow_appointments ?? [])): ?>
+                <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                    <p style="margin: 0; font-size: 0.875rem;">No appointments scheduled for tomorrow</p>
+                </div>
+            <?php else: ?>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <?php foreach (array_slice($tomorrow_appointments ?? [], 0, 5) as $apt): 
+                        $patName = htmlspecialchars(($apt['pat_first_name'] ?? '') . ' ' . ($apt['pat_last_name'] ?? ''));
+                        $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';
+                        $statusName = strtolower($apt['status_name'] ?? 'scheduled');
+                        $isCanceled = $statusName === 'canceled' || $statusName === 'cancelled';
+                    ?>
+                        <a href="/doctor/appointments/future" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f9fafb; border-radius: 8px; text-decoration: none; color: var(--text-primary); transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='#f9fafb'">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem;"><?= $patName ?></div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                                    <span><i class="fas fa-clock" style="margin-right: 0.25rem;"></i><?= $appointmentTime ?></span>
+                                    <?php if (!empty($apt['service_name'])): ?>
+                                        <span>•</span>
+                                        <span><?= htmlspecialchars($apt['service_name']) ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <span class="badge" style="background: <?= $apt['status_color'] ?? '#3B82F6' ?>; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem;">
+                                <?= htmlspecialchars($apt['status_name'] ?? 'N/A') ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if (count($tomorrow_appointments ?? []) > 5): ?>
+                        <a href="/doctor/appointments/future" style="text-align: center; padding: 0.75rem; color: var(--primary-blue); text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+                            View <?= count($tomorrow_appointments ?? []) - 5 ?> more <i class="fas fa-arrow-right" style="margin-left: 0.25rem;"></i>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

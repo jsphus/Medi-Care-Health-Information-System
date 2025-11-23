@@ -503,7 +503,6 @@ function viewRecord(record) {
                 <div>
                     <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Service:</strong> <span style="color: var(--text-secondary);">${record.service_name || 'N/A'}</span></p>
                     ${record.service_price ? `<p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Service Price:</strong> <span style="color: var(--text-secondary);">₱${parseFloat(record.service_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>` : ''}
-                    <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Duration:</strong> <span style="color: var(--text-secondary);">${record.appointment_duration || 30} minutes</span></p>
                 </div>
                 <div>
                     <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Status:</strong> 

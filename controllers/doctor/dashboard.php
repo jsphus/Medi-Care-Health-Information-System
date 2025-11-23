@@ -15,6 +15,7 @@ $profile_picture_url = $data['profile_picture_url'];
 $stats = $data['stats'];
 $recent_appointments = $data['recent_appointments'];
 $today_appointments = $data['today_appointments'];
+$tomorrow_appointments = $data['tomorrow_appointments'] ?? [];
 $today_schedule = $data['today_schedule'];
 $recent_patients = $data['recent_patients'];
 $recent_records = $data['recent_records'];

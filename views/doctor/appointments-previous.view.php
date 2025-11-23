@@ -47,7 +47,7 @@
     </div>
 </div>
 
-<?php if (isset($error)): ?>
+<?php if (isset($error) && $error): ?>
     <div class="alert alert-error">
         <i class="fas fa-exclamation-triangle"></i>
         <span><?= htmlspecialchars($error) ?></span>
@@ -218,9 +218,7 @@
                     <th>Time</th>
                     <th>Service</th>
                     <th>Contact</th>
-                    <th>Duration</th>
                     <th>Status</th>
-                    <th>Payment</th>
                     <th style="width: 50px;">
                         <i class="fas fa-sticky-note notes-header-icon" title="Notes - Hover over rows to view"></i>
                     </th>
@@ -238,8 +236,6 @@
                     $appointmentDate = isset($apt['appointment_date']) ? date('M d, Y', strtotime($apt['appointment_date'])) : 'N/A';
                     $appointmentTime = isset($apt['appointment_time']) ? date('g:i A', strtotime($apt['appointment_time'])) : 'N/A';
                     $notes = !empty($apt['appointment_notes']) ? htmlspecialchars($apt['appointment_notes']) : 'No notes available';
-                    $paymentStatus = $apt['payment_status_name'] ?? 'N/A';
-                    $paymentStatusColor = $apt['payment_status_color'] ?? '#6b7280';
                     $bookingReference = htmlspecialchars($apt['appointment_id'] ?? 'N/A');
                     ?>
                     <tr class="patient-row table-row" 
@@ -276,20 +272,10 @@
                                 <span style="color: var(--text-secondary);">N/A</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars($apt['appointment_duration'] ?? 30) ?> min</td>
                         <td>
                             <span class="badge <?= $statusClass ?>" style="background: <?= $apt['status_color'] ?? '#3B82F6' ?>; color: white;">
                                 <?= htmlspecialchars($apt['status_name'] ?? 'N/A') ?>
                             </span>
-                        </td>
-                        <td>
-                            <?php if ($paymentStatus !== 'N/A'): ?>
-                                <span class="badge" style="background: <?= $paymentStatusColor ?>; color: white; font-size: 0.75rem;">
-                                    <?= htmlspecialchars($paymentStatus) ?>
-                                </span>
-                            <?php else: ?>
-                                <span style="color: var(--text-secondary); font-size: 0.875rem;">No payment</span>
-                            <?php endif; ?>
                         </td>
                         <td class="notes-cell" data-notes="<?= htmlspecialchars($notes) ?>">
                             <?php if (!empty($apt['appointment_notes'])): ?>

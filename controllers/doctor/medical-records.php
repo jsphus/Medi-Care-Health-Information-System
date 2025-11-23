@@ -150,7 +150,7 @@ try {
     $stmt = $db->prepare("
         SELECT mr.*, 
                a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
-               a.appointment_notes, a.appointment_duration, a.created_at as appointment_created_at,
+               a.appointment_notes, a.created_at as appointment_created_at,
                p.pat_first_name, p.pat_last_name, p.pat_middle_initial,
                s.status_name, s.status_color,
                sv.service_name, sv.service_price,

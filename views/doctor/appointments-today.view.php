@@ -205,7 +205,6 @@ require_once __DIR__ . '/../../config/Database.php';
                     </th>
                     <th>Service</th>
                     <th>Contact</th>
-                    <th>Duration</th>
                     <th>Status</th>
                     <th style="width: 50px;">
                         <i class="fas fa-sticky-note notes-header-icon" title="Notes - Hover over rows to view"></i>
@@ -293,7 +292,6 @@ require_once __DIR__ . '/../../config/Database.php';
                                 <span style="color: var(--text-secondary);">N/A</span>
                             <?php endif; ?>
                         </td>
-                        <td><?= htmlspecialchars($apt['appointment_duration'] ?? 30) ?> min</td>
                         <td>
                             <span class="badge <?= $statusClass ?>" style="background: <?= $apt['status_color'] ?? '#3B82F6' ?>; color: white;">
                                 <?= htmlspecialchars($apt['status_name'] ?? 'N/A') ?>
@@ -446,7 +444,6 @@ function viewAppointmentDetails(appointmentId) {
                                 <div><strong>ID:</strong> ${apt.appointment_id || 'N/A'}</div>
                                 <div><strong>Date:</strong> ${appointmentDate}</div>
                                 <div><strong>Time:</strong> ${appointmentTime}</div>
-                                <div><strong>Duration:</strong> ${apt.appointment_duration || 30} minutes</div>
                                 <div><strong>Service:</strong> ${apt.service_name || 'N/A'}</div>
                                 <div><strong>Status:</strong> 
                                     <span class="badge" style="background: ${apt.status_color || '#3B82F6'}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">

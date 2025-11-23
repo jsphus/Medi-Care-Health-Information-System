@@ -23,12 +23,13 @@ $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $items_per_page = 25;
 $offset = ($page - 1) * $items_per_page;
 
-// Handle sorting
+// Handle sorting - default to nearest first (date ASC, time ASC)
 $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'appointment_date';
-$sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+$sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC' ? 'DESC' : 'ASC');
 $allowed_columns = ['appointment_date', 'appointment_time', 'appointment_id'];
 if (!in_array($sort_column, $allowed_columns)) {
     $sort_column = 'appointment_date';
+    $sort_order = 'ASC';
 }
 $sort_order = $sort_order === 'ASC' ? 'ASC' : 'DESC';
 
@@ -66,6 +67,13 @@ try {
 
     $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
 
+    // Build ORDER BY clause - always include time when sorting by date
+    if ($sort_column === 'appointment_date') {
+        $order_by = "a.appointment_date $sort_order, a.appointment_time ASC";
+    } else {
+        $order_by = "a.$sort_column $sort_order";
+    }
+
     // Get total count for pagination
     $count_stmt = $db->prepare("
         SELECT COUNT(*) 
@@ -92,7 +100,7 @@ try {
         LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN users up ON up.pat_id = p.pat_id
         $where_clause
-        ORDER BY a.$sort_column $sort_order
+        ORDER BY $order_by
         LIMIT :limit OFFSET :offset
     ");
     foreach ($params as $key => $value) {

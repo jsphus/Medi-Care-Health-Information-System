@@ -71,7 +71,10 @@ class DoctorService {
             'today_revenue' => 0,
             'admitted_patients' => 0,
             'this_week_appointments' => 0,
-            'this_week_completed' => 0
+            'this_week_completed' => 0,
+            'upcoming_3_days' => 0,
+            'this_month_appointments' => 0,
+            'future_appointments' => 0
         ];
 
         try {
@@ -228,6 +231,41 @@ class DoctorService {
             ");
             $stmt->execute(['doc_id' => $docId, 'week_start' => $weekStart, 'week_end' => $weekEnd]);
             $stats['this_week_completed'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // Upcoming appointments within 3 days (excluding today)
+            $threeDaysFromNow = date('Y-m-d', strtotime('+3 days'));
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments
+                WHERE doc_id = :doc_id
+                AND appointment_date > CURRENT_DATE
+                AND appointment_date <= :three_days_from_now
+            ");
+            $stmt->execute(['doc_id' => $docId, 'three_days_from_now' => $threeDaysFromNow]);
+            $stats['upcoming_3_days'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // This month's appointments
+            $monthStart = date('Y-m-01');
+            $monthEnd = date('Y-m-t');
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments
+                WHERE doc_id = :doc_id
+                AND appointment_date >= :month_start
+                AND appointment_date <= :month_end
+            ");
+            $stmt->execute(['doc_id' => $docId, 'month_start' => $monthStart, 'month_end' => $monthEnd]);
+            $stats['this_month_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+            
+            // All future appointments (all appointments after today)
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as count
+                FROM appointments
+                WHERE doc_id = :doc_id
+                AND appointment_date > CURRENT_DATE
+            ");
+            $stmt->execute(['doc_id' => $docId]);
+            $stats['future_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
         } catch (PDOException $e) {
             // ignore
         }
@@ -273,6 +311,27 @@ class DoctorService {
             $data['today_appointments'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $data['today_appointments'] = [];
+        }
+
+        try {
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
+            $stmt = $this->db->prepare("
+                SELECT a.*, 
+                       p.pat_first_name, p.pat_last_name, p.pat_date_of_birth, p.pat_email, p.pat_phone,
+                       s.status_name, s.status_color,
+                       sv.service_name
+                FROM appointments a
+                JOIN patients p ON a.pat_id = p.pat_id
+                JOIN appointment_statuses s ON a.status_id = s.status_id
+                LEFT JOIN services sv ON a.service_id = sv.service_id
+                WHERE a.doc_id = :doc_id AND a.appointment_date = :tomorrow
+                ORDER BY a.appointment_time ASC
+                LIMIT 10
+            ");
+            $stmt->execute(['doc_id' => $docId, 'tomorrow' => $tomorrow]);
+            $data['tomorrow_appointments'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            $data['tomorrow_appointments'] = [];
         }
 
         try {
@@ -649,27 +708,12 @@ class DoctorService {
                        p.pat_first_name, p.pat_last_name, p.pat_phone,
                        s.service_name,
                        st.status_name, st.status_color,
-                       up.profile_picture_url as patient_profile_picture,
-                       pay.payment_status_id,
-                       ps.status_name as payment_status_name,
-                       ps.status_color as payment_status_color,
-                       pay.payment_reference,
-                       pay.payment_amount
+                       up.profile_picture_url as patient_profile_picture
                 FROM appointments a
                 LEFT JOIN patients p ON a.pat_id = p.pat_id
                 LEFT JOIN services s ON a.service_id = s.service_id
                 LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
                 LEFT JOIN users up ON up.pat_id = p.pat_id
-                LEFT JOIN (
-                    SELECT p1.appointment_id, p1.payment_status_id, p1.payment_reference, p1.payment_amount
-                    FROM payments p1
-                    INNER JOIN (
-                        SELECT appointment_id, MAX(payment_date) as max_date
-                        FROM payments
-                        GROUP BY appointment_id
-                    ) p2 ON p1.appointment_id = p2.appointment_id AND p1.payment_date = p2.max_date
-                ) pay ON pay.appointment_id = a.appointment_id
-                LEFT JOIN payment_statuses ps ON pay.payment_status_id = ps.payment_status_id
                 WHERE a.doc_id = :doctor_id
                 ORDER BY $orderBy
             ");
