@@ -36,7 +36,6 @@ CREATE TABLE staff (
     staff_phone VARCHAR(20),
     staff_position VARCHAR(100),
     staff_salary DECIMAL(10,2),
-    staff_status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

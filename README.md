@@ -88,7 +88,7 @@ Medi-Care is a full-featured Health Information System (HIS) designed to manage 
 #### Staff
 - `staff_id` (Primary Key)
 - Personal: `staff_first_name`, `staff_middle_initial`, `staff_last_name`, `staff_email`, `staff_phone`
-- Employment: `staff_position`, `staff_hire_date`, `staff_salary`, `staff_status`
+- Employment: `staff_position`, `staff_hire_date`, `staff_salary`
 
 #### Appointments
 - `appointment_id` (Primary Key, VARCHAR)

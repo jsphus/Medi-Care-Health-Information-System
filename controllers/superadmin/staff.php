@@ -29,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $position = sanitize($_POST['position']);
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
-        $status = sanitize($_POST['status'] ?? 'active');
         $password = $_POST['password'] ?? '';
         $create_user = isset($_POST['create_user']) && $_POST['create_user'] === '1';
         
@@ -54,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Insert staff
                     $stmt = $db->prepare("
                         INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
-                                          staff_salary, staff_status, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, :status, NOW())
+                                          staff_salary, created_at) 
+                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, NOW())
                     ");
                     $stmt->execute([
                         'first_name' => $first_name,
@@ -64,8 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'email' => $email,
                         'phone' => $phone,
                         'position' => $position,
-                        'salary' => $salary,
-                        'status' => $status
+                        'salary' => $salary
                     ]);
                     
                     $staff_id = $db->lastInsertId();
@@ -105,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $position = sanitize($_POST['position']);
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
-        $status = sanitize($_POST['status'] ?? 'active');
         
         // Get user_id for profile picture update
         $stmt = $db->prepare("SELECT user_id FROM users WHERE staff_id = :staff_id");
@@ -186,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     UPDATE staff 
                     SET staff_first_name = :first_name, staff_middle_initial = :middle_initial, staff_last_name = :last_name, staff_email = :email, 
                         staff_phone = :phone, staff_position = :position,
-                        staff_salary = :salary, staff_status = :status, updated_at = NOW()
+                        staff_salary = :salary, updated_at = NOW()
                     WHERE staff_id = :id
                 ");
                 $stmt->execute([
@@ -197,7 +194,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'phone' => $phone,
                     'position' => $position,
                     'salary' => $salary,
-                    'status' => $status,
                     'id' => $id
                 ]);
                 $success = 'Staff member updated successfully';
@@ -367,15 +363,13 @@ try {
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $stats['total_this_month'] = $result ? (int)$result['count'] : 0;
     
-    // Active staff
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'active'");
+    // Active staff (all staff are considered active)
+    $stmt = $db->query("SELECT COUNT(*) as count FROM staff");
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $stats['active'] = $result ? (int)$result['count'] : 0;
     
-    // Inactive staff
-    $stmt = $db->query("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'inactive'");
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    $stats['inactive'] = $result ? (int)$result['count'] : 0;
+    // Inactive staff (set to 0 since we removed status)
+    $stats['inactive'] = 0;
     
     // Pending (staff without user accounts - can be used as "pending" if needed)
     $stmt = $db->query("SELECT COUNT(*) as count FROM staff s LEFT JOIN users u ON s.staff_id = u.staff_id WHERE u.user_id IS NULL");
@@ -397,7 +391,6 @@ try {
             s.staff_email,
             s.staff_phone,
             s.staff_position,
-            s.staff_status,
             s.staff_salary,
             s.created_at,
             u.profile_picture_url

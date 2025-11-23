@@ -144,12 +144,6 @@
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <?php if (!empty($recent_staff['staff_status'])): ?>
-                                <div style="display: flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.5rem; background: <?= $recent_staff['staff_status'] === 'active' ? '#10b981' : '#ef4444' ?>; color: white; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                                    <i class="fas fa-<?= $recent_staff['staff_status'] === 'active' ? 'check-circle' : 'times-circle' ?>"></i>
-                                    <span><?= htmlspecialchars(ucfirst($recent_staff['staff_status'])) ?></span>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -467,13 +461,6 @@
                     <label>Salary:</label>
                     <input type="number" name="salary" step="0.01" min="0" class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select name="status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
             </div>
             
             <div class="form-group" style="margin-top: 1rem;">
@@ -567,13 +554,6 @@
                     <label>Salary:</label>
                     <input type="number" name="salary" id="edit_salary" step="0.01" min="0" class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select name="status" id="edit_status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -660,7 +640,6 @@ function editStaff(staff) {
     document.getElementById('edit_phone').value = staff.staff_phone ? formatPhoneNumber(staff.staff_phone) : '';
     document.getElementById('edit_position').value = staff.staff_position || '';
     document.getElementById('edit_salary').value = staff.staff_salary || '';
-    document.getElementById('edit_status').value = staff.staff_status || 'active';
     
     // Update profile picture preview
     updateProfilePicturePreview('edit', staff.profile_picture_url || '', staff.staff_first_name || 'S');
@@ -707,11 +686,6 @@ function viewStaffDetails(staff) {
                     <div>
                         <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 1.5rem;">${fullName || 'N/A'}</h3>
                         <p style="margin: 0; color: var(--text-secondary);">${staff.staff_position || 'N/A'}</p>
-                        <div style="margin-top: 0.5rem;">
-                            <span class="status-badge ${(staff.staff_status || 'active') === 'active' ? 'active' : 'inactive'}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem;">
-                                ${staff.staff_status || 'active'}
-                            </span>
-                        </div>
                     </div>
                 </div>
                 <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Staff Information</h3>
@@ -725,11 +699,6 @@ function viewStaffDetails(staff) {
                     <div>
                         <p style="margin: 0.5rem 0;"><strong>Phone:</strong> ${staff.staff_phone || 'N/A'}</p>
                         <p style="margin: 0.5rem 0;"><strong>Position:</strong> ${staff.staff_position || 'N/A'}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Status:</strong> 
-                            <span class="status-badge ${(staff.staff_status || 'active') === 'active' ? 'active' : 'inactive'}">
-                                ${staff.staff_status || 'active'}
-                            </span>
-                        </p>
                     </div>
                 </div>
                 ${staff.staff_address ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Address:</strong> ${staff.staff_address}</p></div>` : ''}

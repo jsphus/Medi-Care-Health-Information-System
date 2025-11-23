@@ -388,13 +388,6 @@
                     <label>Salary:</label>
                     <input type="number" name="salary" id="edit_salary" step="0.01" min="0" class="form-control">
                 </div>
-                <div class="form-group">
-                    <label>Status:</label>
-                    <select name="status" id="edit_status" class="form-control">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
                 <button type="submit" class="btn btn-success">
@@ -462,7 +455,6 @@ function editStaff(staff) {
     document.getElementById('edit_phone').value = staff.staff_phone ? formatPhoneNumber(staff.staff_phone) : '';
     document.getElementById('edit_position').value = staff.staff_position || '';
     document.getElementById('edit_salary').value = staff.staff_salary || '';
-    document.getElementById('edit_status').value = staff.staff_status || 'active';
     document.getElementById('editModal').classList.add('active');
 }
 

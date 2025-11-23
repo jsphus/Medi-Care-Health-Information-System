@@ -32,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $position = sanitize($_POST['position'] ?? '');
         $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : null;
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
-        $status = sanitize($_POST['status'] ?? 'active');
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
@@ -49,8 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'staff_phone' => $phone,
                     'staff_position' => $position,
                     'staff_hire_date' => $hire_date,
-                    'staff_salary' => $salary,
-                    'staff_status' => $status
+                    'staff_salary' => $salary
                 ];
                 $result = $staff->create($createData);
                 if ($result['success']) {
@@ -77,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $position = sanitize($_POST['position'] ?? '');
         $hire_date = !empty($_POST['hire_date']) ? $_POST['hire_date'] : null;
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
-        $status = sanitize($_POST['status'] ?? 'active');
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
@@ -95,8 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'staff_phone' => $phone,
                     'staff_position' => $position,
                     'staff_hire_date' => $hire_date,
-                    'staff_salary' => $salary,
-                    'staff_status' => $status
+                    'staff_salary' => $salary
                 ];
                 $result = $staff->update($id, $updateData);
                 if ($result['success']) {
@@ -231,13 +227,12 @@ try {
     $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)");
     $stats['total_this_month'] = $result['count'] ?? 0;
     
-    // Active staff
-    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'active'");
+    // Active staff (all staff are considered active)
+    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff");
     $stats['active'] = $result['count'] ?? 0;
     
-    // Inactive staff
-    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff WHERE staff_status = 'inactive'");
-    $stats['inactive'] = $result['count'] ?? 0;
+    // Inactive staff (set to 0 since we removed status)
+    $stats['inactive'] = 0;
 } catch (PDOException $e) {
     // Keep default values
 }

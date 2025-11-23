@@ -633,13 +633,6 @@
                         <label>Salary:</label>
                         <input type="number" name="salary" id="edit_staff_salary" step="0.01" min="0" class="form-control">
                     </div>
-                    <div class="form-group">
-                        <label>Status:</label>
-                        <select name="status" id="edit_staff_status" class="form-control">
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
                 </div>
             </div>
             
@@ -972,12 +965,6 @@ function viewUserProfile(user) {
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Salary:</strong>
                         <span style="color: var(--text-primary);">${formatCurrency(user.staff_salary)}</span>
                     </div>
-                    <div>
-                        <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Status:</strong>
-                        <span style="color: var(--text-primary); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: ${user.staff_status === 'active' ? '#2ecc7120' : '#e74c3c20'}; color: ${user.staff_status === 'active' ? '#2ecc71' : '#e74c3c'};">
-                            ${user.staff_status ? user.staff_status.charAt(0).toUpperCase() + user.staff_status.slice(1) : 'N/A'}
-                        </span>
-                    </div>
                 </div>
             </div>
         `;
@@ -1150,7 +1137,6 @@ function editUser(user) {
         document.getElementById('edit_staff_position').value = user.staff_position || '';
         document.getElementById('edit_staff_hire_date').value = user.staff_hire_date || '';
         document.getElementById('edit_staff_salary').value = user.staff_salary || '';
-        document.getElementById('edit_staff_status').value = user.staff_status || 'active';
         document.getElementById('staff_fields').style.display = 'block';
     } else if (user.doc_id) {
         currentRole = 'doctor';

@@ -91,7 +91,6 @@ try {
         'staff_position' => null,
         'staff_hire_date' => null,
         'staff_salary' => null,
-        'staff_status' => null,
         'created_at' => null,
         'updated_at' => null
     ];

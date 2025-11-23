@@ -351,8 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             'staff_last_name' => isset($_POST['staff_last_name']) ? sanitize($_POST['staff_last_name']) : $existingStaff['staff_last_name'],
                                             'staff_phone' => isset($_POST['staff_phone']) ? sanitize($_POST['staff_phone']) : $existingStaff['staff_phone'],
                                             'staff_position' => isset($_POST['position']) ? sanitize($_POST['position']) : $existingStaff['staff_position'],
-                                            'staff_salary' => isset($_POST['salary']) && $_POST['salary'] !== '' ? floatval($_POST['salary']) : $existingStaff['staff_salary'],
-                                            'staff_status' => isset($_POST['status']) ? sanitize($_POST['status']) : $existingStaff['staff_status']
+                                            'staff_salary' => isset($_POST['salary']) && $_POST['salary'] !== '' ? floatval($_POST['salary']) : $existingStaff['staff_salary']
                                         ];
                                         
                                         // Format phone number if it has a value
@@ -589,7 +588,7 @@ try {
                      'Super Admin') as status_name,
             CASE 
                 WHEN u.user_is_superadmin = true THEN 'Super Admin'
-                WHEN u.staff_id IS NOT NULL THEN COALESCE(s.staff_status, 'active')
+                WHEN u.staff_id IS NOT NULL THEN 'Staff'
                 WHEN u.doc_id IS NOT NULL THEN COALESCE(d.doc_status, 'active')
                 WHEN u.pat_id IS NOT NULL THEN 'active'
                 ELSE 'inactive'
@@ -600,7 +599,7 @@ try {
             p.pat_medical_history, p.pat_allergies, p.pat_insurance_provider, p.pat_insurance_number,
             -- Staff fields
             s.staff_first_name, s.staff_middle_initial, s.staff_last_name, s.staff_email, s.staff_phone, s.staff_position,
-            s.staff_salary, s.staff_status,
+            s.staff_salary,
             -- Doctor fields
             d.doc_first_name, d.doc_middle_initial, d.doc_last_name, d.doc_email, d.doc_phone, d.doc_specialization_id,
             d.doc_license_number, d.doc_experience_years, d.doc_consultation_fee, d.doc_qualification,
