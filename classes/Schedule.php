@@ -50,6 +50,17 @@ class Schedule extends Entity {
             $errors[] = 'End time is required.';
         }
 
+        // Validate that schedule date/time is not in the past
+        if (!empty($data['schedule_date']) && !empty($data['start_time'])) {
+            $scheduleDateTime = strtotime($data['schedule_date'] . ' ' . $data['start_time']);
+            $currentDateTime = time();
+            
+            // Check if schedule is in the past (with 5 minute buffer to account for current minute)
+            if ($scheduleDateTime < ($currentDateTime - 300)) {
+                $errors[] = 'Cannot create schedules in the past. Please select a future date and time.';
+            }
+        }
+
         return $errors;
     }
 

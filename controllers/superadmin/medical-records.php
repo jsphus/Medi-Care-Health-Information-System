@@ -22,6 +22,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle update action
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
+    $id = (int)$_POST['id'];
+    $med_rec_diagnosis = sanitize($_POST['med_rec_diagnosis'] ?? '');
+    $med_rec_prescription = sanitize($_POST['med_rec_prescription'] ?? '');
+    $med_rec_visit_date = sanitize($_POST['med_rec_visit_date'] ?? '');
+    
+    if (empty($med_rec_diagnosis) || empty($med_rec_visit_date)) {
+        $error = 'Diagnosis and visit date are required';
+    } else {
+        try {
+            $stmt = $db->prepare("
+                UPDATE medical_records 
+                SET med_rec_diagnosis = :med_rec_diagnosis, 
+                    med_rec_prescription = :med_rec_prescription,
+                    med_rec_visit_date = :med_rec_visit_date,
+                    med_rec_updated_at = NOW()
+                WHERE med_rec_id = :id
+            ");
+            $stmt->execute([
+                'med_rec_diagnosis' => $med_rec_diagnosis,
+                'med_rec_prescription' => $med_rec_prescription,
+                'med_rec_visit_date' => $med_rec_visit_date,
+                'id' => $id
+            ]);
+            if ($stmt->rowCount() > 0) {
+                $success = 'Medical record updated successfully';
+            } else {
+                $error = 'Medical record not found';
+            }
+        } catch (PDOException $e) {
+            $error = 'Database error: ' . $e->getMessage();
+        }
+    }
+}
+
 // Handle search and filters
 $search_query = '';
 if (isset($_GET['search'])) {

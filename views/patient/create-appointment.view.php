@@ -1305,6 +1305,28 @@ function clearScheduleSelection() {
     if (validationMsg) validationMsg.style.display = 'none';
 }
 
+// Function to validate if appointment date/time is in the past
+function validatePastDateTime(appointmentDate, appointmentTime) {
+    if (!appointmentDate || !appointmentTime) {
+        return { valid: false, message: 'Please select both date and time.' };
+    }
+    
+    const appointmentDateTime = new Date(appointmentDate + ' ' + appointmentTime);
+    const currentDateTime = new Date();
+    
+    // Add 5 minute buffer to account for current minute
+    currentDateTime.setMinutes(currentDateTime.getMinutes() - 5);
+    
+    if (appointmentDateTime < currentDateTime) {
+        return { 
+            valid: false, 
+            message: 'Cannot book appointments in the past. Please select a future date and time.' 
+        };
+    }
+    
+    return { valid: true };
+}
+
 // Form validation
 document.getElementById('appointmentForm')?.addEventListener('submit', function(e) {
     // Check if this is reschedule form
@@ -1330,6 +1352,8 @@ document.getElementById('appointmentForm')?.addEventListener('submit', function(
                                    (document.getElementById('customTimeInput')?.style.display !== 'none' || 
                                     document.getElementById('customTimeInputReschedule')?.style.display !== 'none');
     
+    let finalDate, finalTime;
+    
     if (customTimeActiveCheck) {
         if (!customDateInput || !customDateInput.value || !customTimeInput || !customTimeInput.value) {
             e.preventDefault();
@@ -1347,17 +1371,20 @@ document.getElementById('appointmentForm')?.addEventListener('submit', function(
             alert('The selected time is not within the doctor\'s available schedule. Please select a valid time slot.');
             return false;
         }
+        
+        finalDate = customDateInput.value;
+        finalTime = customTimeInput.value;
     } else {
-    if (!timeInput || !timeInput.value) {
-        e.preventDefault();
+        if (!timeInput || !timeInput.value) {
+            e.preventDefault();
             alert('Please select an available time slot for your appointment.');
-        return false;
-    }
-    
-    if (!dateInput || !dateInput.value) {
-        e.preventDefault();
+            return false;
+        }
+        
+        if (!dateInput || !dateInput.value) {
+            e.preventDefault();
             alert('Please select an available date for your appointment.');
-        return false;
+            return false;
         }
         
         if (!selectedSchedule) {
@@ -1365,6 +1392,17 @@ document.getElementById('appointmentForm')?.addEventListener('submit', function(
             alert('Please select an available time slot by clicking on one of the preset time buttons or use the custom time option.');
             return false;
         }
+        
+        finalDate = dateInput.value;
+        finalTime = timeInput.value;
+    }
+    
+    // Validate that appointment is not in the past
+    const pastValidation = validatePastDateTime(finalDate, finalTime);
+    if (!pastValidation.valid) {
+        e.preventDefault();
+        alert(pastValidation.message);
+        return false;
     }
 });
 </script>

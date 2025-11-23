@@ -55,6 +55,17 @@ class Appointment extends Entity {
             $errors[] = 'Appointment time is required.';
         }
 
+        // Validate that appointment date/time is not in the past
+        if (!empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+            $appointmentDateTime = strtotime($data['appointment_date'] . ' ' . $data['appointment_time']);
+            $currentDateTime = time();
+            
+            // Check if appointment is in the past (with 5 minute buffer to account for current minute)
+            if ($appointmentDateTime < ($currentDateTime - 300)) {
+                $errors[] = 'Cannot book appointments in the past. Please select a future date and time.';
+            }
+        }
+
         // Validate that appointment date/time matches doctor's schedule
         // Skip validation for superadmin
         if (!$this->isSuperAdmin() && !empty($data['doc_id']) && !empty($data['appointment_date']) && !empty($data['appointment_time'])) {
@@ -588,6 +599,17 @@ class Appointment extends Entity {
 
             if ($status && in_array(strtolower($status['status_name']), ['cancelled', 'completed'])) {
                 return ['success' => false, 'error' => 'This appointment cannot be rescheduled'];
+            }
+
+            // Validate that new appointment date/time is not in the past
+            if (!empty($data['appointment_date']) && !empty($data['appointment_time'])) {
+                $appointmentDateTime = strtotime($data['appointment_date'] . ' ' . $data['appointment_time']);
+                $currentDateTime = time();
+                
+                // Check if appointment is in the past (with 5 minute buffer to account for current minute)
+                if ($appointmentDateTime < ($currentDateTime - 300)) {
+                    return ['success' => false, 'error' => 'Cannot reschedule appointments to a past date and time. Please select a future date and time.'];
+                }
             }
 
             // Validate that new date/time matches doctor's schedule

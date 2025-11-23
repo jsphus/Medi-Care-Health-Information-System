@@ -80,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $success = 'Schedule created successfully';
                     }
                 }
+            }
             } catch (PDOException $e) {
                 // Check if it's a unique constraint violation
                 if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
@@ -103,6 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($start_time >= $end_time) {
             $error = 'End time must be after start time';
         } else {
+            // Validate that schedule date/time is not in the past
+            $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
+            $currentDateTime = time();
+            
+            if ($scheduleDateTime < ($currentDateTime - 300)) {
+                $error = 'Cannot update schedules to a past date and time. Please select a future date and time.';
+            } else {
             try {
                 // Check for overlapping schedules (excluding current schedule)
                 $stmt = $db->prepare("
@@ -142,6 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                     $success = 'Schedule updated successfully';
                 }
+            }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }

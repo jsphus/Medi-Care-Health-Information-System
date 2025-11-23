@@ -234,6 +234,12 @@
                                             style="padding: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    <button class="btn btn-sm edit-record-btn" 
+                                            data-record="<?= base64_encode(json_encode($record)) ?>" 
+                                            title="Edit"
+                                            style="padding: 0.5rem; background: transparent; border: none; color: var(--primary-blue); cursor: pointer;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this medical record? This action cannot be undone.');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $record['med_rec_id'] ?>">
@@ -313,6 +319,54 @@
                 <span>Close</span>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Medical Record</h2>
+            <button type="button" class="modal-close" onclick="closeEditModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="editRecordForm" method="POST" onsubmit="return handleEditSubmit(event);">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" id="edit_record_id">
+            
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Record ID:</strong> <span id="edit_record_id_display" style="color: var(--text-secondary);"></span></p>
+                <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Patient:</strong> <span id="edit_patient_name" style="color: var(--text-secondary);"></span></p>
+                <p style="margin: 0.5rem 0; font-size: 0.875rem;"><strong style="color: var(--text-primary);">Doctor:</strong> <span id="edit_doctor_name" style="color: var(--text-secondary);"></span></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_visit_date">Visit Date: <span style="color: var(--status-error);">*</span></label>
+                <input type="date" name="med_rec_visit_date" id="edit_visit_date" required class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_diagnosis">Diagnosis: <span style="color: var(--status-error);">*</span></label>
+                <textarea name="med_rec_diagnosis" id="edit_diagnosis" rows="6" required class="form-control" placeholder="Enter diagnosis details..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="edit_prescription">Prescription:</label>
+                <textarea name="med_rec_prescription" id="edit_prescription" rows="6" class="form-control" placeholder="Enter prescription details..."></textarea>
+            </div>
+            
+            <div class="action-buttons" style="margin-top: 1.5rem;">
+                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    <span>Cancel</span>
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -457,6 +511,46 @@ function closeViewModal() {
     document.getElementById('viewModal').classList.remove('active');
 }
 
+function editRecord(record) {
+    // Populate edit form with record data
+    document.getElementById('edit_record_id').value = record.med_rec_id || '';
+    document.getElementById('edit_record_id_display').textContent = '#' + (record.med_rec_id || 'N/A');
+    
+    // Format patient name
+    const patientName = `${record.pat_first_name || ''} ${record.pat_middle_initial ? record.pat_middle_initial + '.' : ''} ${record.pat_last_name || ''}`.trim();
+    document.getElementById('edit_patient_name').textContent = patientName || 'N/A';
+    
+    // Format doctor name
+    const doctorName = `Dr. ${record.doc_first_name || ''} ${record.doc_middle_initial ? record.doc_middle_initial + '.' : ''} ${record.doc_last_name || ''}`.trim();
+    document.getElementById('edit_doctor_name').textContent = doctorName || 'N/A';
+    
+    // Set form values
+    if (record.med_rec_visit_date) {
+        const visitDate = new Date(record.med_rec_visit_date);
+        document.getElementById('edit_visit_date').value = visitDate.toISOString().split('T')[0];
+    } else {
+        document.getElementById('edit_visit_date').value = '';
+    }
+    
+    document.getElementById('edit_diagnosis').value = record.med_rec_diagnosis || '';
+    document.getElementById('edit_prescription').value = record.med_rec_prescription || '';
+    
+    // Show modal
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+    // Reset form
+    document.getElementById('editRecordForm').reset();
+}
+
+function handleEditSubmit(event) {
+    // Form validation is handled by HTML5 required attributes
+    // Just let it submit normally
+    return true;
+}
+
 // Category tab functionality
 document.addEventListener('DOMContentLoaded', function() {
     const categoryTabs = document.querySelectorAll('.category-tab');
@@ -477,6 +571,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 const decodedJson = atob(encodedData);
                 const recordData = JSON.parse(decodedJson);
                 viewRecord(recordData);
+            } catch (e) {
+                console.error('Error parsing record data:', e);
+                alert('Error loading record data. Please check the console for details.');
+            }
+        });
+    });
+    
+    // Add event listeners for edit buttons
+    document.querySelectorAll('.edit-record-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            try {
+                const encodedData = this.getAttribute('data-record');
+                const decodedJson = atob(encodedData);
+                const recordData = JSON.parse(decodedJson);
+                editRecord(recordData);
             } catch (e) {
                 console.error('Error parsing record data:', e);
                 alert('Error loading record data. Please check the console for details.');

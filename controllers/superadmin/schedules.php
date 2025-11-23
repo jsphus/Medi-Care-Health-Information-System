@@ -30,6 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($start_time >= $end_time) {
             $error = 'End time must be after start time';
         } else {
+            // Validate that schedule date/time is not in the past
+            $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
+            $currentDateTime = time();
+            
+            if ($scheduleDateTime < ($currentDateTime - 300)) {
+                $error = 'Cannot create schedules in the past. Please select a future date and time.';
+            } else {
             try {
                 // Check for exact duplicate (same doc_id, schedule_date, and start_time)
                 $stmt = $db->prepare("
@@ -81,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $success = 'Schedule created successfully';
                     }
                 }
+            }
             } catch (PDOException $e) {
                 // Check if it's a unique constraint violation
                 if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
@@ -109,6 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($start_date > $end_date) {
             $error = 'End date must be after or equal to start date';
         } else {
+            // Validate that start date/time is not in the past
+            $startDateTime = strtotime($start_date . ' ' . $start_time);
+            $currentDateTime = time();
+            
+            if ($startDateTime < ($currentDateTime - 300)) {
+                $error = 'Cannot create schedules in the past. Please select a future start date and time.';
+            } else {
             try {
                 $created_count = 0;
                 $skipped_count = 0;
@@ -146,6 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (in_array($day_of_week, $selected_days)) {
                         $schedule_date = $current->format('Y-m-d');
                         
+                        // Validate that schedule date/time is not in the past
+                        $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
+                        $currentDateTime = time();
+                        
+                        if ($scheduleDateTime < ($currentDateTime - 300)) {
+                            $skipped_count++;
+                        } else {
                         // Check for exact duplicate
                         $stmt = $db->prepare("
                             SELECT schedule_id FROM schedules 
@@ -197,6 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $created_count++;
                             }
                         }
+                        }
                     }
                     
                     $current->modify('+1 day');
@@ -210,6 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error = "No schedules were created. All dates either already have schedules or overlap with existing ones.";
                 }
+            }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -225,6 +249,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($schedule_date) || empty($start_time) || empty($end_time)) {
             $error = 'Date, start time, and end time are required';
         } else {
+            // Validate that schedule date/time is not in the past
+            $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
+            $currentDateTime = time();
+            
+            if ($scheduleDateTime < ($currentDateTime - 300)) {
+                $error = 'Cannot update schedules to a past date and time. Please select a future date and time.';
+            } else {
             try {
                 $schedule = new Schedule();
                 $updateData = [
@@ -239,6 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error = $result['message'] ?? 'Database error';
                 }
+            }
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }

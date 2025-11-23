@@ -70,21 +70,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($appointment_date) || empty($appointment_time)) {
                 $error = 'Date and time are required';
             } else {
-                $rescheduleResult = $appointmentModel->rescheduleForPatient($reschedule_appointment_id, $patient_id, [
-                    'appointment_date' => $appointment_date,
-                    'appointment_time' => $appointment_time,
-                    'appointment_notes' => $notes
-                ]);
+                // Validate that appointment date/time is not in the past
+                $appointmentDateTime = strtotime($appointment_date . ' ' . $appointment_time);
+                $currentDateTime = time();
+                
+                if ($appointmentDateTime < ($currentDateTime - 300)) {
+                    $error = 'Cannot reschedule appointments to a past date and time. Please select a future date and time.';
+                } else {
+                    $rescheduleResult = $appointmentModel->rescheduleForPatient($reschedule_appointment_id, $patient_id, [
+                        'appointment_date' => $appointment_date,
+                        'appointment_time' => $appointment_time,
+                        'appointment_notes' => $notes
+                    ]);
 
-                if ($rescheduleResult['success']) {
-                    // Clear filter session variables
-                    unset($_SESSION['filter_date']);
-                    unset($_SESSION['filter_time']);
-                    header('Location: /patient/appointments?success=rescheduled&id=' . $reschedule_appointment_id);
-                    exit;
+                    if ($rescheduleResult['success']) {
+                        // Clear filter session variables
+                        unset($_SESSION['filter_date']);
+                        unset($_SESSION['filter_time']);
+                        header('Location: /patient/appointments?success=rescheduled&id=' . $reschedule_appointment_id);
+                        exit;
+                    }
+
+                    $error = $rescheduleResult['error'] ?? 'Failed to reschedule appointment. Please try again.';
                 }
-
-                $error = $rescheduleResult['error'] ?? 'Failed to reschedule appointment. Please try again.';
             }
         }
     }
@@ -125,25 +133,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if (empty($error)) {
-                $createResult = $appointmentModel->bookForPatient([
-                    'pat_id' => $patient_id,
-                    'doc_id' => $doctor_id,
-                    'service_id' => $service_id,
-                    'appointment_date' => $appointment_date,
-                    'appointment_time' => $appointment_time,
-                    'appointment_notes' => $notes
-                ]);
+                // Validate that appointment date/time is not in the past
+                $appointmentDateTime = strtotime($appointment_date . ' ' . $appointment_time);
+                $currentDateTime = time();
+                
+                if ($appointmentDateTime < ($currentDateTime - 300)) {
+                    $error = 'Cannot book appointments in the past. Please select a future date and time.';
+                } else {
+                    $createResult = $appointmentModel->bookForPatient([
+                        'pat_id' => $patient_id,
+                        'doc_id' => $doctor_id,
+                        'service_id' => $service_id,
+                        'appointment_date' => $appointment_date,
+                        'appointment_time' => $appointment_time,
+                        'appointment_notes' => $notes
+                    ]);
 
-                if ($createResult['success']) {
-                    unset($_SESSION['appointment_review']);
-                    // Clear filter session variables
-                    unset($_SESSION['filter_date']);
-                    unset($_SESSION['filter_time']);
-                    header('Location: /patient/payment?appointment_id=' . urlencode($createResult['id']));
-                    exit;
+                    if ($createResult['success']) {
+                        unset($_SESSION['appointment_review']);
+                        // Clear filter session variables
+                        unset($_SESSION['filter_date']);
+                        unset($_SESSION['filter_time']);
+                        header('Location: /patient/payment?appointment_id=' . urlencode($createResult['id']));
+                        exit;
+                    }
+
+                    $error = implode(', ', $createResult['errors'] ?? ['Failed to create appointment.']);
                 }
-
-                $error = implode(', ', $createResult['errors'] ?? ['Failed to create appointment.']);
             }
         }
     }

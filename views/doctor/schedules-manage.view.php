@@ -262,7 +262,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST" action="">
+        <form method="POST" action="" onsubmit="return validateScheduleForm(this)">
             <input type="hidden" name="action" value="create">
             <div class="form-grid">
                 <div class="form-group">
@@ -336,7 +336,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST" action="">
+        <form method="POST" action="" onsubmit="return validateScheduleForm(this)">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" id="edit_id">
             
@@ -620,6 +620,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+// Validate schedule form - check if schedule is in the past
+function validateScheduleForm(form) {
+    const scheduleDate = form.querySelector('input[name="schedule_date"]')?.value;
+    const startTime = form.querySelector('input[name="start_time"]')?.value;
+    
+    if (!scheduleDate || !startTime) {
+        return true; // Let HTML5 validation handle required fields
+    }
+    
+    const scheduleDateTime = new Date(scheduleDate + ' ' + startTime);
+    const currentDateTime = new Date();
+    
+    // Add 5 minute buffer to account for current minute
+    currentDateTime.setMinutes(currentDateTime.getMinutes() - 5);
+    
+    if (scheduleDateTime < currentDateTime) {
+        alert('Cannot create schedules in the past. Please select a future date and time.');
+        return false;
+    }
+    
+    return true;
+}
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>
