@@ -12,12 +12,10 @@
     <!-- Navigation -->
     <nav class="bg-white shadow-sm fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <div class="flex items-center">
-                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                    </svg>
-                    <span class="ml-3 text-2xl font-bold text-gray-900">Medi-Care</span>
+            <div class="flex justify-between items-center h-28">
+                <div class="flex items-center space-x-1">
+                    <img src="/assets/images/Medi-Care.png" alt="Medi-Care Logo" class="w-44 h-44 object-contain">
+                    <span class="text-3xl font-bold text-gray-900">Medi-Care</span>
                 </div>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -341,9 +339,7 @@
             <div class="grid md:grid-cols-4 gap-8 mb-12">
                 <div>
                     <div class="flex items-center mb-4">
-                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                        </svg>
+                        <img src="/assets/images/Medi-Care.png" alt="Medi-Care Logo" class="w-20 h-20 object-contain">
                         <span class="ml-2 text-xl font-bold">Medi-Care</span>
                     </div>
                     <p class="text-gray-400 leading-relaxed">Your trusted partner in healthcare, connecting patients with top medical professionals.</p>
