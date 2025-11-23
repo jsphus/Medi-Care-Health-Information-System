@@ -94,9 +94,15 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -619,63 +625,49 @@ function resetToPaginatedView() {
     window.location.href = url.toString();
 }
 
+// Table Filtering Functions - Simple URL-based filtering
 function applyTableFilters() {
-    // Apply filters directly without requiring all_results mode
-    filterTable();
-}
-
-function filterTable() {
-    const patientFilter = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
-    const doctorFilter = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
-    const diagnosisFilter = document.getElementById('filterDiagnosis')?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById('filterDate')?.value || '';
+    const url = new URL(window.location.href);
     
-    const rows = document.querySelectorAll('.table-row');
-    let visibleCount = 0;
+    // Get filter values
+    const patient = document.getElementById('filterPatient')?.value.trim() || '';
+    const doctor = document.getElementById('filterDoctor')?.value.trim() || '';
+    const diagnosis = document.getElementById('filterDiagnosis')?.value.trim() || '';
+    const dateFrom = document.getElementById('filterDateFrom')?.value.trim() || '';
+    const dateTo = document.getElementById('filterDateTo')?.value.trim() || '';
     
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const doctor = row.getAttribute('data-doctor') || '';
-        const diagnosis = row.getAttribute('data-diagnosis') || '';
-        const date = row.getAttribute('data-date') || '';
-        
-        const matchesPatient = !patientFilter || patient.includes(patientFilter);
-        const matchesDoctor = !doctorFilter || doctor.includes(doctorFilter);
-        const matchesDiagnosis = !diagnosisFilter || diagnosis.includes(diagnosisFilter);
-        const matchesDate = !dateFilter || date === dateFilter;
-        
-        if (matchesPatient && matchesDoctor && matchesDiagnosis && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    // Remove existing filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('doctor');
+    url.searchParams.delete('diagnosis');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
     
-    const hasActiveFilters = patientFilter || doctorFilter || diagnosisFilter || dateFilter;
-    const tableBody = document.getElementById('tableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
+    // Add non-empty filter values to URL
+    if (patient) url.searchParams.set('patient', patient);
+    if (doctor) url.searchParams.set('doctor', doctor);
+    if (diagnosis) url.searchParams.set('diagnosis', diagnosis);
+    if (dateFrom) url.searchParams.set('date_from', dateFrom);
+    if (dateTo) url.searchParams.set('date_to', dateTo);
     
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 8;
-            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No medical records match the current filters.</p></td>`;
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    // Redirect to filtered URL
+    window.location.href = url.toString();
 }
 
 function resetTableFilters() {
-    const inputs = ['filterPatient', 'filterDoctor', 'filterDiagnosis', 'filterDate'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    filterTable();
+    const url = new URL(window.location.href);
+    
+    // Remove all filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('doctor');
+    url.searchParams.delete('diagnosis');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('page');
+    
+    // Redirect to clean URL
+    window.location.href = url.toString();
 }
 
 function toggleTableFilters() {
@@ -683,50 +675,51 @@ function toggleTableFilters() {
     const toggleBtn = document.getElementById('toggleFilterBtn');
     
     if (filterBar && toggleBtn) {
-        if (filterBar.style.display === 'none') {
+        if (filterBar.style.display === 'none' || !filterBar.style.display) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         } else {
             filterBar.style.display = 'none';
             toggleBtn.classList.remove('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--bg-light)';
+            toggleBtn.style.color = 'var(--text-secondary)';
         }
     }
 }
 
-// Initialize filtering
+// Initialize - restore filter values from URL on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
-    
-    // Check if we're in all_results mode and restore filters
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                if (filterValues.filterPatient && document.getElementById('filterPatient')) {
-                    document.getElementById('filterPatient').value = filterValues.filterPatient;
-                }
-                if (filterValues.filterDoctor && document.getElementById('filterDoctor')) {
-                    document.getElementById('filterDoctor').value = filterValues.filterDoctor;
-                }
-                if (filterValues.filterDiagnosis && document.getElementById('filterDiagnosis')) {
-                    document.getElementById('filterDiagnosis').value = filterValues.filterDiagnosis;
-                }
-                if (filterValues.filterDate && document.getElementById('filterDate')) {
-                    document.getElementById('filterDate').value = filterValues.filterDate;
-                }
-                // Apply the filters
-                filterTable();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
+    
+    // Restore filter values from URL
+    if (urlParams.get('patient') && document.getElementById('filterPatient')) {
+        document.getElementById('filterPatient').value = urlParams.get('patient');
+    }
+    if (urlParams.get('doctor') && document.getElementById('filterDoctor')) {
+        document.getElementById('filterDoctor').value = urlParams.get('doctor');
+    }
+    if (urlParams.get('diagnosis') && document.getElementById('filterDiagnosis')) {
+        document.getElementById('filterDiagnosis').value = urlParams.get('diagnosis');
+    }
+    if (urlParams.get('date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('date_from');
+    }
+    if (urlParams.get('date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('date_to');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.has('patient') || urlParams.has('doctor') || urlParams.has('diagnosis') || 
+        urlParams.has('date_from') || urlParams.has('date_to')) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar && toggleBtn) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         }
     }
 });

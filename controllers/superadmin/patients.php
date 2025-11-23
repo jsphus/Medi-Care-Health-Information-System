@@ -293,39 +293,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
+// Handle filters from URL
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_email = isset($_GET['filter_email']) ? sanitize($_GET['filter_email']) : '';
+$filter_phone = isset($_GET['filter_phone']) ? sanitize($_GET['filter_phone']) : '';
+$filter_gender = isset($_GET['filter_gender']) ? sanitize($_GET['filter_gender']) : '';
+$filter_insurance = isset($_GET['filter_insurance']) ? sanitize($_GET['filter_insurance']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
-$filter_gender = isset($_GET['gender']) ? sanitize($_GET['gender']) : '';
-$filter_insurance = isset($_GET['insurance']) ? sanitize($_GET['insurance']) : '';
-
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = (($page - 1) * $items_per_page);
 
 // Fetch all patients with filters
 try {
     $where_conditions = [];
     $params = [];
     
-    if (!empty($search_query)) {
-        $where_conditions[] = "(pat_first_name LIKE :search OR pat_middle_initial LIKE :search OR pat_last_name LIKE :search)";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_name)) {
+        // Case-insensitive search in first name, last name, middle initial, and concatenated full name
+        $where_conditions[] = "(LOWER(p.pat_first_name) LIKE :name OR LOWER(p.pat_last_name) LIKE :name OR LOWER(p.pat_middle_initial) LIKE :name OR LOWER(TRIM(CONCAT(COALESCE(p.pat_first_name, ''), ' ', COALESCE(p.pat_middle_initial, ''), ' ', COALESCE(p.pat_last_name, '')))) LIKE :name)";
+        $params['name'] = '%' . strtolower($filter_name) . '%';
+    }
+    
+    if (!empty($filter_email)) {
+        // Case-insensitive email search with trimmed input
+        $email_clean = trim(strtolower($filter_email));
+        $where_conditions[] = "LOWER(TRIM(p.pat_email)) LIKE :email";
+        $params['email'] = '%' . $email_clean . '%';
+    }
+    
+    if (!empty($filter_phone)) {
+        // Remove non-numeric characters for phone search to make it more flexible
+        $phone_clean = preg_replace('/[^0-9]/', '', $filter_phone);
+        $where_conditions[] = "REPLACE(REPLACE(REPLACE(REPLACE(p.pat_phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone";
+        $params['phone'] = '%' . $phone_clean . '%';
     }
     
     if (!empty($filter_gender)) {
-        $where_conditions[] = "LOWER(TRIM(pat_gender)) = LOWER(TRIM(:gender))";
+        $where_conditions[] = "LOWER(TRIM(p.pat_gender)) = LOWER(TRIM(:gender))";
         $params['gender'] = $filter_gender;
     }
     
     if (!empty($filter_insurance)) {
-        $where_conditions[] = "pat_insurance_provider = :insurance";
+        $where_conditions[] = "p.pat_insurance_provider = :insurance";
         $params['insurance'] = $filter_insurance;
+    }
+    
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(p.created_at) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+    
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(p.created_at) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
     
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';

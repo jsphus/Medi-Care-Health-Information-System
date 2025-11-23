@@ -226,50 +226,15 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Status
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered - From
                 </label>
-                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
-                    <option value="">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                </select>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date Registered - To
                 </label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
-                    <select id="filterDateMonth" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                    <select id="filterDateDay" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Days</option>
-                        <?php for ($i = 1; $i <= 31; $i++): ?>
-                            <option value="<?= $i ?>"><?= $i ?></option>
-                        <?php endfor; ?>
-                    </select>
-                    <select id="filterDateYear" class="filter-input" style="padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
-                        <option value="">All Years</option>
-                        <?php 
-                        $current_year = (int)date('Y');
-                        for ($year = $current_year; $year >= 2020; $year--): 
-                        ?>
-                            <option value="<?= $year ?>"><?= $year ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -318,9 +283,6 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Position
                         </th>
-                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
-                            Status
-                        </th>
                         <th class="sortable <?= $current_sort === 'created_at' ? 'sort-' . strtolower($current_order) : '' ?>" 
                             onclick="sortTable('created_at')" 
                             style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
@@ -349,7 +311,6 @@
                             data-email="<?= htmlspecialchars(strtolower($member['staff_email'] ?? '')) ?>"
                             data-phone="<?= htmlspecialchars(strtolower($member['staff_phone'] ?? '')) ?>"
                             data-position="<?= htmlspecialchars($member['staff_position'] ?? '') ?>"
-                            data-status="<?= htmlspecialchars(strtolower($member['staff_status'] ?? '')) ?>"
                             data-date="<?= !empty($member['created_at']) ? date('Y-m-d', strtotime($member['created_at'])) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;" 
                             onmouseover="this.style.background='#f9fafb'" 
@@ -369,15 +330,6 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_email']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_phone'] ?? 'N/A') ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($member['staff_position'] ?? 'N/A') ?></td>
-                            <td style="padding: 1rem;">
-                                <?php
-                                $status = $member['staff_status'] ?? 'active';
-                                $statusColor = $status === 'active' ? '#10b981' : '#ef4444';
-                                ?>
-                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $statusColor ?>; color: white;">
-                                    <?= htmlspecialchars(ucfirst($status)) ?>
-                                </span>
-                            </td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['created_at'] ? date('d M Y', strtotime($member['created_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $member['updated_at'] ? date('d M Y', strtotime($member['updated_at'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
@@ -858,11 +810,43 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Filters only apply when "Apply Filters" button is clicked
-    
-    // Check if filters are active on page load
+    // Initialize filter values from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
+    
+    // Restore filter values from URL
+    const filterName = document.getElementById('filterName');
+    const filterEmail = document.getElementById('filterEmail');
+    const filterPhone = document.getElementById('filterPhone');
+    const filterPosition = document.getElementById('filterPosition');
+    const filterDateFrom = document.getElementById('filterDateFrom');
+    const filterDateTo = document.getElementById('filterDateTo');
+    
+    if (filterName && urlParams.get('filter_name')) {
+        filterName.value = urlParams.get('filter_name');
+    }
+    if (filterEmail && urlParams.get('filter_email')) {
+        filterEmail.value = urlParams.get('filter_email');
+    }
+    if (filterPhone && urlParams.get('filter_phone')) {
+        filterPhone.value = urlParams.get('filter_phone');
+    }
+    if (filterPosition && urlParams.get('filter_position')) {
+        filterPosition.value = urlParams.get('filter_position');
+    }
+    if (filterDateFrom && urlParams.get('filter_date_from')) {
+        filterDateFrom.value = urlParams.get('filter_date_from');
+    }
+    if (filterDateTo && urlParams.get('filter_date_to')) {
+        filterDateTo.value = urlParams.get('filter_date_to');
+    }
+    
+    // Show filter bar if any filters are active
+    const hasFilters = urlParams.get('filter_name') || urlParams.get('filter_email') || 
+                       urlParams.get('filter_phone') || urlParams.get('filter_position') || 
+                       urlParams.get('filter_date_from') || 
+                       urlParams.get('filter_date_to');
+    
+    if (hasFilters) {
         const filterBar = document.getElementById('tableFilterBar');
         const toggleBtn = document.getElementById('toggleFilterBtn');
         if (filterBar) {
@@ -870,46 +854,6 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
             toggleBtn.style.color = 'white';
-        }
-        
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                // Restore filter input values
-                if (filterValues.filterName && document.getElementById('filterName')) {
-                    document.getElementById('filterName').value = filterValues.filterName;
-                }
-                if (filterValues.filterEmail && document.getElementById('filterEmail')) {
-                    document.getElementById('filterEmail').value = filterValues.filterEmail;
-                }
-                if (filterValues.filterPhone && document.getElementById('filterPhone')) {
-                    document.getElementById('filterPhone').value = filterValues.filterPhone;
-                }
-                if (filterValues.filterPosition && document.getElementById('filterPosition')) {
-                    document.getElementById('filterPosition').value = filterValues.filterPosition;
-                }
-                if (filterValues.filterStatus && document.getElementById('filterStatus')) {
-                    document.getElementById('filterStatus').value = filterValues.filterStatus;
-                }
-                if (filterValues.filterDateMonth && document.getElementById('filterDateMonth')) {
-                    document.getElementById('filterDateMonth').value = filterValues.filterDateMonth;
-                }
-                if (filterValues.filterDateDay && document.getElementById('filterDateDay')) {
-                    document.getElementById('filterDateDay').value = filterValues.filterDateDay;
-                }
-                if (filterValues.filterDateYear && document.getElementById('filterDateYear')) {
-                    document.getElementById('filterDateYear').value = filterValues.filterDateYear;
-                }
-                // Apply the filters
-                filterTable();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
         }
     }
 });
@@ -935,132 +879,61 @@ function sortTable(column) {
 
 // Filtering Functions
 function applyTableFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
     const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
     
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterName: document.getElementById('filterName')?.value || '',
-            filterEmail: document.getElementById('filterEmail')?.value || '',
-            filterPhone: document.getElementById('filterPhone')?.value || '',
-            filterPosition: document.getElementById('filterPosition')?.value || '',
-            filterStatus: document.getElementById('filterStatus')?.value || '',
-            filterDateMonth: document.getElementById('filterDateMonth')?.value || '',
-            filterDateDay: document.getElementById('filterDateDay')?.value || '',
-            filterDateYear: document.getElementById('filterDateYear')?.value || ''
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
-    }
-    
-    // Apply filters if already in all_results mode
-    filterTable();
-}
-
-function filterTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
-    
-    const rows = tbody.querySelectorAll('.table-row');
-    const filterName = document.getElementById('filterName')?.value.toLowerCase().trim() || '';
-    const filterEmail = document.getElementById('filterEmail')?.value.toLowerCase().trim() || '';
-    const filterPhone = document.getElementById('filterPhone')?.value.toLowerCase().trim() || '';
+    // Get filter values
+    const filterName = document.getElementById('filterName')?.value.trim() || '';
+    const filterEmail = document.getElementById('filterEmail')?.value.trim() || '';
+    const filterPhone = document.getElementById('filterPhone')?.value.trim() || '';
     const filterPosition = document.getElementById('filterPosition')?.value || '';
-    const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
-    const dateMonthFilter = document.getElementById('filterDateMonth')?.value || '';
-    const dateDayFilter = document.getElementById('filterDateDay')?.value || '';
-    const dateYearFilter = document.getElementById('filterDateYear')?.value || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
     
-    let visibleCount = 0;
-    let hasActiveFilters = filterName || filterEmail || filterPhone || filterPosition || filterStatus || dateMonthFilter || dateDayFilter || dateYearFilter;
+    // Remove existing filter parameters
+    url.searchParams.delete('filter_name');
+    url.searchParams.delete('filter_email');
+    url.searchParams.delete('filter_phone');
+    url.searchParams.delete('filter_position');
+    url.searchParams.delete('filter_date_from');
+    url.searchParams.delete('filter_date_to');
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
     
-    rows.forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        const email = row.getAttribute('data-email') || '';
-        const phone = row.getAttribute('data-phone') || '';
-        const position = row.getAttribute('data-position') || '';
-        const status = row.getAttribute('data-status') || '';
-        const dateStr = row.getAttribute('data-date') || '';
-        
-        const matchesName = !filterName || name.includes(filterName);
-        const matchesEmail = !filterEmail || email.includes(filterEmail);
-        const matchesPhone = !filterPhone || phone.includes(filterPhone);
-        const matchesPosition = !filterPosition || position === filterPosition;
-        const matchesStatus = !filterStatus || status === filterStatus;
-        
-        // Date filtering - extract month, day, year from date string (format: YYYY-MM-DD)
-        let matchesDate = true;
-        if (dateMonthFilter || dateDayFilter || dateYearFilter) {
-            if (dateStr) {
-                const dateParts = dateStr.split('-');
-                if (dateParts.length === 3) {
-                    const year = dateParts[0];
-                    const month = dateParts[1];
-                    const day = dateParts[2];
-                    
-                    const matchesMonth = !dateMonthFilter || month === String(dateMonthFilter).padStart(2, '0');
-                    const matchesDay = !dateDayFilter || day === String(dateDayFilter).padStart(2, '0');
-                    const matchesYear = !dateYearFilter || year === dateYearFilter;
-                    
-                    matchesDate = matchesMonth && matchesDay && matchesYear;
-                } else {
-                    matchesDate = false;
-                }
-            } else {
-                matchesDate = false;
-            }
-        }
-        
-        if (matchesName && matchesEmail && matchesPhone && matchesPosition && matchesStatus && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Show/hide pagination and filter message
-    const paginationContainer = document.getElementById('paginationContainer');
-    let filterActiveMessage = document.getElementById('filterActiveMessage');
-    
-    if (hasActiveFilters) {
-        if (paginationContainer) paginationContainer.style.display = 'none';
-        
-        if (!filterActiveMessage) {
-            filterActiveMessage = document.createElement('div');
-            filterActiveMessage.id = 'filterActiveMessage';
-            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
-            tbody.parentElement.parentElement.parentElement.appendChild(filterActiveMessage);
-        }
-        
-        if (visibleCount === 0) {
-            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No staff members match the applied filters.';
-        } else {
-            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} staff member(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
-        }
-        filterActiveMessage.style.display = 'block';
-    } else {
-        if (paginationContainer) paginationContainer.style.display = '';
-        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
+    // Add new filter parameters only if they have values
+    if (filterName) {
+        url.searchParams.set('filter_name', filterName);
     }
+    if (filterEmail) {
+        url.searchParams.set('filter_email', filterEmail);
+    }
+    if (filterPhone) {
+        url.searchParams.set('filter_phone', filterPhone);
+    }
+    if (filterPosition) {
+        url.searchParams.set('filter_position', filterPosition);
+    }
+    if (filterDateFrom) {
+        url.searchParams.set('filter_date_from', filterDateFrom);
+    }
+    if (filterDateTo) {
+        url.searchParams.set('filter_date_to', filterDateTo);
+    }
+    
+    window.location.href = url.toString();
 }
 
 function resetTableFilters() {
-    document.getElementById('filterName').value = '';
-    document.getElementById('filterEmail').value = '';
-    document.getElementById('filterPhone').value = '';
-    document.getElementById('filterPosition').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterDateMonth').value = '';
-    document.getElementById('filterDateDay').value = '';
-    document.getElementById('filterDateYear').value = '';
+    const url = new URL(window.location.href);
     
-    filterTable();
-    resetToPaginatedView();
+    // Remove all filter parameters
+    url.searchParams.delete('filter_name');
+    url.searchParams.delete('filter_email');
+    url.searchParams.delete('filter_phone');
+    url.searchParams.delete('filter_position');
+    url.searchParams.delete('filter_date_from');
+    url.searchParams.delete('filter_date_to');
+    url.searchParams.delete('page');
+    
+    window.location.href = url.toString();
 }
 
 function toggleTableFilters() {
@@ -1072,29 +945,12 @@ function toggleTableFilters() {
         toggleBtn.classList.add('active');
         toggleBtn.style.background = 'var(--primary-blue)';
         toggleBtn.style.color = 'white';
-        loadAllResults();
     } else {
         filterBar.style.display = 'none';
         toggleBtn.classList.remove('active');
         toggleBtn.style.background = 'var(--bg-light)';
         toggleBtn.style.color = 'var(--text-secondary)';
-        resetTableFilters();
-        resetToPaginatedView();
     }
-}
-
-function loadAllResults() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('all_results', '1');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-function resetToPaginatedView() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('all_results');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
 }
 
 // Profile picture preview and management

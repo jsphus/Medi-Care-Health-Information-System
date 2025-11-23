@@ -462,28 +462,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
+// Handle filters from URL
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_email = isset($_GET['filter_email']) ? sanitize($_GET['filter_email']) : '';
+$filter_role = isset($_GET['filter_role']) ? sanitize($_GET['filter_role']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
-$filter_role = isset($_GET['role']) ? sanitize($_GET['role']) : '';
-
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = (($page - 1) * $items_per_page);
 
 // Fetch users with filters
 try {
     $where_conditions = [];
     $params = [];
 
-    if (!empty($search_query)) {
-        $where_conditions[] = "u.user_email LIKE :search";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_name)) {
+        // Case-insensitive search in full name (patient, staff, doctor names)
+        $where_conditions[] = "(LOWER(COALESCE(p.pat_first_name || ' ' || p.pat_last_name, 
+                     s.staff_first_name || ' ' || s.staff_last_name,
+                     d.doc_first_name || ' ' || d.doc_last_name,
+                     'Super Admin')) LIKE :name)";
+        $params['name'] = '%' . strtolower($filter_name) . '%';
+    }
+
+    if (!empty($filter_email)) {
+        // Case-insensitive email search with trimmed input
+        $email_clean = trim(strtolower($filter_email));
+        $where_conditions[] = "LOWER(TRIM(u.user_email)) LIKE :email";
+        $params['email'] = '%' . $email_clean . '%';
     }
 
     if (!empty($filter_role)) {
@@ -496,6 +505,16 @@ try {
         } elseif ($filter_role === 'patient') {
             $where_conditions[] = "u.pat_id IS NOT NULL";
         }
+    }
+    
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(u.created_at) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+    
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(u.created_at) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';

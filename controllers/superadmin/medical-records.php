@@ -28,8 +28,12 @@ if (isset($_GET['search'])) {
     $search_query = sanitize($_GET['search']);
 }
 
-$filter_doctor = isset($_GET['doctor']) ? (int)$_GET['doctor'] : null;
-$filter_patient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
+// Get filter parameters from URL
+$filter_patient = isset($_GET['patient']) ? sanitize($_GET['patient']) : '';
+$filter_doctor = isset($_GET['doctor']) ? sanitize($_GET['doctor']) : '';
+$filter_diagnosis = isset($_GET['diagnosis']) ? sanitize($_GET['diagnosis']) : '';
+$filter_date_from = isset($_GET['date_from']) ? sanitize($_GET['date_from']) : '';
+$filter_date_to = isset($_GET['date_to']) ? sanitize($_GET['date_to']) : '';
 
 // Fetch medical records with filters
 try {
@@ -41,14 +45,29 @@ try {
         $params['search'] = '%' . $search_query . '%';
     }
 
-    if ($filter_doctor) {
-        $where_conditions[] = "a.doc_id = :doctor";
-        $params['doctor'] = $filter_doctor;
+    if (!empty($filter_patient)) {
+        $where_conditions[] = "(LOWER(p.pat_first_name) LIKE :patient OR LOWER(p.pat_last_name) LIKE :patient OR LOWER(CONCAT(p.pat_first_name, ' ', p.pat_last_name)) LIKE :patient)";
+        $params['patient'] = '%' . strtolower($filter_patient) . '%';
     }
 
-    if ($filter_patient) {
-        $where_conditions[] = "a.pat_id = :patient";
-        $params['patient'] = $filter_patient;
+    if (!empty($filter_doctor)) {
+        $where_conditions[] = "(LOWER(d.doc_first_name) LIKE :doctor OR LOWER(d.doc_last_name) LIKE :doctor OR LOWER(CONCAT(d.doc_first_name, ' ', d.doc_last_name)) LIKE :doctor)";
+        $params['doctor'] = '%' . strtolower($filter_doctor) . '%';
+    }
+
+    if (!empty($filter_diagnosis)) {
+        $where_conditions[] = "LOWER(mr.med_rec_diagnosis) LIKE :diagnosis";
+        $params['diagnosis'] = '%' . strtolower($filter_diagnosis) . '%';
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(mr.med_rec_visit_date) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(mr.med_rec_visit_date) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
@@ -69,7 +88,25 @@ try {
         $order_by = "mr.$sort_column $sort_order";
     }
 
-    $stmt = $db->prepare("
+    // Pagination
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+    $items_per_page = 25;
+    $offset = (($page - 1) * $items_per_page);
+    
+    // Get total count for pagination
+    $count_sql = "
+        SELECT COUNT(*) as count
+        FROM medical_records mr
+        JOIN appointments a ON mr.appt_id = a.appointment_id
+        JOIN patients p ON a.pat_id = p.pat_id
+        JOIN doctors d ON a.doc_id = d.doc_id
+        $where_clause
+    ";
+    $count_result = $db->fetchOne($count_sql, $params);
+    $total_items = (int)($count_result['count'] ?? 0);
+    $total_pages = $items_per_page > 0 ? ceil($total_items / $items_per_page) : 1;
+
+    $sql = "
         SELECT mr.*, 
                a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
                a.appointment_notes, a.appointment_duration, a.created_at as appointment_created_at,
@@ -89,8 +126,15 @@ try {
         LEFT JOIN users ud ON ud.doc_id = d.doc_id
         $where_clause
         ORDER BY $order_by
-    ");
-    $stmt->execute($params);
+        LIMIT :limit OFFSET :offset
+    ";
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch medical records: ' . $e->getMessage();

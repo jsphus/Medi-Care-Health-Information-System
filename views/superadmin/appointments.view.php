@@ -97,9 +97,28 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-check-circle" style="margin-right: 0.25rem;"></i>Status
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Statuses</option>
+                    <?php if (!empty($filter_statuses)): ?>
+                        <?php foreach ($filter_statuses as $status): ?>
+                            <option value="<?= htmlspecialchars($status['status_id']) ?>"><?= htmlspecialchars($status['status_name']) ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Appointment Date - From
+                </label>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Appointment Date - To
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -842,80 +861,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Table Filtering Functions
 function applyTableFilters() {
-    // Ensure we're in all_results mode for filtering to work properly
     const url = new URL(window.location.href);
-    const isAllResultsMode = url.searchParams.get('all_results') === '1';
     
-    if (!isAllResultsMode) {
-        // Store filter values before reloading
-        const filterValues = {
-            filterPatient: document.getElementById('filterPatient')?.value || '',
-            filterDoctor: document.getElementById('filterDoctor')?.value || '',
-            filterService: document.getElementById('filterService')?.value || '',
-            filterDate: document.getElementById('filterDate')?.value || ''
-        };
-        sessionStorage.setItem('pendingFilters', JSON.stringify(filterValues));
-        // Load all results first, then apply filters after page reloads
-        loadAllResults();
-        return;
+    // Get filter values
+    const filterPatient = document.getElementById('filterPatient')?.value.trim() || '';
+    const filterDoctor = document.getElementById('filterDoctor')?.value.trim() || '';
+    const filterService = document.getElementById('filterService')?.value.trim() || '';
+    const filterStatus = document.getElementById('filterStatus')?.value || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
+    
+    // Remove existing filter parameters
+    url.searchParams.delete('filter_patient');
+    url.searchParams.delete('filter_doctor');
+    url.searchParams.delete('filter_service');
+    url.searchParams.delete('filter_status');
+    url.searchParams.delete('filter_date_from');
+    url.searchParams.delete('filter_date_to');
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
+    
+    // Add new filter parameters only if they have values
+    if (filterPatient) {
+        url.searchParams.set('filter_patient', filterPatient);
+    }
+    if (filterDoctor) {
+        url.searchParams.set('filter_doctor', filterDoctor);
+    }
+    if (filterService) {
+        url.searchParams.set('filter_service', filterService);
+    }
+    if (filterStatus) {
+        url.searchParams.set('filter_status', filterStatus);
+    }
+    if (filterDateFrom) {
+        url.searchParams.set('filter_date_from', filterDateFrom);
+    }
+    if (filterDateTo) {
+        url.searchParams.set('filter_date_to', filterDateTo);
     }
     
-    // Apply filters if already in all_results mode
-    filterTable();
-}
-
-function filterTable() {
-    const patientFilter = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
-    const doctorFilter = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
-    const serviceFilter = document.getElementById('filterService')?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById('filterDate')?.value || '';
-    
-    const rows = document.querySelectorAll('.table-row');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const doctor = row.getAttribute('data-doctor') || '';
-        const service = row.getAttribute('data-service') || '';
-        const date = row.getAttribute('data-date') || '';
-        
-        const matchesPatient = !patientFilter || patient.includes(patientFilter);
-        const matchesDoctor = !doctorFilter || doctor.includes(doctorFilter);
-        const matchesService = !serviceFilter || service.includes(serviceFilter);
-        const matchesDate = !dateFilter || date === dateFilter;
-        
-        if (matchesPatient && matchesDoctor && matchesService && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    const hasActiveFilters = patientFilter || doctorFilter || serviceFilter || dateFilter;
-    const tableBody = document.getElementById('tableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
-    
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 8;
-            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No appointments match the current filters.</p></td>`;
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    window.location.href = url.toString();
 }
 
 function resetTableFilters() {
-    const inputs = ['filterPatient', 'filterDoctor', 'filterService', 'filterDate'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    filterTable();
+    const url = new URL(window.location.href);
+    
+    // Remove all filter parameters
+    url.searchParams.delete('filter_patient');
+    url.searchParams.delete('filter_doctor');
+    url.searchParams.delete('filter_service');
+    url.searchParams.delete('filter_status');
+    url.searchParams.delete('filter_date_from');
+    url.searchParams.delete('filter_date_to');
+    url.searchParams.delete('page');
+    
+    window.location.href = url.toString();
 }
 
 function toggleTableFilters() {
@@ -923,14 +923,16 @@ function toggleTableFilters() {
     const toggleBtn = document.getElementById('toggleFilterBtn');
     
     if (filterBar && toggleBtn) {
-        if (filterBar.style.display === 'none') {
+        if (filterBar.style.display === 'none' || !filterBar.style.display) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         } else {
             filterBar.style.display = 'none';
             toggleBtn.classList.remove('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--bg-light)';
+            toggleBtn.style.color = 'var(--text-secondary)';
         }
     }
 }
@@ -956,36 +958,48 @@ function sortTable(column) {
 
 // Initialize filtering
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
-    
-    // Check if we're in all_results mode and restore filters
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
-        // Restore filter values from sessionStorage and apply them
-        const pendingFilters = sessionStorage.getItem('pendingFilters');
-        if (pendingFilters) {
-            try {
-                const filterValues = JSON.parse(pendingFilters);
-                if (filterValues.filterPatient && document.getElementById('filterPatient')) {
-                    document.getElementById('filterPatient').value = filterValues.filterPatient;
-                }
-                if (filterValues.filterDoctor && document.getElementById('filterDoctor')) {
-                    document.getElementById('filterDoctor').value = filterValues.filterDoctor;
-                }
-                if (filterValues.filterService && document.getElementById('filterService')) {
-                    document.getElementById('filterService').value = filterValues.filterService;
-                }
-                if (filterValues.filterDate && document.getElementById('filterDate')) {
-                    document.getElementById('filterDate').value = filterValues.filterDate;
-                }
-                // Apply the filters
-                filterTable();
-                // Clear the stored filters
-                sessionStorage.removeItem('pendingFilters');
-            } catch (e) {
-                console.error('Error restoring filters:', e);
-                sessionStorage.removeItem('pendingFilters');
-            }
+    
+    // Restore filter values from URL
+    const filterPatient = document.getElementById('filterPatient');
+    const filterDoctor = document.getElementById('filterDoctor');
+    const filterService = document.getElementById('filterService');
+    const filterStatus = document.getElementById('filterStatus');
+    const filterDateFrom = document.getElementById('filterDateFrom');
+    const filterDateTo = document.getElementById('filterDateTo');
+    
+    if (filterPatient && urlParams.get('filter_patient')) {
+        filterPatient.value = urlParams.get('filter_patient');
+    }
+    if (filterDoctor && urlParams.get('filter_doctor')) {
+        filterDoctor.value = urlParams.get('filter_doctor');
+    }
+    if (filterService && urlParams.get('filter_service')) {
+        filterService.value = urlParams.get('filter_service');
+    }
+    if (filterStatus && urlParams.get('filter_status')) {
+        filterStatus.value = urlParams.get('filter_status');
+    }
+    if (filterDateFrom && urlParams.get('filter_date_from')) {
+        filterDateFrom.value = urlParams.get('filter_date_from');
+    }
+    if (filterDateTo && urlParams.get('filter_date_to')) {
+        filterDateTo.value = urlParams.get('filter_date_to');
+    }
+    
+    // Show filter bar if any filters are active
+    const hasFilters = urlParams.get('filter_patient') || urlParams.get('filter_doctor') || 
+                       urlParams.get('filter_service') || urlParams.get('filter_status') || 
+                       urlParams.get('filter_date_from') || urlParams.get('filter_date_to');
+    
+    if (hasFilters) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar && toggleBtn) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         }
     }
 });

@@ -113,8 +113,14 @@ if (isset($_GET['search'])) {
     $search_query = sanitize($_GET['search']);
 }
 
-$filter_status = isset($_GET['status']) ? (int)$_GET['status'] : null;
-$filter_method = isset($_GET['method']) ? (int)$_GET['method'] : null;
+// Get filter parameters from URL
+$filter_patient = isset($_GET['patient']) ? sanitize($_GET['patient']) : '';
+$filter_amount_min = isset($_GET['amount_min']) ? floatval($_GET['amount_min']) : null;
+$filter_amount_max = isset($_GET['amount_max']) ? floatval($_GET['amount_max']) : null;
+$filter_method = isset($_GET['method']) ? sanitize($_GET['method']) : '';
+$filter_date_from = isset($_GET['date_from']) ? sanitize($_GET['date_from']) : '';
+$filter_date_to = isset($_GET['date_to']) ? sanitize($_GET['date_to']) : '';
+$filter_status = isset($_GET['status']) ? sanitize($_GET['status']) : '';
 
 // Fetch payments with filters
 try {
@@ -126,14 +132,39 @@ try {
         $params['search'] = '%' . $search_query . '%';
     }
 
-    if ($filter_status) {
-        $where_conditions[] = "p.payment_status_id = :status";
-        $params['status'] = $filter_status;
+    if (!empty($filter_patient)) {
+        $where_conditions[] = "(LOWER(pat.pat_first_name) LIKE :patient OR LOWER(pat.pat_last_name) LIKE :patient OR LOWER(CONCAT(pat.pat_first_name, ' ', pat.pat_last_name)) LIKE :patient)";
+        $params['patient'] = '%' . strtolower($filter_patient) . '%';
     }
 
-    if ($filter_method) {
-        $where_conditions[] = "p.payment_method_id = :method";
-        $params['method'] = $filter_method;
+    if ($filter_amount_min !== null && $filter_amount_min > 0) {
+        $where_conditions[] = "p.payment_amount >= :amount_min";
+        $params['amount_min'] = $filter_amount_min;
+    }
+
+    if ($filter_amount_max !== null && $filter_amount_max > 0) {
+        $where_conditions[] = "p.payment_amount <= :amount_max";
+        $params['amount_max'] = $filter_amount_max;
+    }
+
+    if (!empty($filter_method)) {
+        $where_conditions[] = "LOWER(pm.method_name) = :method";
+        $params['method'] = strtolower($filter_method);
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(p.payment_date) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(p.payment_date) <= :date_to";
+        $params['date_to'] = $filter_date_to;
+    }
+
+    if (!empty($filter_status)) {
+        $where_conditions[] = "LOWER(ps.status_name) = :status";
+        $params['status'] = strtolower($filter_status);
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
@@ -170,6 +201,8 @@ try {
         FROM payments p
         LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
+        LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
         $where_clause
     ";
     $count_result = $db->fetchOne($count_sql, $params);

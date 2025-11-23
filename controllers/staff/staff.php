@@ -111,27 +111,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
-
-$filter_position = isset($_GET['position']) ? sanitize($_GET['position']) : '';
+// Handle filters from URL
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_email = isset($_GET['filter_email']) ? sanitize($_GET['filter_email']) : '';
+$filter_phone = isset($_GET['filter_phone']) ? sanitize($_GET['filter_phone']) : '';
+$filter_position = isset($_GET['filter_position']) ? sanitize($_GET['filter_position']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
 // Fetch staff members with filters
 try {
     $where_conditions = [];
     $params = [];
 
-    if (!empty($search_query)) {
-        $where_conditions[] = "(staff_first_name LIKE :search OR staff_middle_initial LIKE :search OR staff_last_name LIKE :search)";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_name)) {
+        // Case-insensitive search in first name, last name, middle initial, and concatenated full name
+        $where_conditions[] = "(LOWER(s.staff_first_name) LIKE :name OR LOWER(s.staff_last_name) LIKE :name OR LOWER(s.staff_middle_initial) LIKE :name OR LOWER(TRIM(CONCAT(COALESCE(s.staff_first_name, ''), ' ', COALESCE(s.staff_middle_initial, ''), ' ', COALESCE(s.staff_last_name, '')))) LIKE :name)";
+        $params['name'] = '%' . strtolower($filter_name) . '%';
+    }
+
+    if (!empty($filter_email)) {
+        // Case-insensitive email search with trimmed input
+        $email_clean = trim(strtolower($filter_email));
+        $where_conditions[] = "LOWER(TRIM(s.staff_email)) LIKE :email";
+        $params['email'] = '%' . $email_clean . '%';
+    }
+
+    if (!empty($filter_phone)) {
+        // Remove non-numeric characters for phone search to make it more flexible
+        $phone_clean = preg_replace('/[^0-9]/', '', $filter_phone);
+        $where_conditions[] = "REPLACE(REPLACE(REPLACE(REPLACE(s.staff_phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone";
+        $params['phone'] = '%' . $phone_clean . '%';
     }
 
     if (!empty($filter_position)) {
-        $where_conditions[] = "staff_position = :position";
+        $where_conditions[] = "s.staff_position = :position";
         $params['position'] = $filter_position;
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(s.created_at) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(s.created_at) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
 
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
@@ -148,16 +173,15 @@ try {
     
     // Special handling for name sorting (sort by first name, then last name)
     if ($sort_column === 'staff_first_name') {
-        $order_by = "staff_first_name $sort_order, staff_last_name $sort_order";
+        $order_by = "s.staff_first_name $sort_order, s.staff_last_name $sort_order";
     } else {
-        $order_by = "$sort_column $sort_order";
+        $order_by = "s.$sort_column $sort_order";
     }
 
     // Pagination
-    $load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
     $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-    $items_per_page = $load_all ? 10000 : 10;
-    $offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+    $items_per_page = 10;
+    $offset = (($page - 1) * $items_per_page);
     
     // Get total count for pagination
     $count_sql = "SELECT COUNT(*) as count FROM staff s $where_clause";

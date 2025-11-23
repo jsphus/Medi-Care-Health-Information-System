@@ -162,17 +162,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     exit;
 }
 
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Get filter parameters from URL
+$filter_patient = isset($_GET['patient']) ? sanitize($_GET['patient']) : '';
+$filter_amount_min = isset($_GET['amount_min']) ? floatval($_GET['amount_min']) : null;
+$filter_amount_max = isset($_GET['amount_max']) ? floatval($_GET['amount_max']) : null;
+$filter_method = isset($_GET['method']) ? sanitize($_GET['method']) : '';
+$filter_date_from = isset($_GET['date_from']) ? sanitize($_GET['date_from']) : '';
+$filter_date_to = isset($_GET['date_to']) ? sanitize($_GET['date_to']) : '';
+$filter_status = isset($_GET['status']) ? sanitize($_GET['status']) : '';
+
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = (($page - 1) * $items_per_page);
 
 // Fetch all payments with related data
 try {
+    // Build WHERE conditions
+    $where_conditions = [];
+    $params = [];
+
+    if (!empty($filter_patient)) {
+        $where_conditions[] = "(LOWER(pat.pat_first_name) LIKE :patient OR LOWER(pat.pat_last_name) LIKE :patient OR LOWER(CONCAT(pat.pat_first_name, ' ', pat.pat_last_name)) LIKE :patient)";
+        $params['patient'] = '%' . strtolower($filter_patient) . '%';
+    }
+
+    if ($filter_amount_min !== null && $filter_amount_min > 0) {
+        $where_conditions[] = "p.payment_amount >= :amount_min";
+        $params['amount_min'] = $filter_amount_min;
+    }
+
+    if ($filter_amount_max !== null && $filter_amount_max > 0) {
+        $where_conditions[] = "p.payment_amount <= :amount_max";
+        $params['amount_max'] = $filter_amount_max;
+    }
+
+    if (!empty($filter_method)) {
+        $where_conditions[] = "LOWER(pm.method_name) = :method";
+        $params['method'] = strtolower($filter_method);
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(p.payment_date) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(p.payment_date) <= :date_to";
+        $params['date_to'] = $filter_date_to;
+    }
+
+    if (!empty($filter_status)) {
+        $where_conditions[] = "LOWER(ps.status_name) = :status";
+        $params['status'] = strtolower($filter_status);
+    }
+
+    $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+
     // Get total count for pagination
-    $count_stmt = $db->query("SELECT COUNT(*) FROM payments p");
-    $total_items = $count_stmt->fetchColumn();
+    $count_sql = "
+        SELECT COUNT(*) as count
+        FROM payments p
+        LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
+        LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        $where_clause
+    ";
+    $count_result = $db->fetchOne($count_sql, $params);
+    $total_items = (int)($count_result['count'] ?? 0);
     $total_pages = ceil($total_items / $items_per_page);
     
     // Handle sorting - default to showing newest payments first by creation date
@@ -199,7 +257,7 @@ try {
     
     // Fetch paginated results - ensure all payments are shown even if JOINs fail
     // Include appointment details with doctor and patient profile pictures
-    $stmt = $db->prepare("
+    $sql = "
         SELECT p.*, 
                a.appointment_id, a.pat_id, a.doc_id, a.service_id, a.status_id,
                a.appointment_date, a.appointment_time, a.appointment_notes,
@@ -211,7 +269,7 @@ try {
                up.profile_picture_url as patient_profile_picture,
                ud.profile_picture_url as doctor_profile_picture,
                pm.method_name,
-               ps.status_name
+               ps.status_name, ps.payment_status_id
         FROM payments p
         LEFT JOIN appointments a ON p.appointment_id = a.appointment_id
         LEFT JOIN patients pat ON a.pat_id = pat.pat_id
@@ -223,9 +281,14 @@ try {
         LEFT JOIN appointment_statuses st ON a.status_id = st.status_id
         LEFT JOIN payment_methods pm ON p.payment_method_id = pm.method_id
         LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        $where_clause
         ORDER BY $order_by
         LIMIT :limit OFFSET :offset
-    ");
+    ";
+    $stmt = $db->prepare($sql);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
     $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();

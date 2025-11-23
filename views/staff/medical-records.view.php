@@ -86,9 +86,15 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
         </div>
     </div>
@@ -137,15 +143,6 @@
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">
                             Treatment
                         </th>
-                        <th class="sortable <?= $current_sort === 'follow_up_date' ? 'sort-' . strtolower($current_order) : '' ?>" 
-                            onclick="sortTable('follow_up_date')" 
-                            style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem; cursor: pointer;">
-                            Follow-up
-                            <span class="sort-indicator">
-                                <i class="fas fa-arrow-up"></i>
-                                <i class="fas fa-arrow-down"></i>
-                            </span>
-                        </th>
                         <th style="padding: 1rem; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 0.875rem;">Action</th>
                     </tr>
                 </thead>
@@ -154,13 +151,13 @@
                         <tr class="table-row" 
                             data-patient="<?= htmlspecialchars(strtolower(($record['pat_first_name'] ?? '') . ' ' . ($record['pat_last_name'] ?? ''))) ?>"
                             data-doctor="<?= htmlspecialchars(strtolower(($record['doc_first_name'] ?? '') . ' ' . ($record['doc_last_name'] ?? ''))) ?>"
-                            data-diagnosis="<?= htmlspecialchars(strtolower($record['diagnosis'] ?? '')) ?>"
-                            data-date="<?= !empty($record['record_date']) ? htmlspecialchars(date('Y-m-d', strtotime($record['record_date']))) : '' ?>"
+                            data-diagnosis="<?= htmlspecialchars(strtolower($record['med_rec_diagnosis'] ?? $record['diagnosis'] ?? '')) ?>"
+                            data-date="<?= !empty($record['med_rec_visit_date'] ?? $record['record_date'] ?? null) ? htmlspecialchars(date('Y-m-d', strtotime($record['med_rec_visit_date'] ?? $record['record_date']))) : '' ?>"
                             style="border-bottom: 1px solid var(--border-light); transition: background 0.2s;">
                             <td style="padding: 1rem;">
-                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['record_id']) ?></strong>
+                                <strong style="color: var(--text-primary);">#<?= htmlspecialchars($record['record_id'] ?? $record['med_rec_id'] ?? 'N/A') ?></strong>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['record_date'] ? date('d M Y', strtotime($record['record_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?= !empty($record['record_date'] ?? $record['med_rec_visit_date'] ?? null) ? date('d M Y', strtotime($record['record_date'] ?? $record['med_rec_visit_date'])) : 'N/A' ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                                     <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.875rem; overflow: hidden; flex-shrink: 0;">
@@ -183,9 +180,14 @@
                                     <span style="color: var(--text-secondary);">Dr. <?= htmlspecialchars($record['doc_first_name'] . ' ' . $record['doc_last_name']) ?></span>
                                 </div>
                             </td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['diagnosis'] ?? '', 0, 50)) ?><?= strlen($record['diagnosis'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars(substr($record['treatment'] ?? '', 0, 50)) ?><?= strlen($record['treatment'] ?? '') > 50 ? '...' : '' ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $record['follow_up_date'] ? date('d M Y', strtotime($record['follow_up_date'])) : 'N/A' ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?php 
+                                $diagnosis = $record['med_rec_diagnosis'] ?? $record['diagnosis'] ?? '';
+                                echo htmlspecialchars(substr($diagnosis, 0, 50)) . (strlen($diagnosis) > 50 ? '...' : '');
+                            ?></td>
+                            <td style="padding: 1rem; color: var(--text-secondary);"><?php 
+                                $prescription = $record['med_rec_prescription'] ?? $record['prescription'] ?? '';
+                                echo htmlspecialchars(substr($prescription, 0, 50)) . (strlen($prescription) > 50 ? '...' : '');
+                            ?></td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                                     <button class="btn btn-sm view-record-btn" 
@@ -201,6 +203,51 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                Showing <?= ($offset ?? 0) + 1 ?>-<?= min(($offset ?? 0) + ($items_per_page ?? 10), $total_items ?? count($records)) ?> of <?= $total_items ?? count($records) ?> entries
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => max(1, ($page ?? 1) - 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= ($page ?? 1) <= 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    < Previous
+                </a>
+                <?php
+                $current_page = $page ?? 1;
+                $total_pages = $total_pages ?? 1;
+                $start_page = max(1, $current_page - 2);
+                $end_page = min($total_pages, $current_page + 2);
+                if ($start_page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" class="btn btn-sm">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                       class="btn btn-sm <?= $i === $current_page ? 'btn-primary' : '' ?>"
+                       style="<?= $i === $current_page ? 'background: var(--primary); color: white;' : '' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" class="btn btn-sm"><?= $total_pages ?></a>
+                <?php endif; ?>
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => min($total_pages, ($page ?? 1) + 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= ($page ?? 1) >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    Next >
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
@@ -565,63 +612,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Table Filtering Functions
+// Table Filtering Functions - Simple URL-based filtering
 function applyTableFilters() {
-    filterTable();
-}
-
-function filterTable() {
-    const patientFilter = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
-    const doctorFilter = document.getElementById('filterDoctor')?.value.toLowerCase().trim() || '';
-    const diagnosisFilter = document.getElementById('filterDiagnosis')?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById('filterDate')?.value || '';
+    const url = new URL(window.location.href);
     
-    const rows = document.querySelectorAll('.table-row');
-    let visibleCount = 0;
+    // Get filter values
+    const patient = document.getElementById('filterPatient')?.value.trim() || '';
+    const doctor = document.getElementById('filterDoctor')?.value.trim() || '';
+    const diagnosis = document.getElementById('filterDiagnosis')?.value.trim() || '';
+    const dateFrom = document.getElementById('filterDateFrom')?.value.trim() || '';
+    const dateTo = document.getElementById('filterDateTo')?.value.trim() || '';
     
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const doctor = row.getAttribute('data-doctor') || '';
-        const diagnosis = row.getAttribute('data-diagnosis') || '';
-        const date = row.getAttribute('data-date') || '';
-        
-        const matchesPatient = !patientFilter || patient.includes(patientFilter);
-        const matchesDoctor = !doctorFilter || doctor.includes(doctorFilter);
-        const matchesDiagnosis = !diagnosisFilter || diagnosis.includes(diagnosisFilter);
-        const matchesDate = !dateFilter || date === dateFilter;
-        
-        if (matchesPatient && matchesDoctor && matchesDiagnosis && matchesDate) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    // Remove existing filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('doctor');
+    url.searchParams.delete('diagnosis');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
     
-    const hasActiveFilters = patientFilter || doctorFilter || diagnosisFilter || dateFilter;
-    const tableBody = document.getElementById('tableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
+    // Add non-empty filter values to URL
+    if (patient) url.searchParams.set('patient', patient);
+    if (doctor) url.searchParams.set('doctor', doctor);
+    if (diagnosis) url.searchParams.set('diagnosis', diagnosis);
+    if (dateFrom) url.searchParams.set('date_from', dateFrom);
+    if (dateTo) url.searchParams.set('date_to', dateTo);
     
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 8;
-            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No medical records match the current filters.</p></td>`;
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    // Redirect to filtered URL
+    window.location.href = url.toString();
 }
 
 function resetTableFilters() {
-    const inputs = ['filterPatient', 'filterDoctor', 'filterDiagnosis', 'filterDate'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    filterTable();
+    const url = new URL(window.location.href);
+    
+    // Remove all filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('doctor');
+    url.searchParams.delete('diagnosis');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('page');
+    
+    // Redirect to clean URL
+    window.location.href = url.toString();
 }
 
 function toggleTableFilters() {
@@ -629,21 +662,53 @@ function toggleTableFilters() {
     const toggleBtn = document.getElementById('toggleFilterBtn');
     
     if (filterBar && toggleBtn) {
-        if (filterBar.style.display === 'none') {
+        if (filterBar.style.display === 'none' || !filterBar.style.display) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         } else {
             filterBar.style.display = 'none';
             toggleBtn.classList.remove('active');
-            toggleBtn.innerHTML = '<i class="fas fa-filter"></i>';
+            toggleBtn.style.background = 'var(--bg-light)';
+            toggleBtn.style.color = 'var(--text-secondary)';
         }
     }
 }
 
-// Initialize filtering
+// Initialize - restore filter values from URL on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Restore filter values from URL
+    if (urlParams.get('patient') && document.getElementById('filterPatient')) {
+        document.getElementById('filterPatient').value = urlParams.get('patient');
+    }
+    if (urlParams.get('doctor') && document.getElementById('filterDoctor')) {
+        document.getElementById('filterDoctor').value = urlParams.get('doctor');
+    }
+    if (urlParams.get('diagnosis') && document.getElementById('filterDiagnosis')) {
+        document.getElementById('filterDiagnosis').value = urlParams.get('diagnosis');
+    }
+    if (urlParams.get('date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('date_from');
+    }
+    if (urlParams.get('date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('date_to');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.has('patient') || urlParams.has('doctor') || urlParams.has('diagnosis') || 
+        urlParams.has('date_from') || urlParams.has('date_to')) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar && toggleBtn) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        }
+    }
 });
 
 // Table Sorting Function

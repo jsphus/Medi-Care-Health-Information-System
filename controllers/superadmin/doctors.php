@@ -285,36 +285,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle filters
-$spec_filter = isset($_GET['spec_id']) ? (int)$_GET['spec_id'] : null;
-$status_filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
-$spec_name_filter = '';
+// Handle filters from URL
+$filter_name = isset($_GET['filter_name']) ? sanitize($_GET['filter_name']) : '';
+$filter_email = isset($_GET['filter_email']) ? sanitize($_GET['filter_email']) : '';
+$filter_phone = isset($_GET['filter_phone']) ? sanitize($_GET['filter_phone']) : '';
+$filter_specialization = isset($_GET['filter_specialization']) ? (int)$_GET['filter_specialization'] : null;
+$filter_status = isset($_GET['filter_status']) ? sanitize($_GET['filter_status']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = (($page - 1) * $items_per_page);
 
 // Fetch all doctors with filters
 try {
     $where_conditions = [];
     $params = [];
     
-    if ($spec_filter) {
-        $where_conditions[] = "d.doc_specialization_id = :spec_id";
-        $params['spec_id'] = $spec_filter;
-        
-        // Get specialization name for display
-        $stmt = $db->prepare("SELECT spec_name FROM specializations WHERE spec_id = :spec_id");
-        $stmt->execute(['spec_id' => $spec_filter]);
-        $spec_data = $stmt->fetch(PDO::FETCH_ASSOC);
-        $spec_name_filter = $spec_data ? $spec_data['spec_name'] : '';
+    if (!empty($filter_name)) {
+        // Case-insensitive search in first name, last name, middle initial, and concatenated full name
+        $where_conditions[] = "(LOWER(d.doc_first_name) LIKE :name OR LOWER(d.doc_last_name) LIKE :name OR LOWER(d.doc_middle_initial) LIKE :name OR LOWER(TRIM(CONCAT(COALESCE(d.doc_first_name, ''), ' ', COALESCE(d.doc_middle_initial, ''), ' ', COALESCE(d.doc_last_name, '')))) LIKE :name)";
+        $params['name'] = '%' . strtolower($filter_name) . '%';
     }
     
-    if (!empty($status_filter)) {
+    if (!empty($filter_email)) {
+        // Case-insensitive email search with trimmed input
+        $email_clean = trim(strtolower($filter_email));
+        $where_conditions[] = "LOWER(TRIM(d.doc_email)) LIKE :email";
+        $params['email'] = '%' . $email_clean . '%';
+    }
+    
+    if (!empty($filter_phone)) {
+        // Remove non-numeric characters for phone search to make it more flexible
+        $phone_clean = preg_replace('/[^0-9]/', '', $filter_phone);
+        $where_conditions[] = "REPLACE(REPLACE(REPLACE(REPLACE(d.doc_phone, ' ', ''), '-', ''), '(', ''), ')', '') LIKE :phone";
+        $params['phone'] = '%' . $phone_clean . '%';
+    }
+    
+    if ($filter_specialization) {
+        $where_conditions[] = "d.doc_specialization_id = :spec_id";
+        $params['spec_id'] = $filter_specialization;
+    }
+    
+    if (!empty($filter_status)) {
         $where_conditions[] = "d.doc_status = :status";
-        $params['status'] = $status_filter;
+        $params['status'] = $filter_status;
+    }
+    
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(d.created_at) >= :date_from";
+        $params['date_from'] = $filter_date_from;
+    }
+    
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(d.created_at) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
     
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';

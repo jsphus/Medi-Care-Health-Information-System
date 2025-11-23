@@ -104,19 +104,39 @@
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
                     <i class="fas fa-credit-card" style="margin-right: 0.25rem;"></i>Payment Method
                 </label>
-                <input type="text" id="filterMethod" class="filter-input" placeholder="Search method..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterMethod" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Methods</option>
+                    <?php foreach ($payment_methods as $method): ?>
+                        <option value="<?= htmlspecialchars(strtolower($method['method_name'])) ?>">
+                            <?= htmlspecialchars($method['method_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
                     <i class="fas fa-toggle-on" style="margin-right: 0.25rem;"></i>Status
                 </label>
-                <input type="text" id="filterStatus" class="filter-input" placeholder="Search status..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Statuses</option>
+                    <?php foreach ($payment_statuses as $status): ?>
+                        <option value="<?= htmlspecialchars(strtolower($status['status_name'])) ?>">
+                            <?= htmlspecialchars($status['status_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
     </div>
@@ -196,20 +216,20 @@
                             <td style="padding: 1rem; color: var(--status-success); font-weight: 600;">₱<?= number_format($payment['payment_amount'] ?? 0, 2) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($payment['method_name'] ?? 'N/A') ?></td>
                             <td style="padding: 1rem;">
-                                <form method="POST" class="status-update-form" style="display: inline;" onchange="this.submit()">
-                                    <input type="hidden" name="action" value="update_status">
-                                    <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
-                                    <select name="payment_status_id" class="status-dropdown" 
-                                            style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: var(--primary-blue); color: white; border: 1px solid var(--primary-blue); cursor: pointer; min-width: 120px;">
-                                        <?php foreach ($payment_statuses as $status): ?>
-                                            <option value="<?= $status['payment_status_id'] ?>" 
-                                                    <?= ($payment['payment_status_id'] == $status['payment_status_id']) ? 'selected' : '' ?>
-                                                    style="background: white; color: var(--text-primary);">
-                                                <?= htmlspecialchars($status['status_name']) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </form>
+                                <?php
+                                $status_name = strtolower($payment['status_name'] ?? '');
+                                $status_color = '#3b82f6'; // Default blue
+                                if ($status_name === 'paid') {
+                                    $status_color = '#10b981'; // Green
+                                } elseif ($status_name === 'pending') {
+                                    $status_color = '#f59e0b'; // Yellow
+                                } elseif ($status_name === 'refunded') {
+                                    $status_color = '#ef4444'; // Red
+                                }
+                                ?>
+                                <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $status_color ?>; color: white; display: inline-block;">
+                                    <?= htmlspecialchars($payment['status_name'] ?? 'N/A') ?>
+                                </span>
                             </td>
                             <td style="padding: 1rem;">
                                 <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -770,129 +790,111 @@ function sortTable(column) {
     window.location.href = url.toString();
 }
 
-// Filtering Functions
+// Filtering Functions - Simple URL-based filtering
 function applyTableFilters() {
-    filterTable();
-}
-
-function filterTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
+    const url = new URL(window.location.href);
     
-    const rows = tbody.querySelectorAll('.table-row');
-    const filterPatient = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
-    const filterAmountMin = document.getElementById('filterAmountMin')?.value ? parseFloat(document.getElementById('filterAmountMin').value) : null;
-    const filterAmountMax = document.getElementById('filterAmountMax')?.value ? parseFloat(document.getElementById('filterAmountMax').value) : null;
-    const filterMethod = document.getElementById('filterMethod')?.value.toLowerCase().trim() || '';
-    const filterDate = document.getElementById('filterDate')?.value || '';
-    const filterStatus = document.getElementById('filterStatus')?.value.toLowerCase().trim() || '';
+    // Get filter values
+    const patient = document.getElementById('filterPatient')?.value.trim() || '';
+    const amountMin = document.getElementById('filterAmountMin')?.value.trim() || '';
+    const amountMax = document.getElementById('filterAmountMax')?.value.trim() || '';
+    const method = document.getElementById('filterMethod')?.value.trim() || '';
+    const dateFrom = document.getElementById('filterDateFrom')?.value.trim() || '';
+    const dateTo = document.getElementById('filterDateTo')?.value.trim() || '';
+    const status = document.getElementById('filterStatus')?.value.trim() || '';
     
-    let visibleCount = 0;
-    let hasActiveFilters = filterPatient || filterAmountMin !== null || filterAmountMax !== null || filterMethod || filterDate || filterStatus;
+    // Remove existing filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('amount_min');
+    url.searchParams.delete('amount_max');
+    url.searchParams.delete('method');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('status');
+    url.searchParams.delete('page'); // Reset to page 1 when filtering
     
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const amount = parseFloat(row.getAttribute('data-amount') || 0);
-        const method = row.getAttribute('data-method') || '';
-        const date = row.getAttribute('data-date') || '';
-        const status = row.getAttribute('data-status') || '';
-        
-        const matchesPatient = !filterPatient || patient.includes(filterPatient);
-        const matchesAmountMin = filterAmountMin === null || amount >= filterAmountMin;
-        const matchesAmountMax = filterAmountMax === null || amount <= filterAmountMax;
-        const matchesMethod = !filterMethod || method.includes(filterMethod);
-        const matchesDate = !filterDate || date === filterDate;
-        const matchesStatus = !filterStatus || status === filterStatus;
-        
-        if (matchesPatient && matchesAmountMin && matchesAmountMax && matchesMethod && matchesDate && matchesStatus) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    // Add non-empty filter values to URL
+    if (patient) url.searchParams.set('patient', patient);
+    if (amountMin) url.searchParams.set('amount_min', amountMin);
+    if (amountMax) url.searchParams.set('amount_max', amountMax);
+    if (method) url.searchParams.set('method', method);
+    if (dateFrom) url.searchParams.set('date_from', dateFrom);
+    if (dateTo) url.searchParams.set('date_to', dateTo);
+    if (status) url.searchParams.set('status', status);
     
-    // Show/hide pagination and filter message
-    const paginationContainer = document.getElementById('paginationContainer');
-    let filterActiveMessage = document.getElementById('filterActiveMessage');
-    
-    if (hasActiveFilters) {
-        if (paginationContainer) paginationContainer.style.display = 'none';
-        
-        if (!filterActiveMessage) {
-            filterActiveMessage = document.createElement('div');
-            filterActiveMessage.id = 'filterActiveMessage';
-            filterActiveMessage.style.cssText = 'padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem; border-top: 1px solid var(--border-light);';
-            tbody.parentElement.parentElement.parentElement.appendChild(filterActiveMessage);
-        }
-        
-        if (visibleCount === 0) {
-            filterActiveMessage.innerHTML = '<i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>No payments match the applied filters.';
-        } else {
-            filterActiveMessage.innerHTML = `<i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Showing ${visibleCount} payment(s) matching your filters. <a href="javascript:void(0)" onclick="resetTableFilters()" style="color: var(--primary-blue); text-decoration: underline; margin-left: 0.5rem;">Clear filters</a>`;
-        }
-        filterActiveMessage.style.display = 'block';
-    } else {
-        if (paginationContainer) paginationContainer.style.display = '';
-        if (filterActiveMessage) filterActiveMessage.style.display = 'none';
-    }
+    // Redirect to filtered URL
+    window.location.href = url.toString();
 }
 
 function resetTableFilters() {
-    document.getElementById('filterPatient').value = '';
-    document.getElementById('filterAmountMin').value = '';
-    document.getElementById('filterAmountMax').value = '';
-    document.getElementById('filterMethod').value = '';
-    document.getElementById('filterDate').value = '';
+    const url = new URL(window.location.href);
     
-    filterTable();
-    resetToPaginatedView();
+    // Remove all filter parameters
+    url.searchParams.delete('patient');
+    url.searchParams.delete('amount_min');
+    url.searchParams.delete('amount_max');
+    url.searchParams.delete('method');
+    url.searchParams.delete('date_from');
+    url.searchParams.delete('date_to');
+    url.searchParams.delete('status');
+    url.searchParams.delete('page');
+    
+    // Redirect to clean URL
+    window.location.href = url.toString();
 }
 
 function toggleTableFilters() {
     const filterBar = document.getElementById('tableFilterBar');
     const toggleBtn = document.getElementById('toggleFilterBtn');
     
-    if (filterBar.style.display === 'none' || !filterBar.style.display) {
-        filterBar.style.display = 'block';
-        toggleBtn.classList.add('active');
-        toggleBtn.style.background = 'var(--primary-blue)';
-        toggleBtn.style.color = 'white';
-        loadAllResults();
-    } else {
-        filterBar.style.display = 'none';
-        toggleBtn.classList.remove('active');
-        toggleBtn.style.background = 'var(--bg-light)';
-        toggleBtn.style.color = 'var(--text-secondary)';
-        resetTableFilters();
-        resetToPaginatedView();
+    if (filterBar && toggleBtn) {
+        if (filterBar.style.display === 'none' || !filterBar.style.display) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        } else {
+            filterBar.style.display = 'none';
+            toggleBtn.classList.remove('active');
+            toggleBtn.style.background = 'var(--bg-light)';
+            toggleBtn.style.color = 'var(--text-secondary)';
+        }
     }
 }
 
-function loadAllResults() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('all_results', '1');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-function resetToPaginatedView() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('all_results');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-}
-
-// Initialize filter event listeners
+// Initialize - restore filter values from URL on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
-    
-    // Check if filters are active on page load
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('all_results') === '1') {
+    
+    // Restore filter values from URL
+    if (urlParams.get('patient') && document.getElementById('filterPatient')) {
+        document.getElementById('filterPatient').value = urlParams.get('patient');
+    }
+    if (urlParams.get('amount_min') && document.getElementById('filterAmountMin')) {
+        document.getElementById('filterAmountMin').value = urlParams.get('amount_min');
+    }
+    if (urlParams.get('amount_max') && document.getElementById('filterAmountMax')) {
+        document.getElementById('filterAmountMax').value = urlParams.get('amount_max');
+    }
+    if (urlParams.get('method') && document.getElementById('filterMethod')) {
+        document.getElementById('filterMethod').value = urlParams.get('method');
+    }
+    if (urlParams.get('date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('date_from');
+    }
+    if (urlParams.get('date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('date_to');
+    }
+    if (urlParams.get('status') && document.getElementById('filterStatus')) {
+        document.getElementById('filterStatus').value = urlParams.get('status');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.has('patient') || urlParams.has('amount_min') || urlParams.has('amount_max') || 
+        urlParams.has('method') || urlParams.has('date_from') || urlParams.has('date_to') || urlParams.has('status')) {
         const filterBar = document.getElementById('tableFilterBar');
         const toggleBtn = document.getElementById('toggleFilterBtn');
-        if (filterBar) {
+        if (filterBar && toggleBtn) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
             toggleBtn.style.background = 'var(--primary-blue)';
@@ -1049,7 +1051,8 @@ function filterTable() {
     const amountMin = parseFloat(document.getElementById('filterAmountMin')?.value) || 0;
     const amountMax = parseFloat(document.getElementById('filterAmountMax')?.value) || Infinity;
     const methodFilter = document.getElementById('filterMethod')?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById('filterDate')?.value || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
     
     const rows = document.querySelectorAll('.table-row');
     let visibleCount = 0;
@@ -1063,9 +1066,10 @@ function filterTable() {
         const matchesPatient = !patientFilter || patient.includes(patientFilter);
         const matchesAmount = amount >= amountMin && amount <= amountMax;
         const matchesMethod = !methodFilter || method.includes(methodFilter);
-        const matchesDate = !dateFilter || date === dateFilter;
+        const matchesDateFrom = !filterDateFrom || date >= filterDateFrom;
+        const matchesDateTo = !filterDateTo || date <= filterDateTo;
         
-        if (matchesPatient && matchesAmount && matchesMethod && matchesDate) {
+        if (matchesPatient && matchesAmount && matchesMethod && matchesDateFrom && matchesDateTo) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -1073,7 +1077,7 @@ function filterTable() {
         }
     });
     
-    const hasActiveFilters = patientFilter || document.getElementById('filterAmountMin')?.value || document.getElementById('filterAmountMax')?.value || methodFilter || dateFilter;
+    const hasActiveFilters = patientFilter || document.getElementById('filterAmountMin')?.value || document.getElementById('filterAmountMax')?.value || methodFilter || filterDateFrom || filterDateTo;
     const tableBody = document.getElementById('tableBody');
     const noResultsMsg = document.getElementById('noResultsMessage');
     
@@ -1091,7 +1095,7 @@ function filterTable() {
 }
 
 function resetTableFilters() {
-    const inputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDate'];
+    const inputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDateFrom', 'filterDateTo', 'filterStatus'];
     inputs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -1118,15 +1122,8 @@ function toggleTableFilters() {
 
 // Initialize filtering
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = ['filterPatient', 'filterAmountMin', 'filterAmountMax', 'filterMethod', 'filterDate'];
-    filterInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', filterTable);
-            input.addEventListener('change', filterTable);
-        }
-    });
-    filterTable();
+    // Filters only apply when "Apply Filters" button is clicked
+    // No automatic filtering on input/change events
 });
 
 // Table Sorting Function

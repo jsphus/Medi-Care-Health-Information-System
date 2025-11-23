@@ -124,30 +124,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
+// Handle filters from URL
+$filter_patient = isset($_GET['filter_patient']) ? sanitize($_GET['filter_patient']) : '';
+$filter_doctor = isset($_GET['filter_doctor']) ? sanitize($_GET['filter_doctor']) : '';
+$filter_service = isset($_GET['filter_service']) ? sanitize($_GET['filter_service']) : '';
+$filter_status = isset($_GET['filter_status']) ? (int)$_GET['filter_status'] : null;
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
-$filter_status = isset($_GET['status']) ? (int)$_GET['status'] : null;
-$filter_doctor = isset($_GET['doctor']) ? (int)$_GET['doctor'] : null;
-$filter_patient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
-
-// Pagination - check if we should load all results (for client-side filtering)
-$load_all = isset($_GET['all_results']) && $_GET['all_results'] == '1';
+// Pagination
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$items_per_page = $load_all ? 10000 : 25; // Load all if filtering, otherwise paginate
-$offset = $load_all ? 0 : (($page - 1) * $items_per_page);
+$items_per_page = 25;
+$offset = (($page - 1) * $items_per_page);
 
 // Fetch appointments with filters
 try {
     $where_conditions = [];
     $params = [];
     
-    if (!empty($search_query)) {
-        $where_conditions[] = "a.appointment_id LIKE :search";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_patient)) {
+        // Case-insensitive search in patient name
+        $where_conditions[] = "(LOWER(p.pat_first_name) LIKE :patient OR LOWER(p.pat_last_name) LIKE :patient OR LOWER(TRIM(CONCAT(COALESCE(p.pat_first_name, ''), ' ', COALESCE(p.pat_last_name, '')))) LIKE :patient)";
+        $params['patient'] = '%' . strtolower($filter_patient) . '%';
+    }
+    
+    if (!empty($filter_doctor)) {
+        // Case-insensitive search in doctor name
+        $where_conditions[] = "(LOWER(d.doc_first_name) LIKE :doctor OR LOWER(d.doc_last_name) LIKE :doctor OR LOWER(TRIM(CONCAT(COALESCE(d.doc_first_name, ''), ' ', COALESCE(d.doc_last_name, '')))) LIKE :doctor)";
+        $params['doctor'] = '%' . strtolower($filter_doctor) . '%';
+    }
+    
+    if (!empty($filter_service)) {
+        // Case-insensitive search in service name
+        $where_conditions[] = "LOWER(s.service_name) LIKE :service";
+        $params['service'] = '%' . strtolower($filter_service) . '%';
     }
     
     if ($filter_status) {
@@ -155,14 +165,14 @@ try {
         $params['status'] = $filter_status;
     }
     
-    if ($filter_doctor) {
-        $where_conditions[] = "a.doc_id = :doctor";
-        $params['doctor'] = $filter_doctor;
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(a.appointment_date) >= :date_from";
+        $params['date_from'] = $filter_date_from;
     }
     
-    if ($filter_patient) {
-        $where_conditions[] = "a.pat_id = :patient";
-        $params['patient'] = $filter_patient;
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(a.appointment_date) <= :date_to";
+        $params['date_to'] = $filter_date_to;
     }
     
     $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
@@ -248,6 +258,7 @@ try {
 // Fetch filter data from database
 $filter_doctors = [];
 $filter_patients = [];
+$filter_statuses = [];
 try {
     // Get unique doctors from appointments
     $stmt = $db->query("SELECT DISTINCT d.doc_id, d.doc_first_name, d.doc_last_name FROM appointments a JOIN doctors d ON a.doc_id = d.doc_id ORDER BY d.doc_first_name");
@@ -256,9 +267,14 @@ try {
     // Get unique patients from appointments
     $stmt = $db->query("SELECT DISTINCT p.pat_id, p.pat_first_name, p.pat_last_name FROM appointments a JOIN patients p ON a.pat_id = p.pat_id ORDER BY p.pat_first_name");
     $filter_patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get all appointment statuses
+    $stmt = $db->query("SELECT status_id, status_name, status_color FROM appointment_statuses ORDER BY status_name");
+    $filter_statuses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $filter_doctors = [];
     $filter_patients = [];
+    $filter_statuses = [];
 }
 
 // Calculate statistics for summary cards
