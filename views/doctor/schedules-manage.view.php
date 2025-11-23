@@ -87,11 +87,87 @@
 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
     <!-- Table Header -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
-        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Schedules</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">All Schedules</h2>
+            <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+                <i class="fas fa-filter"></i>
+            </button>
+        </div>
         <button type="button" class="btn btn-primary" onclick="openAddScheduleModal()" style="display: flex; align-items: center; gap: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add New Schedule</span>
         </button>
+    </div>
+
+    <!-- Filter Bar (Hidden by default) -->
+    <div id="tableFilterBar" class="services-filter-bar" style="display: none; padding: 1.5rem; border-bottom: 1px solid var(--border-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">
+                <i class="fas fa-filter" style="margin-right: 0.5rem;"></i>Filter Schedules
+            </h3>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn btn-sm" onclick="applyTableFilters()" style="padding: 0.5rem 1rem; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); color: white; cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-check"></i>
+                    <span>Apply Filters</span>
+                </button>
+                <button type="button" class="btn btn-sm" onclick="resetTableFilters()" style="padding: 0.5rem 1rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem;">
+                    <i class="fas fa-redo"></i>
+                    <span>Reset Filters</span>
+                </button>
+            </div>
+        </div>
+        <div class="filter-controls-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-user-md" style="margin-right: 0.25rem;"></i>Doctor
+                </label>
+                <select id="filterDoctorId" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Doctors</option>
+                    <?php foreach ($doctors as $doc): ?>
+                        <option value="<?= $doc['doc_id'] ?>" <?= (isset($_GET['filter_doctor_id']) && (int)$_GET['filter_doctor_id'] === $doc['doc_id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($doc['doctor_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-stethoscope" style="margin-right: 0.25rem;"></i>Specialization
+                </label>
+                <select id="filterSpecializationId" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                    <option value="">All Specializations</option>
+                    <?php foreach ($specializations as $spec): ?>
+                        <option value="<?= $spec['spec_id'] ?>" <?= (isset($_GET['filter_specialization_id']) && (int)$_GET['filter_specialization_id'] === $spec['spec_id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($spec['spec_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
+                </label>
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
+                </label>
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Start Time
+                </label>
+                <input type="time" id="filterStartTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>End Time
+                </label>
+                <input type="time" id="filterEndTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+        </div>
     </div>
     <?php if (empty($all_schedules)): ?>
         <div style="padding: 3rem; text-align: center; color: var(--text-secondary);">
@@ -448,6 +524,102 @@ function sortTable(column) {
     
     window.location.href = url.toString();
 }
+
+// URL-based Filtering Functions
+function applyTableFilters() {
+    const params = new URLSearchParams();
+    
+    const filterDoctorId = document.getElementById('filterDoctorId')?.value || '';
+    const filterSpecializationId = document.getElementById('filterSpecializationId')?.value || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
+    const filterStartTime = document.getElementById('filterStartTime')?.value || '';
+    const filterEndTime = document.getElementById('filterEndTime')?.value || '';
+    
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
+    
+    if (filterDoctorId) params.set('filter_doctor_id', filterDoctorId);
+    if (filterSpecializationId) params.set('filter_specialization_id', filterSpecializationId);
+    if (filterDateFrom) params.set('filter_date_from', filterDateFrom);
+    if (filterDateTo) params.set('filter_date_to', filterDateTo);
+    if (filterStartTime) params.set('filter_start_time', filterStartTime);
+    if (filterEndTime) params.set('filter_end_time', filterEndTime);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+}
+
+function resetTableFilters() {
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
+    
+    const params = new URLSearchParams();
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+}
+
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
+    
+    if (filterBar.style.display === 'none' || !filterBar.style.display) {
+        filterBar.style.display = 'block';
+        toggleBtn.classList.add('active');
+        toggleBtn.style.background = 'var(--primary-blue)';
+        toggleBtn.style.color = 'white';
+    } else {
+        filterBar.style.display = 'none';
+        toggleBtn.classList.remove('active');
+        toggleBtn.style.background = 'var(--bg-light)';
+        toggleBtn.style.color = 'var(--text-secondary)';
+    }
+}
+
+// Initialize filter values from URL parameters
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('filter_doctor_id') && document.getElementById('filterDoctorId')) {
+        document.getElementById('filterDoctorId').value = urlParams.get('filter_doctor_id');
+    }
+    if (urlParams.get('filter_specialization_id') && document.getElementById('filterSpecializationId')) {
+        document.getElementById('filterSpecializationId').value = urlParams.get('filter_specialization_id');
+    }
+    if (urlParams.get('filter_date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('filter_date_from');
+    }
+    if (urlParams.get('filter_date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('filter_date_to');
+    }
+    if (urlParams.get('filter_start_time') && document.getElementById('filterStartTime')) {
+        document.getElementById('filterStartTime').value = urlParams.get('filter_start_time');
+    }
+    if (urlParams.get('filter_end_time') && document.getElementById('filterEndTime')) {
+        document.getElementById('filterEndTime').value = urlParams.get('filter_end_time');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.get('filter_doctor_id') || urlParams.get('filter_specialization_id') || 
+        urlParams.get('filter_date_from') || urlParams.get('filter_date_to') || 
+        urlParams.get('filter_start_time') || urlParams.get('filter_end_time')) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
+        }
+    }
+});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

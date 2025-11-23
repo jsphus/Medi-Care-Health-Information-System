@@ -1,4 +1,7 @@
-<?php require_once __DIR__ . '/../partials/header.php'; ?>
+<?php 
+require_once __DIR__ . '/../partials/header.php';
+require_once __DIR__ . '/../../config/Database.php';
+?>
 
 <style>
 @keyframes spin {
@@ -150,9 +153,23 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Time
+                    <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>Status
                 </label>
-                <input type="time" id="filterTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Statuses</option>
+                    <?php
+                    try {
+                        $db = Database::getInstance();
+                        $status_stmt = $db->query("SELECT status_name FROM appointment_statuses ORDER BY status_name");
+                        $statuses = $status_stmt->fetchAll(PDO::FETCH_COLUMN);
+                        foreach ($statuses as $status): ?>
+                            <option value="<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($status) ?></option>
+                        <?php endforeach;
+                    } catch (PDOException $e) {
+                        // Keep default options
+                    }
+                    ?>
+                </select>
             </div>
         </div>
     </div>
@@ -326,6 +343,49 @@
                 <?php endforeach; ?>
             </tbody>
         </table>
+        
+        <!-- Pagination -->
+        <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => max(1, $page - 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page <= 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    < Previous
+                </a>
+                <?php
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                if ($start_page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" class="btn btn-sm">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                       class="btn btn-sm <?= $i == $page ? 'btn-primary' : '' ?>" 
+                       style="<?= $i == $page ? 'background: var(--primary-blue); color: white;' : '' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" class="btn btn-sm"><?= $total_pages ?></a>
+                <?php endif; ?>
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => min($total_pages, $page + 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    Next >
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
@@ -514,60 +574,42 @@ document.getElementById('appointmentDetailModal')?.addEventListener('click', fun
     }
 });
 
-// Table Filtering Functions
+// URL-based Filtering Functions
 function applyTableFilters() {
-    filterTable();
-}
-
-function filterTable() {
-    const patientFilter = document.getElementById('filterPatient')?.value.toLowerCase().trim() || '';
-    const serviceFilter = document.getElementById('filterService')?.value.toLowerCase().trim() || '';
-    const timeFilter = document.getElementById('filterTime')?.value || '';
+    const params = new URLSearchParams();
     
-    const rows = document.querySelectorAll('.table-row');
-    let visibleCount = 0;
+    const filterPatient = document.getElementById('filterPatient')?.value.trim() || '';
+    const filterService = document.getElementById('filterService')?.value.trim() || '';
+    const filterStatus = document.getElementById('filterStatus')?.value || '';
     
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const service = row.getAttribute('data-service') || '';
-        const time = row.getAttribute('data-time') || '';
-        
-        const matchesPatient = !patientFilter || patient.includes(patientFilter);
-        const matchesService = !serviceFilter || service.includes(serviceFilter);
-        const matchesTime = !timeFilter || time.startsWith(timeFilter);
-        
-        if (matchesPatient && matchesService && matchesTime) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    const hasActiveFilters = patientFilter || serviceFilter || timeFilter;
-    const tableBody = document.getElementById('tableBody');
-    const noResultsMsg = document.getElementById('noResultsMessage');
+    if (filterPatient) params.set('filter_patient', filterPatient);
+    if (filterService) params.set('filter_service', filterService);
+    if (filterStatus) params.set('filter_status', filterStatus);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
     
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = 'noResultsMessage';
-            const colCount = document.querySelector('thead tr')?.querySelectorAll('th').length || 8;
-            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No appointments match the current filters.</p></td>`;
-            tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    // Reset to page 1 when applying filters
+    params.set('page', '1');
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function resetTableFilters() {
-    const inputs = ['filterPatient', 'filterService', 'filterTime'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    filterTable();
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
+    
+    const params = new URLSearchParams();
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
 function toggleTableFilters() {
@@ -587,9 +629,29 @@ function toggleTableFilters() {
     }
 }
 
-// Initialize filtering
+// Initialize filter values from URL parameters
 document.addEventListener('DOMContentLoaded', function() {
-    // Filters only apply when "Apply Filters" button is clicked
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('filter_patient') && document.getElementById('filterPatient')) {
+        document.getElementById('filterPatient').value = urlParams.get('filter_patient');
+    }
+    if (urlParams.get('filter_service') && document.getElementById('filterService')) {
+        document.getElementById('filterService').value = urlParams.get('filter_service');
+    }
+    if (urlParams.get('filter_status') && document.getElementById('filterStatus')) {
+        document.getElementById('filterStatus').value = urlParams.get('filter_status');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.get('filter_patient') || urlParams.get('filter_service') || urlParams.get('filter_status')) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+        }
+    }
 });
 
 // Table Sorting Function

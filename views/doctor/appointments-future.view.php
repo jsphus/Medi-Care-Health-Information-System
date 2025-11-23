@@ -88,7 +88,7 @@
                 <?= count($appointments) ?>
             </span>
         </div>
-        <button type="button" id="toggleFilterBtnUpcoming" class="btn btn-sm" onclick="toggleTableFilters('upcoming')" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
+        <button type="button" id="toggleFilterBtn" class="btn btn-sm" onclick="toggleTableFilters()" style="padding: 0.5rem; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: var(--radius-md); color: var(--text-secondary); cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem;">
             <i class="fas fa-filter"></i>
         </button>
     </div>
@@ -170,15 +170,36 @@
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>Date
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>From Date
                 </label>
-                <input type="date" id="filterDate" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <input type="date" id="filterDateFrom" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
             </div>
             <div class="filter-control">
                 <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <i class="fas fa-clock" style="margin-right: 0.25rem;"></i>Time
+                    <i class="fas fa-calendar" style="margin-right: 0.25rem;"></i>To Date
                 </label>
-                <input type="time" id="filterTime" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+                <input type="date" id="filterDateTo" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem;">
+            </div>
+            <div class="filter-control">
+                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <i class="fas fa-info-circle" style="margin-right: 0.25rem;"></i>Status
+                </label>
+                <select id="filterStatus" class="filter-input" style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-size: 0.875rem; background: white; cursor: pointer;">
+                    <option value="">All Statuses</option>
+                    <?php
+                    require_once __DIR__ . '/../../config/Database.php';
+                    try {
+                        $db = Database::getInstance();
+                        $status_stmt = $db->query("SELECT status_name FROM appointment_statuses ORDER BY status_name");
+                        $statuses = $status_stmt->fetchAll(PDO::FETCH_COLUMN);
+                        foreach ($statuses as $status): ?>
+                            <option value="<?= htmlspecialchars($status) ?>"><?= htmlspecialchars($status) ?></option>
+                        <?php endforeach;
+                    } catch (PDOException $e) {
+                        // Keep default options
+                    }
+                    ?>
+                </select>
             </div>
         </div>
     </div>
@@ -281,88 +302,144 @@
                 <?php endforeach; ?>
             </tbody>
         </table>
+        
+        <!-- Pagination -->
+        <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div id="paginationContainer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                Showing <?= $offset + 1 ?>-<?= min($offset + $items_per_page, $total_items) ?> of <?= $total_items ?> entries
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => max(1, $page - 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page <= 1 ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    < Previous
+                </a>
+                <?php
+                $start_page = max(1, $page - 2);
+                $end_page = min($total_pages, $page + 2);
+                if ($start_page > 1): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>" class="btn btn-sm">1</a>
+                    <?php if ($start_page > 2): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>" 
+                       class="btn btn-sm <?= $i == $page ? 'btn-primary' : '' ?>" 
+                       style="<?= $i == $page ? 'background: var(--primary-blue); color: white;' : '' ?>">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                <?php if ($end_page < $total_pages): ?>
+                    <?php if ($end_page < $total_pages - 1): ?>
+                        <span style="padding: 0.5rem;">...</span>
+                    <?php endif; ?>
+                    <a href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>" class="btn btn-sm"><?= $total_pages ?></a>
+                <?php endif; ?>
+                <a href="?<?= http_build_query(array_merge($_GET, ['page' => min($total_pages, $page + 1)])) ?>" 
+                   class="btn btn-sm" 
+                   style="<?= $page >= $total_pages ? 'opacity: 0.5; pointer-events: none;' : '' ?>">
+                    Next >
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
 <script>
-// Table Filtering Functions
-function applyTableFilters(section) {
-    filterTable(section);
+// URL-based Filtering Functions
+function applyTableFilters() {
+    const params = new URLSearchParams();
+    
+    const filterPatient = document.getElementById('filterPatient')?.value.trim() || '';
+    const filterService = document.getElementById('filterService')?.value.trim() || '';
+    const filterDateFrom = document.getElementById('filterDateFrom')?.value || '';
+    const filterDateTo = document.getElementById('filterDateTo')?.value || '';
+    const filterStatus = document.getElementById('filterStatus')?.value || '';
+    
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
+    
+    if (filterPatient) params.set('filter_patient', filterPatient);
+    if (filterService) params.set('filter_service', filterService);
+    if (filterDateFrom) params.set('filter_date_from', filterDateFrom);
+    if (filterDateTo) params.set('filter_date_to', filterDateTo);
+    if (filterStatus) params.set('filter_status', filterStatus);
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
+    
+    // Reset to page 1 when applying filters
+    params.set('page', '1');
+    
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
-function filterTable(section) {
-    const patientFilter = document.getElementById(`filterPatient${section.charAt(0).toUpperCase() + section.slice(1)}`)?.value.toLowerCase().trim() || '';
-    const serviceFilter = document.getElementById(`filterService${section.charAt(0).toUpperCase() + section.slice(1)}`)?.value.toLowerCase().trim() || '';
-    const dateFilter = document.getElementById(`filterDate${section.charAt(0).toUpperCase() + section.slice(1)}`)?.value || '';
-    const timeFilter = document.getElementById(`filterTime${section.charAt(0).toUpperCase() + section.slice(1)}`)?.value || '';
+function resetTableFilters() {
+    // Preserve sort parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const sort = urlParams.get('sort');
+    const order = urlParams.get('order');
     
-    const rows = document.querySelectorAll(`.table-row[data-section="${section}"]`);
-    let visibleCount = 0;
+    const params = new URLSearchParams();
+    if (sort) params.set('sort', sort);
+    if (order) params.set('order', order);
     
-    rows.forEach(row => {
-        const patient = row.getAttribute('data-patient') || '';
-        const service = row.getAttribute('data-service') || '';
-        const date = row.getAttribute('data-date') || '';
-        const time = row.getAttribute('data-time') || '';
-        
-        const matchesPatient = !patientFilter || patient.includes(patientFilter);
-        const matchesService = !serviceFilter || service.includes(serviceFilter);
-        const matchesDate = !dateFilter || date === dateFilter;
-        const matchesTime = !timeFilter || time.startsWith(timeFilter);
-        
-        if (matchesPatient && matchesService && matchesDate && matchesTime) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    const hasActiveFilters = patientFilter || serviceFilter || dateFilter || timeFilter;
-    const tableBody = document.getElementById(`tableBody${section.charAt(0).toUpperCase() + section.slice(1)}`);
-    const noResultsMsg = document.getElementById(`noResultsMessage${section.charAt(0).toUpperCase() + section.slice(1)}`);
-    
-    if (visibleCount === 0 && rows.length > 0 && hasActiveFilters) {
-        if (!noResultsMsg) {
-            const msg = document.createElement('tr');
-            msg.id = `noResultsMessage${section.charAt(0).toUpperCase() + section.slice(1)}`;
-            const colCount = document.querySelector(`#tableBody${section.charAt(0).toUpperCase() + section.slice(1)}`)?.closest('table')?.querySelector('thead tr')?.querySelectorAll('th').length || 10;
-            msg.innerHTML = `<td colspan="${colCount}" style="padding: 3rem; text-align: center; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.3;"></i><p style="margin: 0;">No appointments match the current filters.</p></td>`;
-            if (tableBody) tableBody.appendChild(msg);
-        }
-    } else if (noResultsMsg) {
-        noResultsMsg.remove();
-    }
+    window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
 }
 
-function resetTableFilters(section) {
-    const capitalized = section.charAt(0).toUpperCase() + section.slice(1);
-    const inputs = [`filterPatient${capitalized}`, `filterService${capitalized}`, `filterDate${capitalized}`, `filterTime${capitalized}`];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    filterTable(section);
-}
-
-function toggleTableFilters(section) {
-    const capitalized = section.charAt(0).toUpperCase() + section.slice(1);
-    const filterBar = document.getElementById(`tableFilterBar${capitalized}`);
-    const toggleBtn = document.getElementById(`toggleFilterBtn${capitalized}`);
+function toggleTableFilters() {
+    const filterBar = document.getElementById('tableFilterBar');
+    const toggleBtn = document.getElementById('toggleFilterBtn');
     
     if (filterBar && toggleBtn) {
-        if (filterBar.style.display === 'none') {
+        if (filterBar.style.display === 'none' || !filterBar.style.display) {
             filterBar.style.display = 'block';
             toggleBtn.classList.add('active');
+            toggleBtn.style.background = 'var(--primary-blue)';
+            toggleBtn.style.color = 'white';
         } else {
             filterBar.style.display = 'none';
             toggleBtn.classList.remove('active');
+            toggleBtn.style.background = 'var(--bg-light)';
+            toggleBtn.style.color = 'var(--text-secondary)';
         }
     }
 }
 
-// Initialize filtering for all sections
+// Initialize filter values from URL parameters
 document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('filter_patient') && document.getElementById('filterPatient')) {
+        document.getElementById('filterPatient').value = urlParams.get('filter_patient');
+    }
+    if (urlParams.get('filter_service') && document.getElementById('filterService')) {
+        document.getElementById('filterService').value = urlParams.get('filter_service');
+    }
+    if (urlParams.get('filter_date_from') && document.getElementById('filterDateFrom')) {
+        document.getElementById('filterDateFrom').value = urlParams.get('filter_date_from');
+    }
+    if (urlParams.get('filter_date_to') && document.getElementById('filterDateTo')) {
+        document.getElementById('filterDateTo').value = urlParams.get('filter_date_to');
+    }
+    if (urlParams.get('filter_status') && document.getElementById('filterStatus')) {
+        document.getElementById('filterStatus').value = urlParams.get('filter_status');
+    }
+    
+    // Show filter bar if any filters are active
+    if (urlParams.get('filter_patient') || urlParams.get('filter_service') || urlParams.get('filter_date_from') || urlParams.get('filter_date_to') || urlParams.get('filter_status')) {
+        const filterBar = document.getElementById('tableFilterBar');
+        const toggleBtn = document.getElementById('toggleFilterBtn');
+        if (filterBar) {
+            filterBar.style.display = 'block';
+            toggleBtn.classList.add('active');
+        }
+    }
+    
     // Notes tooltip functionality
     const notesCells = document.querySelectorAll('.notes-cell');
     notesCells.forEach(cell => {

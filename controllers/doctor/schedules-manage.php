@@ -160,6 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle filters from URL parameters
+$filter_doctor_id = isset($_GET['filter_doctor_id']) ? (int)$_GET['filter_doctor_id'] : 0;
+$filter_specialization_id = isset($_GET['filter_specialization_id']) ? (int)$_GET['filter_specialization_id'] : 0;
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
+$filter_start_time = isset($_GET['filter_start_time']) ? sanitize($_GET['filter_start_time']) : '';
+$filter_end_time = isset($_GET['filter_end_time']) ? sanitize($_GET['filter_end_time']) : '';
+
 // Fetch all schedules with doctor info
 try {
     // Handle sorting
@@ -179,15 +187,56 @@ try {
         $order_by = "s.$sort_column $sort_order";
     }
     
-    $stmt = $db->query("
+    // Build WHERE conditions
+    $where_conditions = [];
+    $params = [];
+    
+    if ($filter_doctor_id > 0) {
+        $where_conditions[] = "s.doc_id = :filter_doctor_id";
+        $params['filter_doctor_id'] = $filter_doctor_id;
+    }
+    
+    if ($filter_specialization_id > 0) {
+        $where_conditions[] = "d.doc_specialization_id = :filter_specialization_id";
+        $params['filter_specialization_id'] = $filter_specialization_id;
+    }
+    
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(s.schedule_date) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
+    }
+    
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(s.schedule_date) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
+    }
+    
+    if (!empty($filter_start_time)) {
+        $where_conditions[] = "s.start_time >= :filter_start_time";
+        $params['filter_start_time'] = $filter_start_time;
+    }
+    
+    if (!empty($filter_end_time)) {
+        $where_conditions[] = "s.end_time <= :filter_end_time";
+        $params['filter_end_time'] = $filter_end_time;
+    }
+    
+    $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
+    
+    $sql = "
         SELECT s.*, 
                CONCAT(d.doc_first_name, ' ', COALESCE(d.doc_middle_initial || '. ', ''), d.doc_last_name) as doctor_name,
-               sp.spec_name
+               sp.spec_name,
+               d.doc_specialization_id
         FROM schedules s
         JOIN doctors d ON s.doc_id = d.doc_id
         LEFT JOIN specializations sp ON d.doc_specialization_id = sp.spec_id
+        $where_clause
         ORDER BY $order_by
-    ");
+    ";
+    
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $all_schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch schedules: ' . $e->getMessage();
@@ -222,6 +271,17 @@ try {
     ")->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $doctors = [];
+}
+
+// Fetch all specializations for dropdown
+try {
+    $specializations = $db->query("
+        SELECT spec_id, spec_name 
+        FROM specializations 
+        ORDER BY spec_name
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $specializations = [];
 }
 
 // Calculate useful statistics for summary cards

@@ -86,43 +86,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle search and filters
-$search_query = '';
-if (isset($_GET['search'])) {
-    $search_query = sanitize($_GET['search']);
-}
+// Handle filters from URL parameters
+$filter_patient = isset($_GET['filter_patient']) ? sanitize($_GET['filter_patient']) : '';
+$filter_diagnosis = isset($_GET['filter_diagnosis']) ? sanitize($_GET['filter_diagnosis']) : '';
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
 
-$filter_patient = isset($_GET['patient']) ? (int)$_GET['patient'] : null;
+// Pagination
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$items_per_page = 25;
+$offset = ($page - 1) * $items_per_page;
+
+// Handle sorting
+$sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'med_rec_visit_date';
+$sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+$allowed_columns = ['med_rec_visit_date', 'med_rec_id', 'med_rec_created_at'];
+if (!in_array($sort_column, $allowed_columns)) {
+    $sort_column = 'med_rec_visit_date';
+}
+$sort_order = $sort_order === 'ASC' ? 'ASC' : 'DESC';
 
 // Fetch medical records with filters
 try {
     $where_conditions = ['a.doc_id = :doctor_id'];
     $params = ['doctor_id' => $doctor_id];
 
-    if (!empty($search_query)) {
-        $where_conditions[] = "(p.pat_first_name LIKE :search OR p.pat_last_name LIKE :search OR mr.med_rec_diagnosis LIKE :search)";
-        $params['search'] = '%' . $search_query . '%';
+    if (!empty($filter_patient)) {
+        $where_conditions[] = "(LOWER(p.pat_first_name) LIKE LOWER(:filter_patient) OR LOWER(p.pat_middle_initial) LIKE LOWER(:filter_patient) OR LOWER(p.pat_last_name) LIKE LOWER(:filter_patient) OR LOWER(CONCAT(p.pat_first_name, ' ', COALESCE(p.pat_middle_initial, ''), ' ', p.pat_last_name)) LIKE LOWER(:filter_patient))";
+        $params['filter_patient'] = '%' . $filter_patient . '%';
     }
 
-    if ($filter_patient) {
-        $where_conditions[] = "a.pat_id = :patient";
-        $params['patient'] = $filter_patient;
+    if (!empty($filter_diagnosis)) {
+        $where_conditions[] = "LOWER(mr.med_rec_diagnosis) LIKE LOWER(:filter_diagnosis)";
+        $params['filter_diagnosis'] = '%' . $filter_diagnosis . '%';
+    }
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(mr.med_rec_visit_date) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
+    }
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(mr.med_rec_visit_date) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
     }
 
     $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
-
-    // Handle sorting
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'med_rec_visit_date';
-    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
-    
-    // Validate sort column to prevent SQL injection
-    $allowed_columns = ['med_rec_visit_date', 'med_rec_id', 'med_rec_created_at'];
-    if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'med_rec_visit_date';
-    }
-    
     $order_by = "mr.$sort_column $sort_order";
 
+    // Get total count for pagination
+    $count_stmt = $db->prepare("
+        SELECT COUNT(*) 
+        FROM medical_records mr
+        JOIN appointments a ON mr.appt_id = a.appointment_id
+        JOIN patients p ON a.pat_id = p.pat_id
+        $where_clause
+    ");
+    $count_stmt->execute($params);
+    $total_items = $count_stmt->fetchColumn();
+    $total_pages = ceil($total_items / $items_per_page);
+
+    // Fetch paginated results
     $stmt = $db->prepare("
         SELECT mr.*, 
                a.pat_id, a.doc_id, a.appointment_date, a.appointment_time, a.appointment_id,
@@ -139,12 +163,20 @@ try {
         LEFT JOIN users up ON up.pat_id = p.pat_id
         $where_clause
         ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute($params);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch medical records: ' . $e->getMessage();
     $records = [];
+    $total_items = 0;
+    $total_pages = 0;
 }
 
 // Fetch filter data from database
@@ -158,7 +190,7 @@ try {
     $filter_patients = [];
 }
 
-// Fetch appointments for dropdown (completed appointments without medical records)
+// Fetch appointments for dropdown (all appointments without medical records for this doctor)
 try {
     $stmt = $db->prepare("
         SELECT a.appointment_id, a.appointment_date, a.appointment_time,
@@ -171,7 +203,6 @@ try {
         LEFT JOIN services sv ON a.service_id = sv.service_id
         LEFT JOIN medical_records mr ON a.appointment_id = mr.appt_id
         WHERE a.doc_id = :doctor_id
-        AND LOWER(s.status_name) = 'completed'
         AND mr.med_rec_id IS NULL
         ORDER BY a.appointment_date DESC, a.appointment_time DESC
     ");

@@ -276,7 +276,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'schedule_date' => $schedule_date,
                             'start_time' => $start_time,
                             'end_time' => $end_time,
-,
                             'id' => $id,
                             'doc_id' => $doctor_id
                         ]);
@@ -306,35 +305,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch all schedules for this doctor
+// Handle filters from URL parameters
+$filter_date_from = isset($_GET['filter_date_from']) ? sanitize($_GET['filter_date_from']) : '';
+$filter_date_to = isset($_GET['filter_date_to']) ? sanitize($_GET['filter_date_to']) : '';
+$filter_start_time = isset($_GET['filter_start_time']) ? sanitize($_GET['filter_start_time']) : '';
+$filter_end_time = isset($_GET['filter_end_time']) ? sanitize($_GET['filter_end_time']) : '';
+
+// Pagination
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$items_per_page = 25;
+$offset = ($page - 1) * $items_per_page;
+
+// Handle sorting
+$sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'schedule_date';
+$sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
+$allowed_columns = ['schedule_date', 'start_time', 'end_time', 'created_at', 'updated_at'];
+if (!in_array($sort_column, $allowed_columns)) {
+    $sort_column = 'schedule_date';
+}
+
+// Special handling for date/time sorting
+if ($sort_column === 'schedule_date') {
+    $order_by = "schedule_date $sort_order, start_time $sort_order";
+} else {
+    $order_by = "$sort_column $sort_order";
+}
+
+// Fetch schedules with filters
 try {
-    // Handle sorting
-    $sort_column = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'schedule_date';
-    $sort_order = isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC' ? 'ASC' : 'DESC';
-    
-    // Validate sort column to prevent SQL injection
-    $allowed_columns = ['schedule_date', 'start_time', 'end_time'];
-    if (!in_array($sort_column, $allowed_columns)) {
-        $sort_column = 'schedule_date';
+    $where_conditions = ['doc_id = :doctor_id'];
+    $params = ['doctor_id' => $doctor_id];
+
+    if (!empty($filter_date_from)) {
+        $where_conditions[] = "DATE(schedule_date) >= :filter_date_from";
+        $params['filter_date_from'] = $filter_date_from;
     }
-    
-    // Special handling for date/time sorting
-    if ($sort_column === 'schedule_date') {
-        $order_by = "schedule_date $sort_order, start_time $sort_order";
-    } else {
-        $order_by = "$sort_column $sort_order";
+
+    if (!empty($filter_date_to)) {
+        $where_conditions[] = "DATE(schedule_date) <= :filter_date_to";
+        $params['filter_date_to'] = $filter_date_to;
     }
-    
+
+    if (!empty($filter_start_time)) {
+        $where_conditions[] = "start_time >= :filter_start_time";
+        $params['filter_start_time'] = $filter_start_time;
+    }
+
+    if (!empty($filter_end_time)) {
+        $where_conditions[] = "end_time <= :filter_end_time";
+        $params['filter_end_time'] = $filter_end_time;
+    }
+
+    $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
+
+    // Get total count for pagination
+    $count_stmt = $db->prepare("SELECT COUNT(*) FROM schedules $where_clause");
+    $count_stmt->execute($params);
+    $total_items = $count_stmt->fetchColumn();
+    $total_pages = ceil($total_items / $items_per_page);
+
+    // Fetch paginated results
     $stmt = $db->prepare("
         SELECT * FROM schedules 
-        WHERE doc_id = :doctor_id 
+        $where_clause
         ORDER BY $order_by
+        LIMIT :limit OFFSET :offset
     ");
-    $stmt->execute(['doctor_id' => $doctor_id]);
+    foreach ($params as $key => $value) {
+        $stmt->bindValue(':' . $key, $value);
+    }
+    $stmt->bindValue(':limit', $items_per_page, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
     $schedules = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $error = 'Failed to fetch schedules: ' . $e->getMessage();
     $schedules = [];
+    $total_items = 0;
+    $total_pages = 0;
 }
 
 // Get today's schedules
@@ -353,47 +401,59 @@ try {
 
 // Calculate useful statistics for summary cards
 $stats = [
-    'today_appointments' => 0,
-    'available_slots_today' => 0,
-    'next_schedule' => null,
-    'this_week_schedules' => 0
+    'schedules_today' => [],
+    'this_week_schedules' => 0,
+    'next_month_schedules' => 0,
+    'past_schedules' => 0
 ];
 
 try {
     $today = date('Y-m-d');
+    $week_end = date('Y-m-d', strtotime('+7 days'));
+    $next_month_end = date('Y-m-d', strtotime('+1 month'));
     
-    // Today's appointments count
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM appointments WHERE doc_id = :doctor_id AND appointment_date = :today");
-    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
-    $stats['today_appointments'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    
-    // Available slots today (unlimited now, so we just show today's schedules count)
-    $stats['available_slots_today'] = count($today_schedules);
-    
-    // Next upcoming schedule
+    // Schedules today with start and end times
     $stmt = $db->prepare("
-        SELECT schedule_date, start_time 
+        SELECT start_time, end_time 
         FROM schedules 
         WHERE doc_id = :doctor_id 
-        AND (schedule_date > :today OR (schedule_date = :today AND start_time > TIME(NOW())))
-        ORDER BY schedule_date ASC, start_time ASC 
-        LIMIT 1
+        AND schedule_date = :today
+        ORDER BY start_time ASC
     ");
     $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
-    $next_schedule = $stmt->fetch(PDO::FETCH_ASSOC);
-    $stats['next_schedule'] = $next_schedule;
+    $stats['schedules_today'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // This week's schedules count (next 7 days)
-    $week_end = date('Y-m-d', strtotime('+7 days'));
+    // This week's schedules count (next 7 days, excluding today)
     $stmt = $db->prepare("
         SELECT COUNT(*) as count 
         FROM schedules 
         WHERE doc_id = :doctor_id 
-        AND schedule_date >= :today 
+        AND schedule_date > :today 
         AND schedule_date <= :week_end
     ");
     $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today, 'week_end' => $week_end]);
     $stats['this_week_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Next month's schedules count (excluding this week)
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM schedules 
+        WHERE doc_id = :doctor_id 
+        AND schedule_date > :week_end 
+        AND schedule_date <= :next_month_end
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'week_end' => $week_end, 'next_month_end' => $next_month_end]);
+    $stats['next_month_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // Past schedules count
+    $stmt = $db->prepare("
+        SELECT COUNT(*) as count 
+        FROM schedules 
+        WHERE doc_id = :doctor_id 
+        AND schedule_date < :today
+    ");
+    $stmt->execute(['doctor_id' => $doctor_id, 'today' => $today]);
+    $stats['past_schedules'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 } catch (PDOException $e) {
     // Keep default values
 }

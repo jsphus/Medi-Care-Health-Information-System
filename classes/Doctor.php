@@ -15,7 +15,6 @@ class Doctor extends Entity {
     private $doc_consultation_fee;
     private $doc_qualification;
     private $doc_bio;
-    private $doc_status;
     private $created_at;
     private $updated_at;
 
@@ -39,7 +38,7 @@ class Doctor extends Entity {
         return [
             'doc_id', 'doc_first_name', 'doc_middle_initial', 'doc_last_name', 'doc_email', 'doc_phone',
             'doc_license_number', 'doc_specialization_id', 'doc_experience_years',
-            'doc_consultation_fee', 'doc_qualification', 'doc_bio', 'doc_status',
+            'doc_consultation_fee', 'doc_qualification', 'doc_bio',
             'created_at', 'updated_at'
         ];
     }
@@ -118,7 +117,6 @@ class Doctor extends Entity {
             'doc_consultation_fee' => $this->doc_consultation_fee,
             'doc_qualification' => $this->doc_qualification,
             'doc_bio' => $this->doc_bio,
-            'doc_status' => $this->doc_status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at
         ];
@@ -137,7 +135,6 @@ class Doctor extends Entity {
         $this->doc_consultation_fee = $data['doc_consultation_fee'] ?? null;
         $this->doc_qualification = $data['doc_qualification'] ?? null;
         $this->doc_bio = $data['doc_bio'] ?? null;
-        $this->doc_status = $data['doc_status'] ?? 'active';
         $this->created_at = $data['created_at'] ?? null;
         $this->updated_at = $data['updated_at'] ?? null;
         return $this;
