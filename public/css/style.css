@@ -104,6 +104,42 @@ body {
     width: 70px;
 }
 
+.sidebar-modern.collapsed .sidebar-profile-modern{
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0;
+    position: relative;
+}
+
+.sidebar-modern.collapsed .sidebar-profile-modern .profile-details,
+.sidebar-modern.collapsed .sidebar-profile-modern .view-as-section {
+    display: none; /* Hide text and buttons */
+}
+
+.sidebar-modern.collapsed .sidebar-profile-modern .profile-avatar-modern {
+    margin: 0 auto;
+}
+
+/*reduce logout icon size when collapsed */
+.sidebar-modern.collapsed .profile-logout {
+    display: none; /* hide the logout icon, because we may rely on dropdown only */
+}
+
+/* Tooltip for profile avatar when collapsed */
+.sidebar-modern.collapsed .sidebar-profile-modern .profile-avatar-modern:hover::after {
+    content: "Profile";
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--text-primary);
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+}
+
 /* Sidebar Scrollbar Styling */
 .sidebar-modern::-webkit-scrollbar {
     width: 6px;
@@ -122,21 +158,31 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Sidebar Header */
+/* Sidebar header container */
 .sidebar-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: space-between; /* ensures logo and toggle are at ends */
+    padding: 0.75rem 1rem; /* adjust as needed */
 }
 
+/* Logo section */
 .sidebar-logo {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    white-space: nowrap;
+    gap: 0.5rem; /* space between icon and text */
+}
+
+/* When sidebar is collapsed */
+.sidebar-modern.collapsed .sidebar-logo {
+    opacity: 0;           /* hide the logo */
+    pointer-events: none; /* prevent interaction */
+    width: 0;
     overflow: hidden;
+}
+
+.sidebar-modern.collapsed .sidebar-toggle {
+    margin-left: 0;  /* optional: center toggle where logo was */
 }
 
 .logo-icon-sidebar {
@@ -436,6 +482,33 @@ body {
     visibility: visible;
     transform: translateY(0);
 }
+
+/* Hide profile details in collapsed sidebar */
+.sidebar-modern.collapsed .profile-details {
+    display: none;
+}
+
+/* Adjust profile-dropdown in collapsed mode */
+.sidebar-modern.collapsed .profile-dropdown {
+    width: auto; /* shrink to fit icons */
+    min-width: 50px; /* enough for icons */
+    padding: 0.25rem;
+    left: 50px; /* adjust according to avatar position */
+}
+
+/* Profile dropdown items only show icons */
+.sidebar-modern.collapsed .profile-dropdown .profile-dropdown-item span {
+    display: none;
+}
+
+/* Optionally center icons */
+.sidebar-modern.collapsed .profile-dropdown .profile-dropdown-item i {
+    display: block;
+    text-align: center;
+    font-size: 1.2rem;
+    padding: 0.5rem 0;
+}
+
 
 .profile-dropdown-item {
     display: flex;
