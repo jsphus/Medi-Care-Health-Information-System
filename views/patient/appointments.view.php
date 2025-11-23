@@ -11,16 +11,17 @@ if (strpos($_SERVER['REQUEST_URI'], '/today') !== false) {
     $currentTab = 'past';
 }
 
-// Determine which appointments to show
+// Determine which appointments to show (already sorted in controller)
+// Upcoming are sorted nearest first, past are sorted most recent first
 $displayAppointments = [];
 if ($currentTab === 'today') {
     $displayAppointments = $today_appointments ?? [];
 } elseif ($currentTab === 'upcoming') {
-    $displayAppointments = $upcoming_appointments ?? [];
+    $displayAppointments = $upcoming_appointments ?? []; // Already sorted nearest first
 } elseif ($currentTab === 'past') {
-    $displayAppointments = $past_appointments ?? [];
+    $displayAppointments = $past_appointments ?? []; // Already sorted most recent first
 } else {
-    // All tab - combine upcoming and past
+    // All tab - combine upcoming (nearest first) and past (most recent first)
     $displayAppointments = array_merge($upcoming_appointments ?? [], $past_appointments ?? []);
 }
 ?>

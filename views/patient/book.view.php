@@ -106,19 +106,31 @@
         background: var(--bg-white);
     }
     
-    .category-tab:hover {
+    #specializationFilter:focus {
+        outline: none;
         border-color: var(--status-success);
-        color: var(--status-success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        background: var(--bg-white);
     }
     
-    .category-tab.active {
-        background: var(--status-success);
-        border-color: var(--status-success);
-        color: var(--text-white);
+    #specializationFilter:hover {
+        border-color: var(--border-dark);
+        background: var(--bg-white);
     }
     
-    .btn-secondary:hover {
+            .btn-secondary:hover {
         background: var(--border-light);
+    }
+    
+    .btn-primary {
+        background: var(--primary-blue);
+        border-color: var(--primary-blue);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-blue-dark);
+        border-color: var(--primary-blue-dark);
     }
     
     .empty-state {
@@ -170,10 +182,12 @@
             gap: 1rem;
         }
         
-        .category-tabs {
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            -webkit-overflow-scrolling: touch;
+        .search-filter-bar-modern form {
+            flex-direction: column;
+        }
+        
+        .search-filter-bar-modern form > div {
+            width: 100%;
         }
     }
     
@@ -415,35 +429,46 @@
     <?php endif; ?>
     
     <!-- Search and Filter Bar -->
-    <div class="search-filter-bar-modern" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border-light); display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-            <form method="GET" id="searchForm" style="flex: 1; display: flex; align-items: center; gap: 0.75rem; min-width: 250px;" onsubmit="handleSearchSubmit(event);">
-                <div class="search-input-wrapper" style="position: relative; flex: 1; min-width: 250px;">
-                    <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.875rem;"></i>
-                    <input type="text" 
-                           name="search" 
-                           id="searchInput"
-                           class="search-input-modern"
-                           placeholder="Search doctors by name or specialization..." 
-                           value="<?= htmlspecialchars($search_query) ?>"
-                           aria-label="Search doctors"
-                           style="width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; transition: var(--transition); background: var(--bg-light);">
-                </div>
-                <?php if ($search_query || $filter_specialization): ?>
-                <a href="/patient/book" class="btn-action btn-secondary" style="padding: 0.625rem 1rem; text-decoration: none; white-space: nowrap; background: var(--bg-light); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-times"></i> Clear
-                </a>
-                <?php endif; ?>
-            </form>
-        </div>
-        <div class="category-tabs" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid var(--border-light);">
-            <button type="button" class="category-tab <?= empty($filter_specialization) ? 'active' : '' ?>" data-specialization="all" onclick="filterBySpecialization('all')" style="padding: 0.5rem 1rem; background: var(--bg-white); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: var(--transition); white-space: nowrap;">All</button>
-            <?php foreach ($specializations as $spec): ?>
-                <button type="button" class="category-tab <?= ($filter_specialization == $spec['spec_id']) ? 'active' : '' ?>" data-specialization="<?= $spec['spec_id'] ?>" onclick="filterBySpecialization('<?= $spec['spec_id'] ?>')" style="padding: 0.5rem 1rem; background: var(--bg-white); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: var(--transition); white-space: nowrap;">
-                    <?= htmlspecialchars($spec['spec_name']) ?>
-                </button>
-            <?php endforeach; ?>
-        </div>
+    <div class="search-filter-bar-modern" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem; border: 1px solid var(--border-light);">
+        <form method="GET" id="searchForm" action="/patient/book" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="search-input-wrapper" style="position: relative; flex: 1; min-width: 250px;">
+                <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.875rem;"></i>
+                <input type="text" 
+                       name="search" 
+                       id="searchInput"
+                       class="search-input-modern"
+                       placeholder="Search doctors..." 
+                       value="<?= htmlspecialchars($search_query) ?>"
+                       aria-label="Search doctors"
+                       style="width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; transition: var(--transition); background: var(--bg-light);">
+            </div>
+            
+            <div style="position: relative; min-width: 200px;">
+                <i class="fas fa-filter" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.875rem; z-index: 1;"></i>
+                <select 
+                    name="specialization" 
+                    id="specializationFilter"
+                    style="width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; transition: var(--transition); background: var(--bg-light); cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none;">
+                    <option value="">All Specializations</option>
+                    <?php foreach ($specializations as $spec): ?>
+                        <option value="<?= $spec['spec_id'] ?>" <?= ($filter_specialization == $spec['spec_id']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($spec['spec_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <i class="fas fa-chevron-down" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.75rem; pointer-events: none;"></i>
+            </div>
+            
+            <button type="submit" class="btn-action btn-primary" style="padding: 0.625rem 1.5rem; white-space: nowrap; background: var(--primary-blue); border: 1px solid var(--primary-blue); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: white; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-search"></i> Apply Filter
+            </button>
+            
+            <?php if ($search_query || $filter_specialization): ?>
+            <a href="/patient/book" class="btn-action btn-secondary" style="padding: 0.625rem 1rem; text-decoration: none; white-space: nowrap; background: var(--bg-light); border: 1px solid var(--border-medium); border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500; color: var(--text-primary); cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-times"></i> Clear
+            </a>
+            <?php endif; ?>
+        </form>
     </div>
     
     <?php if (empty($available_doctors) && empty($unavailable_doctors)): ?>
@@ -586,52 +611,8 @@
 </div>
 
 <script>
-// Handle search form submission - reload page with search query
-function handleSearchSubmit(event) {
-    event.preventDefault();
-    const params = new URLSearchParams();
-    const search = document.getElementById('searchInput')?.value.trim();
-    
-    if (search) {
-        params.set('search', search);
-    }
-    
-    // Preserve specialization filter if it exists
-    const currentParams = new URLSearchParams(window.location.search);
-    const specialization = currentParams.get('specialization');
-    if (specialization) {
-        params.set('specialization', specialization);
-    }
-    
-    window.location.href = '/patient/book' + (params.toString() ? '?' + params.toString() : '');
-}
-
-// Category tab functionality for specializations - reload page on filter click
-function filterBySpecialization(specialization) {
-    const params = new URLSearchParams();
-    
-    if (specialization !== 'all') {
-        params.set('specialization', specialization);
-    }
-    
-    // Preserve search query if it exists
-    const search = document.getElementById('searchInput')?.value.trim();
-    if (search) {
-        params.set('search', search);
-    }
-    
-    // Update active tab
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    categoryTabs.forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.dataset.specialization === specialization) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // Reload page with new filter
-    window.location.href = '/patient/book' + (params.toString() ? '?' + params.toString() : '');
-}
+// Form will submit naturally via GET method, creating URL-based filtering
+// No need for JavaScript since form method="GET" handles URL parameters automatically
 
 // Doctor Modal Functions
 function openDoctorModalFromCard(cardElement) {

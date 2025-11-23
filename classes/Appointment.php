@@ -355,15 +355,47 @@ class Appointment extends Entity {
             ) p ON p.appointment_id = a.appointment_id
             LEFT JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
             $whereClause
-            ORDER BY a.appointment_date DESC, a.appointment_time DESC
+            ORDER BY a.appointment_date ASC, a.appointment_time ASC
         ", $params);
 
         $today = date('Y-m-d');
-        $upcoming = array_filter($appointments, fn($apt) => $apt['appointment_date'] >= $today);
-        $past = array_filter($appointments, fn($apt) => $apt['appointment_date'] < $today);
+        $currentDateTime = date('Y-m-d H:i:s');
+        
+        // Filter and sort upcoming appointments (nearest first)
+        $upcoming = array_filter($appointments, function($apt) use ($today, $currentDateTime) {
+            $apptDate = $apt['appointment_date'] ?? '';
+            $apptTime = $apt['appointment_time'] ?? '00:00:00';
+            $apptDateTime = $apptDate . ' ' . $apptTime;
+            return $apptDate >= $today && $apptDateTime >= $currentDateTime;
+        });
+        
+        // Sort upcoming by date and time ascending (nearest first)
+        usort($upcoming, function($a, $b) {
+            $dateA = ($a['appointment_date'] ?? '') . ' ' . ($a['appointment_time'] ?? '00:00:00');
+            $dateB = ($b['appointment_date'] ?? '') . ' ' . ($b['appointment_time'] ?? '00:00:00');
+            return strtotime($dateA) <=> strtotime($dateB);
+        });
+        
+        // Filter and sort past appointments (most recent first)
+        $past = array_filter($appointments, function($apt) use ($today, $currentDateTime) {
+            $apptDate = $apt['appointment_date'] ?? '';
+            $apptTime = $apt['appointment_time'] ?? '00:00:00';
+            $apptDateTime = $apptDate . ' ' . $apptTime;
+            return $apptDate < $today || ($apptDate == $today && $apptDateTime < $currentDateTime);
+        });
+        
+        // Sort past by date and time descending (most recent first)
+        usort($past, function($a, $b) {
+            $dateA = ($a['appointment_date'] ?? '') . ' ' . ($a['appointment_time'] ?? '00:00:00');
+            $dateB = ($b['appointment_date'] ?? '') . ' ' . ($b['appointment_time'] ?? '00:00:00');
+            return strtotime($dateB) <=> strtotime($dateA);
+        });
+        
+        // Combine for 'all' - upcoming first (nearest first), then past (most recent first)
+        $all = array_merge(array_values($upcoming), array_values($past));
 
         return [
-            'all' => $appointments,
+            'all' => $all,
             'upcoming' => array_values($upcoming),
             'past' => array_values($past)
         ];

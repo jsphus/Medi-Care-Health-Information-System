@@ -96,22 +96,43 @@ $past_appointments = $appointmentData['past'];
 
 // Get today's appointments
 $today = date('Y-m-d');
-$today_appointments = array_filter($all_appointments, function($apt) use ($today) {
-    return $apt['appointment_date'] === $today;
+$currentDateTime = date('Y-m-d H:i:s');
+$today_appointments = array_filter($all_appointments, function($apt) use ($today, $currentDateTime) {
+    $apptDate = $apt['appointment_date'] ?? '';
+    $apptTime = $apt['appointment_time'] ?? '00:00:00';
+    $apptDateTime = $apptDate . ' ' . $apptTime;
+    return $apptDate === $today && $apptDateTime >= $currentDateTime;
 });
 $today_appointments = array_values($today_appointments);
 
-// Sort today's appointments by time
+// Sort today's appointments by time ascending (nearest first)
 usort($today_appointments, function($a, $b) {
     $timeA = isset($a['appointment_time']) ? strtotime($a['appointment_time']) : 0;
     $timeB = isset($b['appointment_time']) ? strtotime($b['appointment_time']) : 0;
     return $timeA <=> $timeB;
 });
 
-// Get next appointment
+// Get next appointment - the nearest upcoming one (first non-cancelled/non-completed in sorted upcoming array)
 $next_appointment = null;
 if (!empty($upcoming_appointments)) {
-    $next_appointment = $upcoming_appointments[0];
+    // Find the nearest appointment that is not cancelled or completed
+    // Since upcoming_appointments is already sorted nearest first, we just need to find the first active one
+    foreach ($upcoming_appointments as $apt) {
+        $statusName = strtolower($apt['status_name'] ?? '');
+        // Skip cancelled or completed appointments
+        if (in_array($statusName, ['cancelled', 'completed'])) {
+            continue;
+        }
+        
+        // This is the nearest active appointment
+        $next_appointment = $apt;
+        break;
+    }
+    
+    // Fallback to first appointment if all are cancelled/completed (shouldn't happen but safe fallback)
+    if (!$next_appointment && !empty($upcoming_appointments)) {
+        $next_appointment = $upcoming_appointments[0];
+    }
 }
 
 // Fetch filter data
