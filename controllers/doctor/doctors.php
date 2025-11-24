@@ -50,55 +50,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bio = sanitize($_POST['bio'] ?? '');
         $status = sanitize($_POST['status'] ?? 'active');
         $password = $_POST['password'] ?? '';
-        $create_user = isset($_POST['create_user']) && $_POST['create_user'] === '1';
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
         } elseif (!isValidEmail($email)) {
             $error = 'Invalid email format';
-        } elseif ($create_user && empty($password)) {
-            $error = 'Password is required when creating user account';
-        } elseif ($create_user && strlen($password) < 6) {
+        } elseif (empty($password)) {
+            $error = 'Password is required';
+        } elseif (strlen($password) < 6) {
             $error = 'Password must be at least 6 characters';
         } else {
             try {
                 // Check if email already exists in users table
-                if ($create_user) {
-                    $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
-                    $stmt->execute(['email' => $email]);
-                    if ($stmt->fetch()) {
-                        $error = 'A user account with this email already exists';
-                    }
+                $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
+                $stmt->execute(['email' => $email]);
+                if ($stmt->fetch()) {
+                    $error = 'A user account with this email already exists';
                 }
                 
                 if (empty($error)) {
-                    // Insert doctor
-                    $stmt = $db->prepare("
-                        INSERT INTO doctors (doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
-                                            doc_license_number, doc_experience_years, doc_consultation_fee, 
-                                            doc_qualification, doc_bio, doc_status, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :specialization_id, :license_number,
-                               :experience_years, :consultation_fee, :qualification, :bio, :status, NOW())
-                    ");
-                    $stmt->execute([
-                        'first_name' => $first_name,
-                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
-                        'last_name' => $last_name,
-                        'email' => $email,
-                        'phone' => $phone,
-                        'specialization_id' => $specialization_id,
-                        'license_number' => $license_number,
-                        'experience_years' => $experience_years,
-                        'consultation_fee' => $consultation_fee,
-                        'qualification' => $qualification,
-                        'bio' => $bio,
-                        'status' => $status
-                    ]);
+                    // Begin transaction to ensure both doctor and user are created together
+                    $db->beginTransaction();
                     
-                    $doc_id = $db->lastInsertId();
-                    
-                    // Create user account if requested
-                    if ($create_user) {
+                    try {
+                        // Insert doctor
+                        $stmt = $db->prepare("
+                            INSERT INTO doctors (doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
+                                                doc_license_number, doc_experience_years, doc_consultation_fee, 
+                                                doc_qualification, doc_bio, doc_status, created_at) 
+                            VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :specialization_id, :license_number,
+                                   :experience_years, :consultation_fee, :qualification, :bio, :status, NOW())
+                        ");
+                        $stmt->execute([
+                            'first_name' => $first_name,
+                            'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
+                            'last_name' => $last_name,
+                            'email' => $email,
+                            'phone' => $phone,
+                            'specialization_id' => $specialization_id,
+                            'license_number' => $license_number,
+                            'experience_years' => $experience_years,
+                            'consultation_fee' => $consultation_fee,
+                            'qualification' => $qualification,
+                            'bio' => $bio,
+                            'status' => $status
+                        ]);
+                        
+                        $doc_id = $db->lastInsertId();
+                        
+                        // Always create user account
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                         $stmt = $db->prepare("
                             INSERT INTO users (user_email, user_password, doc_id, user_is_superadmin, created_at) 
@@ -109,9 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'password' => $hashedPassword,
                             'doc_id' => $doc_id
                         ]);
+                        
+                        // Commit transaction
+                        $db->commit();
                         $success = 'Doctor and user account created successfully';
-                    } else {
-                        $success = 'Doctor created successfully (no user account created)';
+                    } catch (PDOException $e) {
+                        // Rollback on error
+                        $db->rollBack();
+                        throw $e;
                     }
                 }
             } catch (PDOException $e) {

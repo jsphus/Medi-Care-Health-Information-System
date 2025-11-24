@@ -37,64 +37,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($scheduleDateTime < ($currentDateTime - 300)) {
                 $error = 'Cannot create schedules in the past. Please select a future date and time.';
             } else {
-            try {
-                // Check for exact duplicate (same doc_id, schedule_date, and start_time)
-                $stmt = $db->prepare("
-                    SELECT schedule_id FROM schedules 
-                    WHERE doc_id = :doc_id 
-                    AND schedule_date = :schedule_date 
-                    AND start_time = :start_time
-                ");
-                $stmt->execute([
-                    'doc_id' => $doc_id,
-                    'schedule_date' => $schedule_date,
-                    'start_time' => $start_time
-                ]);
-                
-                if ($stmt->fetch()) {
-                    $error = 'A schedule with the same date and start time already exists for this doctor. Please choose a different time.';
-                } else {
-                    // Check for overlapping schedules
+                try {
+                    // Check for exact duplicate (same doc_id, schedule_date, and start_time)
                     $stmt = $db->prepare("
                         SELECT schedule_id FROM schedules 
                         WHERE doc_id = :doc_id 
                         AND schedule_date = :schedule_date 
-                        AND (
-                            (start_time <= :start_time AND end_time > :start_time) OR
-                            (start_time < :end_time AND end_time >= :end_time) OR
-                            (start_time >= :start_time AND end_time <= :end_time)
-                        )
+                        AND start_time = :start_time
                     ");
                     $stmt->execute([
                         'doc_id' => $doc_id,
                         'schedule_date' => $schedule_date,
-                        'start_time' => $start_time,
-                        'end_time' => $end_time
+                        'start_time' => $start_time
                     ]);
                     
                     if ($stmt->fetch()) {
-                        $error = 'This schedule overlaps with an existing schedule for this doctor on this date. Please choose a different time.';
+                        $error = 'A schedule with the same date and start time already exists for this doctor. Please choose a different time.';
                     } else {
+                        // Check for overlapping schedules
                         $stmt = $db->prepare("
-                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
-                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
+                            SELECT schedule_id FROM schedules 
+                            WHERE doc_id = :doc_id 
+                            AND schedule_date = :schedule_date 
+                            AND (
+                                (start_time <= :start_time AND end_time > :start_time) OR
+                                (start_time < :end_time AND end_time >= :end_time) OR
+                                (start_time >= :start_time AND end_time <= :end_time)
+                            )
                         ");
                         $stmt->execute([
                             'doc_id' => $doc_id,
                             'schedule_date' => $schedule_date,
                             'start_time' => $start_time,
-                            'end_time' => $end_time,
+                            'end_time' => $end_time
                         ]);
-                        $success = 'Schedule created successfully';
+                        
+                        if ($stmt->fetch()) {
+                            $error = 'This schedule overlaps with an existing schedule for this doctor on this date. Please choose a different time.';
+                        } else {
+                            $stmt = $db->prepare("
+                                INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
+                                VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
+                            ");
+                            $stmt->execute([
+                                'doc_id' => $doc_id,
+                                'schedule_date' => $schedule_date,
+                                'start_time' => $start_time,
+                                'end_time' => $end_time,
+                            ]);
+                            $success = 'Schedule created successfully';
+                        }
                     }
-                }
-            }
-            } catch (PDOException $e) {
-                // Check if it's a unique constraint violation
-                if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
-                    $error = 'A schedule with the same date and start time already exists for this doctor. Please choose a different time.';
-                } else {
-                    $error = 'Database error: ' . $e->getMessage();
+                } catch (PDOException $e) {
+                    // Check if it's a unique constraint violation
+                    if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
+                        $error = 'A schedule with the same date and start time already exists for this doctor. Please choose a different time.';
+                    } else {
+                        $error = 'Database error: ' . $e->getMessage();
+                    }
                 }
             }
         }
@@ -124,118 +124,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($startDateTime < ($currentDateTime - 300)) {
                 $error = 'Cannot create schedules in the past. Please select a future start date and time.';
             } else {
-            try {
-                $created_count = 0;
-                $skipped_count = 0;
-                $errors = [];
-                
-                // Convert start_date and end_date to DateTime objects
-                $start = new DateTime($start_date);
-                $end = new DateTime($end_date);
-                $end->modify('+1 day'); // Include end date
-                
-                // Map day names to numbers (0 = Sunday, 1 = Monday, etc.)
-                $day_map = [
-                    'sunday' => 0,
-                    'monday' => 1,
-                    'tuesday' => 2,
-                    'wednesday' => 3,
-                    'thursday' => 4,
-                    'friday' => 5,
-                    'saturday' => 6
-                ];
-                
-                $selected_days = [];
-                foreach ($days_of_week as $day) {
-                    if (isset($day_map[strtolower($day)])) {
-                        $selected_days[] = $day_map[strtolower($day)];
-                    }
-                }
-                
-                // Iterate through each day in the range
-                $current = clone $start;
-                while ($current < $end) {
-                    $day_of_week = (int)$current->format('w'); // 0 = Sunday, 6 = Saturday
+                try {
+                    $created_count = 0;
+                    $skipped_count = 0;
+                    $errors = [];
                     
-                    // Check if this day is in the selected days
-                    if (in_array($day_of_week, $selected_days)) {
-                        $schedule_date = $current->format('Y-m-d');
+                    // Convert start_date and end_date to DateTime objects
+                    $start = new DateTime($start_date);
+                    $end = new DateTime($end_date);
+                    $end->modify('+1 day'); // Include end date
+                    
+                    // Map day names to numbers (0 = Sunday, 1 = Monday, etc.)
+                    $day_map = [
+                        'sunday' => 0,
+                        'monday' => 1,
+                        'tuesday' => 2,
+                        'wednesday' => 3,
+                        'thursday' => 4,
+                        'friday' => 5,
+                        'saturday' => 6
+                    ];
+                    
+                    $selected_days = [];
+                    foreach ($days_of_week as $day) {
+                        if (isset($day_map[strtolower($day)])) {
+                            $selected_days[] = $day_map[strtolower($day)];
+                        }
+                    }
+                    
+                    // Iterate through each day in the range
+                    $current = clone $start;
+                    while ($current < $end) {
+                        $day_of_week = (int)$current->format('w'); // 0 = Sunday, 6 = Saturday
                         
-                        // Validate that schedule date/time is not in the past
-                        $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
-                        $currentDateTime = time();
-                        
-                        if ($scheduleDateTime < ($currentDateTime - 300)) {
-                            $skipped_count++;
-                        } else {
-                        // Check for exact duplicate
-                        $stmt = $db->prepare("
-                            SELECT schedule_id FROM schedules 
-                            WHERE doc_id = :doc_id 
-                            AND schedule_date = :schedule_date 
-                            AND start_time = :start_time
-                        ");
-                        $stmt->execute([
-                            'doc_id' => $doc_id,
-                            'schedule_date' => $schedule_date,
-                            'start_time' => $start_time
-                        ]);
-                        
-                        if ($stmt->fetch()) {
-                            $skipped_count++;
-                        } else {
-                            // Check for overlapping schedules
-                            $stmt = $db->prepare("
-                                SELECT schedule_id FROM schedules 
-                                WHERE doc_id = :doc_id 
-                                AND schedule_date = :schedule_date 
-                                AND (
-                                    (start_time <= :start_time AND end_time > :start_time) OR
-                                    (start_time < :end_time AND end_time >= :end_time) OR
-                                    (start_time >= :start_time AND end_time <= :end_time)
-                                )
-                            ");
-                            $stmt->execute([
-                                'doc_id' => $doc_id,
-                                'schedule_date' => $schedule_date,
-                                'start_time' => $start_time,
-                                'end_time' => $end_time
-                            ]);
+                        // Check if this day is in the selected days
+                        if (in_array($day_of_week, $selected_days)) {
+                            $schedule_date = $current->format('Y-m-d');
                             
-                            if ($stmt->fetch()) {
+                            // Validate that schedule date/time is not in the past
+                            $scheduleDateTime = strtotime($schedule_date . ' ' . $start_time);
+                            $currentDateTime = time();
+                            
+                            if ($scheduleDateTime < ($currentDateTime - 300)) {
                                 $skipped_count++;
                             } else {
-                                // Create the schedule
+                                // Check for exact duplicate
                                 $stmt = $db->prepare("
-                                    INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
-                                    VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
+                                    SELECT schedule_id FROM schedules 
+                                    WHERE doc_id = :doc_id 
+                                    AND schedule_date = :schedule_date 
+                                    AND start_time = :start_time
                                 ");
                                 $stmt->execute([
                                     'doc_id' => $doc_id,
                                     'schedule_date' => $schedule_date,
-                                    'start_time' => $start_time,
-                                    'end_time' => $end_time
+                                    'start_time' => $start_time
                                 ]);
-                                $created_count++;
+                                
+                                if ($stmt->fetch()) {
+                                    $skipped_count++;
+                                } else {
+                                    // Check for overlapping schedules
+                                    $stmt = $db->prepare("
+                                        SELECT schedule_id FROM schedules 
+                                        WHERE doc_id = :doc_id 
+                                        AND schedule_date = :schedule_date 
+                                        AND (
+                                            (start_time <= :start_time AND end_time > :start_time) OR
+                                            (start_time < :end_time AND end_time >= :end_time) OR
+                                            (start_time >= :start_time AND end_time <= :end_time)
+                                        )
+                                    ");
+                                    $stmt->execute([
+                                        'doc_id' => $doc_id,
+                                        'schedule_date' => $schedule_date,
+                                        'start_time' => $start_time,
+                                        'end_time' => $end_time
+                                    ]);
+                                    
+                                    if ($stmt->fetch()) {
+                                        $skipped_count++;
+                                    } else {
+                                        // Create the schedule
+                                        $stmt = $db->prepare("
+                                            INSERT INTO schedules (doc_id, schedule_date, start_time, end_time, created_at) 
+                                            VALUES (:doc_id, :schedule_date, :start_time, :end_time, NOW())
+                                        ");
+                                        $stmt->execute([
+                                            'doc_id' => $doc_id,
+                                            'schedule_date' => $schedule_date,
+                                            'start_time' => $start_time,
+                                            'end_time' => $end_time
+                                        ]);
+                                        $created_count++;
+                                    }
+                                }
                             }
                         }
-                        }
+                        
+                        $current->modify('+1 day');
                     }
                     
-                    $current->modify('+1 day');
-                }
-                
-                if ($created_count > 0) {
-                    $success = "Successfully created $created_count schedule(s)";
-                    if ($skipped_count > 0) {
-                        $success .= ". $skipped_count schedule(s) were skipped due to conflicts.";
+                    if ($created_count > 0) {
+                        $success = "Successfully created $created_count schedule(s)";
+                        if ($skipped_count > 0) {
+                            $success .= ". $skipped_count schedule(s) were skipped due to conflicts.";
+                        }
+                    } else {
+                        $error = "No schedules were created. All dates either already have schedules or overlap with existing ones.";
                     }
-                } else {
-                    $error = "No schedules were created. All dates either already have schedules or overlap with existing ones.";
+                } catch (PDOException $e) {
+                    $error = 'Database error: ' . $e->getMessage();
                 }
-            }
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
             }
         }
     }
@@ -256,23 +256,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($scheduleDateTime < ($currentDateTime - 300)) {
                 $error = 'Cannot update schedules to a past date and time. Please select a future date and time.';
             } else {
-            try {
-                $schedule = new Schedule();
-                $updateData = [
-                    'schedule_id' => $id,
-                    'schedule_date' => $schedule_date,
-                    'start_time' => $start_time,
-                    'end_time' => $end_time
-                ];
-                $result = $schedule->update($updateData);
-                if ($result['success']) {
-                    $success = 'Schedule updated successfully';
-                } else {
-                    $error = $result['message'] ?? 'Database error';
+                try {
+                    // Fetch existing schedule to get doc_id for validation
+                    $existing = Schedule::findById($id);
+                    if (!$existing) {
+                        $error = 'Schedule not found';
+                    } else {
+                        $schedule = new Schedule();
+                        $updateData = [
+                            'schedule_id' => $id,
+                            'doc_id' => $existing['doc_id'],
+                            'schedule_date' => $schedule_date,
+                            'start_time' => $start_time,
+                            'end_time' => $end_time
+                        ];
+                        $schedule->fromArray($updateData);
+                        $result = $schedule->save();
+                        if ($result['success']) {
+                            $success = 'Schedule updated successfully';
+                        } else {
+                            $error = !empty($result['errors']) ? implode(', ', $result['errors']) : 'Database error';
+                        }
+                    }
+                } catch (PDOException $e) {
+                    $error = 'Database error: ' . $e->getMessage();
                 }
-            }
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
             }
         }
     }

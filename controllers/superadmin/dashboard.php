@@ -63,34 +63,39 @@ try {
     $current_records = (int)$appt_counts['current_records'];
     $last_month_records = (int)$appt_counts['last_month_records'];
     
-    $appointments_change = $last_month_appointments > 0 ? round((($current_appointments - $last_month_appointments) / $last_month_appointments) * 100, 1) : 0;
-    $records_change = $last_month_records > 0 ? round((($current_records - $last_month_records) / $last_month_records) * 100, 1) : 0;
+    $appointments_change = $last_month_appointments > 0 ? round((($current_appointments - $last_month_appointments) / $last_month_appointments) * 100, 1) : ($current_appointments > 0 ? 100 : 0);
+    $records_change = $last_month_records > 0 ? round((($current_records - $last_month_records) / $last_month_records) * 100, 1) : ($current_records > 0 ? 100 : 0);
     
-    // OPTIMIZATION 3: Get all 12 months of patient chart data in one query
+    // OPTIMIZATION 3: Get all 12 months of appointments statistics (total and completed) in one query
     $monthly_data = $db->fetchAll("
         SELECT 
-            DATE_TRUNC('month', appointment_date) as month,
-            COUNT(*) as count
-        FROM appointments
-        WHERE appointment_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months')
-        GROUP BY DATE_TRUNC('month', appointment_date)
+            DATE_TRUNC('month', a.appointment_date) as month,
+            COUNT(*) as total_count,
+            SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed_count
+        FROM appointments a
+        LEFT JOIN appointment_statuses s ON a.status_id = s.status_id
+        WHERE a.appointment_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months')
+        GROUP BY DATE_TRUNC('month', a.appointment_date)
         ORDER BY month ASC
     ");
     
-    // Build array for last 12 months, filling missing months with 0
-    $patient_chart_data = [];
+    // Build arrays for last 12 months, filling missing months with 0
+    $appointments_chart_data = [];
+    $completed_appointments_chart_data = [];
     for ($i = 11; $i >= 0; $i--) {
         $target_month = date('Y-m-01', strtotime("-$i months"));
         $found = false;
         foreach ($monthly_data as $row) {
             if (date('Y-m-01', strtotime($row['month'])) === $target_month) {
-                $patient_chart_data[] = (int)$row['count'];
+                $appointments_chart_data[] = (int)$row['total_count'];
+                $completed_appointments_chart_data[] = (int)$row['completed_count'];
                 $found = true;
                 break;
             }
         }
         if (!$found) {
-            $patient_chart_data[] = 0;
+            $appointments_chart_data[] = 0;
+            $completed_appointments_chart_data[] = 0;
         }
     }
     
@@ -99,15 +104,13 @@ try {
         SELECT 
             SUM(CASE WHEN pat_id IS NOT NULL THEN 1 ELSE 0 END) as patient_count,
             SUM(CASE WHEN doc_id IS NOT NULL THEN 1 ELSE 0 END) as doctor_count,
-            SUM(CASE WHEN staff_id IS NOT NULL THEN 1 ELSE 0 END) as staff_count,
-            SUM(CASE WHEN user_is_superadmin = true THEN 1 ELSE 0 END) as admin_count
+            SUM(CASE WHEN staff_id IS NOT NULL THEN 1 ELSE 0 END) as staff_count
         FROM users
     ");
     $users_by_role = [
         'Patient' => (int)$role_counts['patient_count'],
         'Doctor' => (int)$role_counts['doctor_count'],
-        'Staff' => (int)$role_counts['staff_count'],
-        'Admin' => (int)$role_counts['admin_count']
+        'Staff' => (int)$role_counts['staff_count']
     ];
     
     // Top Services (Most Booked) - already optimized
@@ -134,77 +137,6 @@ try {
     
     $result = $db->fetchOne("SELECT COUNT(*) as count FROM doctors WHERE doc_status = 'active'");
     $total_staff_count = (int)($result['count'] ?? 0);
-    
-    // OPTIMIZATION 6: Get completion rate data in one query
-    $completion_data = $db->fetchOne("
-        SELECT 
-            SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
-            COUNT(*) as total
-        FROM appointments a
-        JOIN appointment_statuses s ON a.status_id = s.status_id
-    ");
-    $completed = (int)$completion_data['completed'];
-    $total_appts = (int)$completion_data['total'];
-    $completion_rate = $total_appts > 0 ? round(($completed / $total_appts) * 100, 1) : 0;
-    
-    // OPTIMIZATION 7: Get all 12 months of completion chart data in one query
-    $completion_monthly_data = $db->fetchAll("
-        SELECT 
-            DATE_TRUNC('month', a.appointment_date) as month,
-            SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
-            COUNT(*) as total
-        FROM appointments a
-        JOIN appointment_statuses s ON a.status_id = s.status_id
-        WHERE a.appointment_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months')
-        GROUP BY DATE_TRUNC('month', a.appointment_date)
-        ORDER BY month ASC
-    ");
-    
-    // Build completion chart data array and extract last month completion
-    $completion_chart_data = [];
-    $last_month_completion = 0;
-    $last_month_target = date('Y-m-01', strtotime('-1 month'));
-    
-    for ($i = 11; $i >= 0; $i--) {
-        $target_month = date('Y-m-01', strtotime("-$i months"));
-        $found = false;
-        foreach ($completion_monthly_data as $row) {
-            if (date('Y-m-01', strtotime($row['month'])) === $target_month) {
-                $month_completed = (int)$row['completed'];
-                $month_total = (int)$row['total'];
-                $rate = $month_total > 0 ? round(($month_completed / $month_total) * 100, 1) : 0;
-                $completion_chart_data[] = $rate;
-                
-                // Store last month completion rate for comparison (when $i === 1, that's 1 month ago)
-                if ($target_month === $last_month_target) {
-                    $last_month_completion = $rate;
-                }
-                $found = true;
-                break;
-            }
-        }
-        if (!$found) {
-            $completion_chart_data[] = 0;
-        }
-    }
-    
-    // Get last month completion rate if not found in the query results
-    if ($last_month_completion === 0) {
-        $last_month_data = $db->fetchOne("
-            SELECT 
-                SUM(CASE WHEN LOWER(s.status_name) = 'completed' THEN 1 ELSE 0 END) as completed,
-                COUNT(*) as total
-            FROM appointments a
-            JOIN appointment_statuses s ON a.status_id = s.status_id
-            WHERE a.appointment_date >= '$last_month_start' 
-            AND a.appointment_date <= '$last_month_end'
-        ");
-        $last_month_completed = (int)$last_month_data['completed'];
-        $last_month_total = (int)$last_month_data['total'];
-        $last_month_completion = $last_month_total > 0 ? round(($last_month_completed / $last_month_total) * 100, 1) : 0;
-    }
-    
-    $completion_change = $last_month_completion > 0 ? round($completion_rate - $last_month_completion, 1) : 0;
     
     // OPTIMIZATION 8: Get all payment statistics in one query
     $payment_data = $db->fetchOne("
@@ -242,15 +174,19 @@ try {
     // Today's Appointments
     $today_appointments = $db->fetchAll("
         SELECT a.*, 
-               p.pat_first_name, p.pat_last_name, p.pat_date_of_birth,
-               d.doc_first_name, d.doc_last_name,
+               p.pat_first_name, p.pat_middle_initial, p.pat_last_name, p.pat_date_of_birth,
+               d.doc_first_name, d.doc_middle_initial, d.doc_last_name,
                s.status_name, s.status_color,
-               sv.service_name
+               sv.service_name,
+               up.profile_picture_url as patient_profile_picture,
+               ud.profile_picture_url as doctor_profile_picture
         FROM appointments a
         LEFT JOIN patients p ON a.pat_id = p.pat_id
         LEFT JOIN doctors d ON a.doc_id = d.doc_id
         LEFT JOIN appointment_statuses s ON a.status_id = s.status_id
         LEFT JOIN services sv ON a.service_id = sv.service_id
+        LEFT JOIN users up ON up.pat_id = p.pat_id
+        LEFT JOIN users ud ON ud.doc_id = d.doc_id
         WHERE a.appointment_date = CURRENT_DATE
         ORDER BY a.appointment_time ASC
         LIMIT 10
@@ -266,15 +202,13 @@ try {
     $records_change = 0;
     $current_users = 0;
     $users_change = 0;
-    $patient_chart_data = array_fill(0, 12, 0);
-    $users_by_role = ['Patient' => 0, 'Doctor' => 0, 'Staff' => 0, 'Admin' => 0];
+    $appointments_chart_data = array_fill(0, 12, 0);
+    $completed_appointments_chart_data = array_fill(0, 12, 0);
+    $users_by_role = ['Patient' => 0, 'Doctor' => 0, 'Staff' => 0];
     $top_services = [];
     $total_service_appointments = 0;
     $top_staff = [];
     $total_staff_count = 0;
-    $completion_rate = 0;
-    $completion_change = 0;
-    $completion_chart_data = array_fill(0, 12, 0);
     $payments_this_month = 0;
     $total_amount_this_month = 0;
     $paid_this_month = 0;

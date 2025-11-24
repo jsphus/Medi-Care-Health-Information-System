@@ -594,19 +594,12 @@
             
             <div class="info-box" style="margin-top: 1.5rem;">
                 <i class="fas fa-lock"></i>
-                <p><strong>User Account (Login Credentials):</strong> Check the box below to create a user account for this patient to login to the system.</p>
+                <p><strong>User Account (Login Credentials):</strong> A user account will be automatically created for this patient to login to the system.</p>
             </div>
             
             <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: flex; align-items: center; cursor: pointer;">
-                    <input type="checkbox" name="create_user" value="1" id="patient_create_user_checkbox" onchange="togglePatientPasswordField()" style="margin-right: 10px; width: auto;">
-                    <span>Create user account for login</span>
-                </label>
-            </div>
-            
-            <div class="form-group" id="patient_password_field" style="display: none;">
                 <label>Password: <span style="color: var(--status-error);">*</span></label>
-                <input type="password" name="password" id="patient_password_input" minlength="6" placeholder="Minimum 6 characters" class="form-control">
+                <input type="password" name="password" id="patient_password_input" minlength="6" required placeholder="Minimum 6 characters" class="form-control">
                 <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary);">The patient will use their email and this password to login.</small>
             </div>
             
@@ -763,23 +756,6 @@ function closeAddPatientModal() {
     document.getElementById('addModal').classList.remove('active');
     // Reset form
     document.querySelector('#addModal form').reset();
-    document.getElementById('patient_password_field').style.display = 'none';
-    document.getElementById('patient_password_input').required = false;
-}
-
-function togglePatientPasswordField() {
-    const checkbox = document.getElementById('patient_create_user_checkbox');
-    const passwordField = document.getElementById('patient_password_field');
-    const passwordInput = document.getElementById('patient_password_input');
-    
-    if (checkbox.checked) {
-        passwordField.style.display = 'block';
-        passwordInput.required = true;
-    } else {
-        passwordField.style.display = 'none';
-        passwordInput.required = false;
-        passwordInput.value = '';
-    }
 }
 
 // Phone number formatting function (Philippine format: XXXX-XXX-XXXX)

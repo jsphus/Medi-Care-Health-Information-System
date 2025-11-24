@@ -463,16 +463,14 @@
                 </div>
             </div>
             
-            <div class="form-group" style="margin-top: 1rem;">
-                <label style="display: flex; align-items: center; cursor: pointer;">
-                    <input type="checkbox" name="create_user" value="1" id="add_staff_create_user_checkbox" onchange="toggleAddStaffPasswordField()" style="margin-right: 10px; width: auto;">
-                    <span>Create user account for login</span>
-                </label>
+            <div class="info-box" style="margin-top: 1.5rem;">
+                <i class="fas fa-lock"></i>
+                <p><strong>User Account (Login Credentials):</strong> A user account will be automatically created for this staff member to login to the system.</p>
             </div>
             
-            <div class="form-group" id="add_staff_password_field" style="display: none;">
+            <div class="form-group" style="margin-top: 1rem;">
                 <label>Password: <span style="color: var(--status-error);">*</span></label>
-                <input type="password" name="password" id="add_staff_password_input" minlength="6" placeholder="Minimum 6 characters" class="form-control">
+                <input type="password" name="password" id="add_staff_password_input" minlength="6" required placeholder="Minimum 6 characters" class="form-control">
                 <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary);">The staff member will use their email and this password to login.</small>
             </div>
             
@@ -578,23 +576,6 @@ function openAddStaffModal() {
 function closeAddStaffModal() {
     document.getElementById('addModal').classList.remove('active');
     document.querySelector('#addModal form').reset();
-    document.getElementById('add_staff_password_field').style.display = 'none';
-    document.getElementById('add_staff_password_input').required = false;
-}
-
-function toggleAddStaffPasswordField() {
-    const checkbox = document.getElementById('add_staff_create_user_checkbox');
-    const passwordField = document.getElementById('add_staff_password_field');
-    const passwordInput = document.getElementById('add_staff_password_input');
-    
-    if (checkbox.checked) {
-        passwordField.style.display = 'block';
-        passwordInput.required = true;
-    } else {
-        passwordField.style.display = 'none';
-        passwordInput.required = false;
-        passwordInput.value = '';
-    }
 }
 
 // Phone number formatting function (Philippine format: XXXX-XXX-XXXX)

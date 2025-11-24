@@ -473,19 +473,12 @@
             
             <div class="info-box" style="margin-bottom: 1.5rem;">
                 <i class="fas fa-lock"></i>
-                <p><strong>User Account (Login Credentials):</strong> Check the box below to create a user account for this doctor to login to the system.</p>
+                <p><strong>User Account (Login Credentials):</strong> A user account will be automatically created for this doctor to login to the system.</p>
             </div>
             
             <div class="form-group form-grid-full">
-                <label style="display: flex; align-items: center; cursor: pointer;">
-                    <input type="checkbox" name="create_user" value="1" id="add_create_user_checkbox" onchange="toggleAddPasswordField()" style="margin-right: 0.5rem; width: auto;">
-                    <span>Create user account for login</span>
-                </label>
-            </div>
-            
-            <div class="form-group form-grid-full" id="add_password_field" style="display: none;">
                 <label>Password: <span style="color: var(--status-error);">*</span></label>
-                <input type="password" name="password" id="add_password_input" minlength="6" placeholder="Minimum 6 characters" class="form-control">
+                <input type="password" name="password" id="add_password_input" minlength="6" required placeholder="Minimum 6 characters" class="form-control">
                 <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">The doctor will use their email and this password to login.</small>
             </div>
             
@@ -638,24 +631,6 @@ function closeAddDoctorModal() {
     const modal = document.getElementById('addModal');
     modal.classList.remove('active');
     modal.querySelector('form').reset();
-    document.getElementById('add_password_field').style.display = 'none';
-    document.getElementById('add_password_input').required = false;
-    document.getElementById('add_create_user_checkbox').checked = false;
-}
-
-function toggleAddPasswordField() {
-    const checkbox = document.getElementById('add_create_user_checkbox');
-    const passwordField = document.getElementById('add_password_field');
-    const passwordInput = document.getElementById('add_password_input');
-    
-    if (checkbox.checked) {
-        passwordField.style.display = 'block';
-        passwordInput.required = true;
-    } else {
-        passwordField.style.display = 'none';
-        passwordInput.required = false;
-        passwordInput.value = '';
-    }
 }
 
 function editDoctor(doctor) {

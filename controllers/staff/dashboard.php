@@ -33,17 +33,9 @@ try {
 
 // Get dashboard statistics
 try {
-    // Count staff
-    $result = $db->fetchOne("SELECT COUNT(*) as count FROM staff");
-    $stats['total_staff'] = $result['count'] ?? 0;
-    
     // Count services
     $result = $db->fetchOne("SELECT COUNT(*) as count FROM services");
     $stats['total_services'] = $result['count'] ?? 0;
-    
-    // Count specializations
-    $result = $db->fetchOne("SELECT COUNT(*) as count FROM specializations");
-    $stats['total_specializations'] = $result['count'] ?? 0;
     
     // Count payment methods
     $result = $db->fetchOne("SELECT COUNT(*) as count FROM payment_methods WHERE is_active = true");
@@ -186,13 +178,55 @@ try {
     $stats['today_payments'] = (int)($result['count'] ?? 0);
     $stats['today_amount'] = (float)($result['total'] ?? 0);
     
+    // This Month Revenue
     $result = $db->fetchOne("
         SELECT COUNT(*) as count, COALESCE(SUM(payment_amount), 0) as total
-        FROM payments
-        WHERE payment_date >= DATE_TRUNC('week', CURRENT_DATE)
+        FROM payments p
+        JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        WHERE EXTRACT(YEAR FROM p.payment_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+          AND EXTRACT(MONTH FROM p.payment_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+          AND LOWER(ps.status_name) = 'completed'
     ");
-    $stats['this_week_payments'] = (int)($result['count'] ?? 0);
-    $stats['this_week_amount'] = (float)($result['total'] ?? 0);
+    $stats['this_month_payments'] = (int)($result['count'] ?? 0);
+    $stats['this_month_amount'] = (float)($result['total'] ?? 0);
+    
+    // Completed Payments Today
+    $result = $db->fetchOne("
+        SELECT COUNT(*) as count, COALESCE(SUM(payment_amount), 0) as total
+        FROM payments p
+        JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        WHERE DATE(p.payment_date) = CURRENT_DATE
+          AND LOWER(ps.status_name) = 'completed'
+    ");
+    $stats['completed_today_count'] = (int)($result['count'] ?? 0);
+    $stats['completed_today_amount'] = (float)($result['total'] ?? 0);
+    
+    // Overdue Payments (pending payments with date in the past)
+    $result = $db->fetchOne("
+        SELECT COUNT(*) as count, COALESCE(SUM(payment_amount), 0) as total
+        FROM payments p
+        JOIN payment_statuses ps ON p.payment_status_id = ps.payment_status_id
+        WHERE LOWER(ps.status_name) = 'pending'
+          AND DATE(p.payment_date) < CURRENT_DATE
+    ");
+    $stats['overdue_payments'] = (int)($result['count'] ?? 0);
+    $stats['overdue_amount'] = (float)($result['total'] ?? 0);
+    
+    // Most Popular Service (by bookings)
+    $most_popular_service = $db->fetchOne("
+        SELECT s.service_id, s.service_name, COUNT(a.appointment_id) as booking_count
+        FROM services s
+        LEFT JOIN appointments a ON s.service_id = a.service_id
+        WHERE a.appointment_id IS NOT NULL
+        GROUP BY s.service_id, s.service_name
+        ORDER BY booking_count DESC
+        LIMIT 1
+    ");
+    if (!$most_popular_service || empty($most_popular_service['service_name'])) {
+        $most_popular_service = ['service_name' => 'N/A', 'booking_count' => 0];
+    }
+    $stats['most_popular_service'] = $most_popular_service['service_name'];
+    $stats['most_popular_service_count'] = (int)($most_popular_service['booking_count'] ?? 0);
     
     // Pending Payments List
     $pending_payments = $db->fetchAll("
@@ -316,16 +350,20 @@ try {
 } catch (PDOException $e) {
     error_log("Staff Dashboard error: " . $e->getMessage());
     $stats = [
-        'total_staff' => 0,
         'total_services' => 0,
-        'total_specializations' => 0,
         'total_payment_methods' => 0,
         'pending_payments' => 0,
         'pending_amount' => 0,
         'today_payments' => 0,
         'today_amount' => 0,
-        'this_week_payments' => 0,
-        'this_week_amount' => 0
+        'this_month_payments' => 0,
+        'this_month_amount' => 0,
+        'completed_today_count' => 0,
+        'completed_today_amount' => 0,
+        'overdue_payments' => 0,
+        'overdue_amount' => 0,
+        'most_popular_service' => 'N/A',
+        'most_popular_service_count' => 0
     ];
     $recent_services = [];
     $pending_payments = [];

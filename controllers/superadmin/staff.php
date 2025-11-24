@@ -30,49 +30,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $position = sanitize($_POST['position']);
         $salary = !empty($_POST['salary']) ? floatval($_POST['salary']) : null;
         $password = $_POST['password'] ?? '';
-        $create_user = isset($_POST['create_user']) && $_POST['create_user'] === '1';
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
-        } elseif ($create_user && empty($password)) {
-            $error = 'Password is required when creating user account';
-        } elseif ($create_user && strlen($password) < 6) {
+        } elseif (!isValidEmail($email)) {
+            $error = 'Invalid email format';
+        } elseif (empty($password)) {
+            $error = 'Password is required';
+        } elseif (strlen($password) < 6) {
             $error = 'Password must be at least 6 characters';
         } else {
             try {
                 // Check if email already exists in users table
-                if ($create_user) {
-                    $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
-                    $stmt->execute(['email' => $email]);
-                    if ($stmt->fetch()) {
-                        $error = 'A user account with this email already exists';
-                    }
+                $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
+                $stmt->execute(['email' => $email]);
+                if ($stmt->fetch()) {
+                    $error = 'A user account with this email already exists';
                 }
                 
                 if (empty($error)) {
-                    // Insert staff
-                    // Use PHP's date() to ensure correct timezone (Asia/Manila from config.php)
-                    $current_timestamp = date('Y-m-d H:i:s');
-                    $stmt = $db->prepare("
-                        INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
-                                          staff_salary, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, :created_at)
-                    ");
-                    $stmt->execute([
-                        'first_name' => $first_name,
-                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
-                        'last_name' => $last_name,
-                        'email' => $email,
-                        'phone' => $phone,
-                        'position' => $position,
-                        'salary' => $salary,
-                        'created_at' => $current_timestamp
-                    ]);
+                    // Begin transaction to ensure both staff and user are created together
+                    $db->beginTransaction();
                     
-                    $staff_id = $db->lastInsertId();
-                    
-                    // Create user account if requested
-                    if ($create_user) {
+                    try {
+                        // Insert staff
+                        // Use PHP's date() to ensure correct timezone (Asia/Manila from config.php)
+                        $current_timestamp = date('Y-m-d H:i:s');
+                        $stmt = $db->prepare("
+                            INSERT INTO staff (staff_first_name, staff_middle_initial, staff_last_name, staff_email, staff_phone, staff_position,
+                                              staff_salary, created_at) 
+                            VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :position, :salary, :created_at)
+                        ");
+                        $stmt->execute([
+                            'first_name' => $first_name,
+                            'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
+                            'last_name' => $last_name,
+                            'email' => $email,
+                            'phone' => $phone,
+                            'position' => $position,
+                            'salary' => $salary,
+                            'created_at' => $current_timestamp
+                        ]);
+                        
+                        $staff_id = $db->lastInsertId();
+                        
+                        // Always create user account
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                         $stmt = $db->prepare("
                             INSERT INTO users (user_email, user_password, staff_id, user_is_superadmin, created_at) 
@@ -83,9 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'password' => $hashedPassword,
                             'staff_id' => $staff_id
                         ]);
+                        
+                        // Commit transaction
+                        $db->commit();
                         $success = 'Staff and user account created successfully';
-                    } else {
-                        $success = 'Staff member created successfully (no user account created)';
+                    } catch (PDOException $e) {
+                        // Rollback on error
+                        $db->rollBack();
+                        throw $e;
                     }
                     
                     // Redirect to prevent form resubmission and refresh the data

@@ -50,115 +50,107 @@
         </div>
     </div>
 
-    <!-- Next Payment Widget (Larger if exists) -->
-    <?php if ($next_payment): ?>
-        <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; grid-column: span 2;" onclick="window.location.href='/staff/payments'">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: white;">
-                <div style="flex: 1;">
-                    <div style="font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500; opacity: 0.9;">
-                        <i class="fas fa-exclamation-circle"></i> Next Payment to Process
-                    </div>
-                    <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">
-                        <?= htmlspecialchars(($next_payment['pat_first_name'] ?? '') . ' ' . ($next_payment['pat_last_name'] ?? 'Patient')) ?>
-                    </div>
-                    <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.25rem;">
-                        ₱<?= number_format($next_payment['payment_amount'] ?? 0, 2) ?> - <?= htmlspecialchars($next_payment['method_name'] ?? 'N/A') ?>
-                    </div>
-                    <div style="font-size: 0.75rem; font-weight: 600; opacity: 0.95;">
-                        <?= isset($next_payment['payment_date']) ? date('M d, Y', strtotime($next_payment['payment_date'])) : 'N/A' ?>
-                    </div>
+    <!-- Overdue Payments Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; <?= ($stats['overdue_payments'] ?? 0) > 0 ? 'border-left: 4px solid #ef4444;' : '' ?>" onclick="window.location.href='/staff/payments'">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                    <span>Overdue Payments</span>
                 </div>
-                <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <?php if (!empty($next_payment['patient_profile_picture'])): ?>
-                        <img src="<?= htmlspecialchars($next_payment['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-                    <?php else: ?>
-                        <span style="font-size: 1.5rem; font-weight: 700;"><?= strtoupper(substr($next_payment['pat_first_name'] ?? 'P', 0, 1)) ?></span>
-                    <?php endif; ?>
+                <div style="font-size: 2rem; font-weight: 700; color: <?= ($stats['overdue_payments'] ?? 0) > 0 ? '#ef4444' : 'var(--text-primary)' ?>; margin-bottom: 0.5rem;">
+                    <?= number_format($stats['overdue_payments'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    ₱<?= number_format($stats['overdue_amount'] ?? 0, 2) ?> urgent
                 </div>
             </div>
-        </div>
-    <?php else: ?>
-        <!-- Today's Payments Card (if no next payment) -->
-        <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/staff/payments'">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fas fa-credit-card" style="color: var(--primary-blue);"></i>
-                        <span>Today's Payments</span>
-                    </div>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                        <?= number_format($stats['today_payments'] ?? 0) ?>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                        ₱<?= number_format($stats['today_amount'] ?? 0, 2) ?> processed
-                    </div>
-                </div>
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <i class="fas fa-credit-card" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
-                </div>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: #ef4444;"></i>
             </div>
         </div>
-    <?php endif; ?>
+    </div>
 
-    <!-- Today's Payments Card -->
+    <!-- Completed Payments Today Card -->
     <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/staff/payments'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="flex: 1;">
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-credit-card" style="color: var(--primary-blue);"></i>
-                    <span>Today's Payments</span>
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    <span>Completed Today</span>
                 </div>
                 <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?= number_format($stats['today_payments'] ?? 0) ?>
+                    <?= number_format($stats['completed_today_count'] ?? 0) ?>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    ₱<?= number_format($stats['today_amount'] ?? 0, 2) ?> processed
+                    ₱<?= number_format($stats['completed_today_amount'] ?? 0, 2) ?> revenue
                 </div>
             </div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="fas fa-credit-card" style="font-size: 1.5rem; color: var(--primary-blue);"></i>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-check-circle" style="font-size: 1.5rem; color: #10b981;"></i>
             </div>
         </div>
     </div>
 
-    <!-- This Week Overview Card -->
-    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <!-- This Month Revenue Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/staff/payments'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="flex: 1;">
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-calendar-week" style="color: #8b5cf6;"></i>
-                    <span>This Week</span>
+                    <i class="fas fa-calendar-alt" style="color: #8b5cf6;"></i>
+                    <span>This Month Revenue</span>
                 </div>
                 <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?= number_format($stats['this_week_payments'] ?? 0) ?>
+                    ₱<?= number_format($stats['this_month_amount'] ?? 0, 0) ?>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    ₱<?= number_format($stats['this_week_amount'] ?? 0, 2) ?> revenue
+                    <?= number_format($stats['this_month_payments'] ?? 0) ?> payments
                 </div>
             </div>
             <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(139, 92, 246, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="fas fa-calendar-week" style="font-size: 1.5rem; color: #8b5cf6;"></i>
+                <i class="fas fa-calendar-alt" style="font-size: 1.5rem; color: #8b5cf6;"></i>
             </div>
         </div>
     </div>
 
-    <!-- Total Services Card -->
+    <!-- Most Popular Service Card -->
     <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/staff/services'">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div style="flex: 1;">
                 <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fas fa-flask" style="color: #10b981;"></i>
-                    <span>Total Services</span>
+                    <i class="fas fa-star" style="color: #f59e0b;"></i>
+                    <span>Most Popular Service</span>
                 </div>
-                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
-                    <?= number_format($stats['total_services'] ?? 0) ?>
+                <div style="font-size: 1.125rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; line-height: 1.3;">
+                    <?= htmlspecialchars($stats['most_popular_service'] ?? 'N/A') ?>
                 </div>
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    Active services
+                    <?= number_format($stats['most_popular_service_count'] ?? 0) ?> bookings
                 </div>
             </div>
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <i class="fas fa-flask" style="font-size: 1.5rem; color: #10b981;"></i>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-star" style="font-size: 1.5rem; color: #f59e0b;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Methods Available Card -->
+    <div class="stat-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/staff/payment-methods'">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-wallet" style="color: #6366f1;"></i>
+                    <span>Payment Methods</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+                    <?= number_format($stats['total_payment_methods'] ?? 0) ?>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    Active methods
+                </div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-wallet" style="font-size: 1.5rem; color: #6366f1;"></i>
             </div>
         </div>
     </div>

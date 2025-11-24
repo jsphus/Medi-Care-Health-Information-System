@@ -32,55 +32,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bio = sanitize($_POST['bio'] ?? '');
         $status = sanitize($_POST['status'] ?? 'active');
         $password = $_POST['password'] ?? '';
-        $create_user = isset($_POST['create_user']) && $_POST['create_user'] === '1';
         
         if (empty($first_name) || empty($last_name) || empty($email)) {
             $error = 'First name, last name, and email are required';
         } elseif (!isValidEmail($email)) {
             $error = 'Invalid email format';
-        } elseif ($create_user && empty($password)) {
-            $error = 'Password is required when creating user account';
-        } elseif ($create_user && strlen($password) < 6) {
+        } elseif (empty($password)) {
+            $error = 'Password is required';
+        } elseif (strlen($password) < 6) {
             $error = 'Password must be at least 6 characters';
         } else {
             try {
                 // Check if email already exists in users table
-                if ($create_user) {
-                    $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
-                    $stmt->execute(['email' => $email]);
-                    if ($stmt->fetch()) {
-                        $error = 'A user account with this email already exists';
-                    }
+                $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
+                $stmt->execute(['email' => $email]);
+                if ($stmt->fetch()) {
+                    $error = 'A user account with this email already exists';
                 }
                 
                 if (empty($error)) {
-                    // Insert doctor
-                    $stmt = $db->prepare("
-                        INSERT INTO doctors (doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
-                                            doc_license_number, doc_experience_years, doc_consultation_fee, 
-                                            doc_qualification, doc_bio, doc_status, created_at) 
-                        VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :specialization_id, :license_number,
-                               :experience_years, :consultation_fee, :qualification, :bio, :status, NOW())
-                    ");
-                    $stmt->execute([
-                        'first_name' => $first_name,
-                        'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
-                        'last_name' => $last_name,
-                        'email' => $email,
-                        'phone' => $phone,
-                        'specialization_id' => $specialization_id,
-                        'license_number' => $license_number,
-                        'experience_years' => $experience_years,
-                        'consultation_fee' => $consultation_fee,
-                        'qualification' => $qualification,
-                        'bio' => $bio,
-                        'status' => $status
-                    ]);
+                    // Begin transaction to ensure both doctor and user are created together
+                    $db->beginTransaction();
                     
-                    $doc_id = $db->lastInsertId();
-                    
-                    // Create user account if requested
-                    if ($create_user) {
+                    try {
+                        // Insert doctor
+                        $stmt = $db->prepare("
+                            INSERT INTO doctors (doc_first_name, doc_middle_initial, doc_last_name, doc_email, doc_phone, doc_specialization_id, 
+                                                doc_license_number, doc_experience_years, doc_consultation_fee, 
+                                                doc_qualification, doc_bio, doc_status, created_at) 
+                            VALUES (:first_name, :middle_initial, :last_name, :email, :phone, :specialization_id, :license_number,
+                                   :experience_years, :consultation_fee, :qualification, :bio, :status, NOW())
+                        ");
+                        $stmt->execute([
+                            'first_name' => $first_name,
+                            'middle_initial' => !empty($middle_initial) ? strtoupper(substr($middle_initial, 0, 1)) : null,
+                            'last_name' => $last_name,
+                            'email' => $email,
+                            'phone' => $phone,
+                            'specialization_id' => $specialization_id,
+                            'license_number' => $license_number,
+                            'experience_years' => $experience_years,
+                            'consultation_fee' => $consultation_fee,
+                            'qualification' => $qualification,
+                            'bio' => $bio,
+                            'status' => $status
+                        ]);
+                        
+                        $doc_id = $db->lastInsertId();
+                        
+                        // Always create user account
                         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                         $stmt = $db->prepare("
                             INSERT INTO users (user_email, user_password, doc_id, user_is_superadmin, created_at) 
@@ -91,9 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'password' => $hashedPassword,
                             'doc_id' => $doc_id
                         ]);
+                        
+                        // Commit transaction
+                        $db->commit();
                         $success = 'Doctor and user account created successfully';
-                    } else {
-                        $success = 'Doctor created successfully (no user account created)';
+                    } catch (PDOException $e) {
+                        // Rollback on error
+                        $db->rollBack();
+                        throw $e;
                     }
                 }
             } catch (PDOException $e) {
@@ -129,23 +134,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userData = $stmt->fetch(PDO::FETCH_ASSOC);
             $user_id = $userData['user_id'] ?? null;
             
+            // Debug logging
+            error_log("Doctor ID $id profile picture update - user_id: " . ($user_id ?? 'NULL'));
+            error_log("Doctor ID $id - File uploaded: " . (isset($_FILES['profile_picture']) ? 'YES' : 'NO'));
+            if (isset($_FILES['profile_picture'])) {
+                error_log("Doctor ID $id - Upload error code: " . ($_FILES['profile_picture']['error'] ?? 'NOT SET'));
+            }
+            error_log("Doctor ID $id - Remove profile picture: " . (isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1' ? 'YES' : 'NO'));
+            
             // Handle profile picture upload/removal
             $profilePictureUrl = null;
+            $updateProfilePicture = false;
             $removeProfilePicture = isset($_POST['remove_profile_picture']) && $_POST['remove_profile_picture'] === '1';
             
+            // Check if we need to handle profile picture but doctor has no user_id
+            $hasFileUpload = isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK;
+            if (($hasFileUpload || $removeProfilePicture) && !$user_id) {
+                // Doctor doesn't have a user account, but we need to update profile picture
+                // Try to find user by email or create one
+                $stmt = $db->prepare("SELECT user_id FROM users WHERE user_email = :email");
+                $stmt->execute(['email' => $email]);
+                $userByEmail = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($userByEmail) {
+                    // User exists with same email but different doc_id - this shouldn't happen, but log it
+                    error_log("Doctor ID $id - User with email $email exists but has different doc_id: " . $userByEmail['user_id']);
+                    $user_id = null;
+                } else {
+                    // No user account exists - we can't update profile picture without a user account
+                    error_log("Doctor ID $id - Cannot update profile picture: No user account linked to this doctor");
+                    // Don't set an error that blocks other updates, but log it
+                }
+            }
+            
             if ($user_id) {
+                // Get current profile picture URL first to preserve it if upload fails
+                $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
+                $stmt->execute(['user_id' => $user_id]);
+                $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                $existingProfilePictureUrl = $currentUser['profile_picture_url'] ?? null;
+                
                 if ($removeProfilePicture) {
-                    // Get current profile picture URL
-                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                    $stmt->execute(['user_id' => $user_id]);
-                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $oldUrl = $currentUser['profile_picture_url'] ?? null;
-                    
                     // Delete from Cloudinary if exists
-                    if ($oldUrl) {
+                    if ($existingProfilePictureUrl) {
                         try {
                             $cloudinary = new CloudinaryUpload();
-                            $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            $oldPublicId = $cloudinary->extractPublicId($existingProfilePictureUrl);
                             if ($oldPublicId) {
                                 $cloudinary->deleteImage($oldPublicId);
                             }
@@ -154,39 +188,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     }
                     $profilePictureUrl = null;
+                    $updateProfilePicture = true;
                 } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                    error_log("Doctor ID $id - File upload detected, starting Cloudinary upload...");
                     try {
                         $cloudinary = new CloudinaryUpload();
+                        error_log("Doctor ID $id - CloudinaryUpload object created, uploading image for user_id: $user_id");
                         $result = $cloudinary->uploadImage($_FILES['profile_picture'], 'profile_pictures', $user_id);
+                        error_log("Doctor ID $id - Upload result type: " . gettype($result));
                         
                         if (is_array($result) && isset($result['url'])) {
-                            // Get old profile picture URL before updating
-                            $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                            $stmt->execute(['user_id' => $user_id]);
-                            $oldUser = $stmt->fetch(PDO::FETCH_ASSOC);
-                            $oldUrl = $oldUser['profile_picture_url'] ?? null;
-                            
+                            error_log("Doctor ID $id - Upload successful, URL: " . $result['url']);
                             // Delete old image from Cloudinary if exists
-                            if ($oldUrl) {
-                                $oldPublicId = $cloudinary->extractPublicId($oldUrl);
+                            if ($existingProfilePictureUrl) {
+                                error_log("Doctor ID $id - Deleting old profile picture from Cloudinary");
+                                $oldPublicId = $cloudinary->extractPublicId($existingProfilePictureUrl);
                                 if ($oldPublicId) {
                                     $cloudinary->deleteImage($oldPublicId);
+                                    error_log("Doctor ID $id - Old image deleted successfully");
                                 }
                             }
                             
                             $profilePictureUrl = $result['url'];
+                            $updateProfilePicture = true;
+                            error_log("Doctor ID $id - Profile picture URL set, updateProfilePicture flag set to true");
                         } else {
-                            $error = is_string($result) ? $result : 'Failed to upload profile picture';
+                            // Upload failed, preserve existing profile picture and log error
+                            $profilePictureUrl = $existingProfilePictureUrl;
+                            $errorMsg = is_string($result) ? $result : 'Failed to upload profile picture';
+                            // Don't block the entire update if only profile picture fails
+                            error_log('Profile picture upload failed for doctor ID ' . $id . ': ' . $errorMsg);
+                            error_log("Doctor ID $id - Result content: " . print_r($result, true));
                         }
                     } catch (Exception $e) {
-                        $error = 'Failed to upload profile picture: ' . $e->getMessage();
+                        // Upload exception, preserve existing profile picture
+                        $profilePictureUrl = $existingProfilePictureUrl;
+                        // Don't block the entire update if only profile picture fails
+                        error_log('Profile picture upload exception for doctor ID ' . $id . ': ' . $e->getMessage());
+                        error_log('Exception trace: ' . $e->getTraceAsString());
                     }
                 } else {
-                    // Keep existing profile picture
-                    $stmt = $db->prepare("SELECT profile_picture_url FROM users WHERE user_id = :user_id");
-                    $stmt->execute(['user_id' => $user_id]);
-                    $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
-                    $profilePictureUrl = $currentUser['profile_picture_url'] ?? null;
+                    // No file uploaded, keep existing profile picture
+                    if (isset($_FILES['profile_picture'])) {
+                        error_log("Doctor ID $id - File uploaded but error code: " . $_FILES['profile_picture']['error']);
+                    } else {
+                        error_log("Doctor ID $id - No file uploaded, preserving existing profile picture");
+                    }
+                    $profilePictureUrl = $existingProfilePictureUrl;
+                    // Only update if we explicitly want to (no update needed if nothing changed)
+                    $updateProfilePicture = false;
                 }
             }
             
@@ -216,10 +266,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'id' => $id
                     ]);
                     
-                    // Update profile picture in users table if we have a user_id
-                    if ($user_id) {
+                    // Update profile picture in users table if we have a user_id and need to update
+                    if ($user_id && $updateProfilePicture) {
+                        error_log("Doctor ID $id - Updating profile picture in database for user_id: $user_id, URL: " . ($profilePictureUrl ?? 'NULL'));
                         $stmt = $db->prepare("UPDATE users SET profile_picture_url = :profile_picture_url WHERE user_id = :user_id");
-                        $stmt->execute(['profile_picture_url' => $profilePictureUrl, 'user_id' => $user_id]);
+                        $result = $stmt->execute(['profile_picture_url' => $profilePictureUrl, 'user_id' => $user_id]);
+                        error_log("Doctor ID $id - Database update result: " . ($result ? 'SUCCESS' : 'FAILED'));
+                        if ($result) {
+                            error_log("Doctor ID $id - Rows affected: " . $stmt->rowCount());
+                        }
+                    } else {
+                        if (!$user_id) {
+                            error_log("Doctor ID $id - Cannot update profile picture: No user_id (doctor has no user account)");
+                            // If user tried to upload but doctor has no account, add a warning
+                            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                                $profilePictureWarning = 'Profile picture not updated: Doctor does not have a user account. Please create a user account for this doctor first.';
+                                if (empty($error)) {
+                                    $error = $profilePictureWarning;
+                                } else {
+                                    $error .= ' | ' . $profilePictureWarning;
+                                }
+                            }
+                        } elseif (!$updateProfilePicture) {
+                            error_log("Doctor ID $id - Profile picture update skipped: updateProfilePicture flag is false");
+                        }
                     }
                     
                     $success = 'Doctor updated successfully';

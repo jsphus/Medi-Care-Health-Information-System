@@ -143,7 +143,7 @@
 
 .bottom-grid {
     display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr;
     gap: 1.5rem;
 }
 
@@ -384,32 +384,32 @@
     <!-- KPI Cards -->
     <div class="kpi-grid">
         <div class="kpi-card">
-            <div class="kpi-label">Total Patient</div>
+            <div class="kpi-label">Total Patients</div>
             <div class="kpi-value"><?= number_format($current_patients) ?></div>
             <div class="kpi-trend <?= $patients_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $patients_change >= 0 ? 'up' : 'down' ?>"></i>
                 <span><?= abs($patients_change) ?>%</span>
-                <span class="kpi-trend-text">from Last month</span>
+                <span class="kpi-trend-text">vs. last month</span>
             </div>
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">New Appointments</div>
+            <div class="kpi-label">New Appointments This Month</div>
             <div class="kpi-value"><?= number_format($current_appointments) ?></div>
             <div class="kpi-trend <?= $appointments_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $appointments_change >= 0 ? 'up' : 'down' ?>"></i>
                 <span><?= abs($appointments_change) ?>%</span>
-                <span class="kpi-trend-text">from Last month</span>
+                <span class="kpi-trend-text">vs. last month</span>
             </div>
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Medical Records</div>
+            <div class="kpi-label">Medical Records This Month</div>
             <div class="kpi-value"><?= number_format($current_records) ?></div>
             <div class="kpi-trend <?= $records_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $records_change >= 0 ? 'up' : 'down' ?>"></i>
                 <span><?= abs($records_change) ?>%</span>
-                <span class="kpi-trend-text">from Last month</span>
+                <span class="kpi-trend-text">vs. last month</span>
             </div>
         </div>
         
@@ -425,38 +425,38 @@
     <!-- Payment Cards -->
     <div class="payments-grid">
         <div class="kpi-card">
-            <div class="kpi-label">Payments This Month</div>
+            <div class="kpi-label">Total Payments This Month</div>
             <div class="kpi-value"><?= number_format($payments_this_month) ?></div>
             <div class="kpi-trend <?= $payments_change >= 0 ? 'positive' : 'negative' ?>">
                 <i class="fas fa-arrow-<?= $payments_change >= 0 ? 'up' : 'down' ?>"></i>
                 <span><?= abs($payments_change) ?>%</span>
-                <span class="kpi-trend-text">from Last month</span>
+                <span class="kpi-trend-text">vs. last month</span>
             </div>
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Total Amount</div>
+            <div class="kpi-label">Total Revenue This Month</div>
             <div class="kpi-value">₱<?= number_format($total_amount_this_month, 0) ?></div>
             <div class="kpi-trend-text" style="margin-top: 0.5rem; color: #6b7280;">
-                This month
+                Total amount collected this month
             </div>
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Paid</div>
+            <div class="kpi-label">Paid This Month</div>
             <div class="kpi-value"><?= number_format($paid_this_month) ?></div>
             <div class="kpi-trend positive">
                 <i class="fas fa-check-circle"></i>
-                <span class="kpi-trend-text">Completed payments</span>
+                <span class="kpi-trend-text">Completed payments this month</span>
             </div>
         </div>
         
         <div class="kpi-card">
-            <div class="kpi-label">Pending</div>
+            <div class="kpi-label">Pending This Month</div>
             <div class="kpi-value"><?= number_format($pending_this_month) ?></div>
             <div class="kpi-trend negative">
                 <i class="fas fa-clock"></i>
-                <span class="kpi-trend-text">Awaiting payment</span>
+                <span class="kpi-trend-text">Awaiting payment this month</span>
             </div>
         </div>
     </div>
@@ -485,7 +485,13 @@
                     $serviceName = htmlspecialchars($apt['service_name'] ?? 'General Consultation');
                     ?>
                     <div class="appointment-item">
-                        <div class="appointment-avatar"><?= $patInitial ?></div>
+                        <div class="appointment-avatar" style="overflow: hidden;">
+                            <?php if (!empty($apt['patient_profile_picture'])): ?>
+                                <img src="<?= htmlspecialchars($apt['patient_profile_picture']) ?>" alt="Patient" style="width: 100%; height: 100%; object-fit: cover;">
+                            <?php else: ?>
+                                <?= $patInitial ?>
+                            <?php endif; ?>
+                        </div>
                         <div class="appointment-info">
                             <div class="appointment-patient-name"><?= $patName ?></div>
                             <div class="appointment-details">
@@ -505,13 +511,13 @@
 
     <!-- Charts Row -->
     <div class="charts-grid">
-        <!-- Patient Statistics Chart -->
+        <!-- Appointments Statistics Chart -->
         <div class="chart-card">
             <div class="chart-header">
-                <h2 class="chart-title">Patient Statistic</h2>
+                <h2 class="chart-title">Appointments Statistics</h2>
             </div>
             <div class="chart-wrapper">
-                <canvas id="patientStatisticChart"></canvas>
+                <canvas id="appointmentsStatisticChart"></canvas>
             </div>
         </div>
         
@@ -592,47 +598,20 @@
             <a href="/superadmin/doctors" class="view-all-btn">View All</a>
         </div>
         
-        <!-- Completion Rate -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <div>
-                    <h2 class="chart-title">Completion Rate</h2>
-                    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <?= $completion_rate ?>%
-                        <?php if ($completion_change >= 0): ?>
-                            <span style="color: #10b981;">
-                                <i class="fas fa-arrow-up"></i> +<?= abs($completion_change) ?>%
-                            </span>
-                        <?php else: ?>
-                            <span style="color: #ef4444;">
-                                <i class="fas fa-arrow-down"></i> <?= $completion_change ?>%
-                            </span>
-                        <?php endif; ?>
-                        <i class="fas fa-smile" style="color: #10b981;"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="chart-wrapper">
-                <canvas id="completionRateChart"></canvas>
-            </div>
-            <div class="satisfaction-description">
-                Appointment completion rate is at <?= $completion_rate ?>%. This indicates the efficiency of appointment processing and patient follow-through.
-            </div>
-        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Patient Statistic Chart (Line Chart)
-const patientCtx = document.getElementById('patientStatisticChart').getContext('2d');
-const patientChart = new Chart(patientCtx, {
+// Appointments Statistics Chart (Line Chart with multiple datasets)
+const appointmentsCtx = document.getElementById('appointmentsStatisticChart').getContext('2d');
+const appointmentsChart = new Chart(appointmentsCtx, {
     type: 'line',
     data: {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         datasets: [{
-            label: 'Appointments',
-            data: <?= json_encode($patient_chart_data) ?>,
+            label: 'Total Appointments',
+            data: <?= json_encode($appointments_chart_data) ?>,
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             tension: 0.4,
@@ -642,6 +621,18 @@ const patientChart = new Chart(patientCtx, {
             pointBackgroundColor: '#3b82f6',
             pointBorderColor: '#fff',
             pointBorderWidth: 2
+        }, {
+            label: 'Completed Appointments',
+            data: <?= json_encode($completed_appointments_chart_data) ?>,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
         }]
     },
     options: {
@@ -649,21 +640,31 @@ const patientChart = new Chart(patientCtx, {
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                display: false
+                display: true,
+                position: 'top',
+                labels: {
+                    padding: 15,
+                    font: { size: 12 },
+                    color: '#374151',
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
             },
             tooltip: {
                 backgroundColor: 'rgba(0, 0, 0, 0.8)',
                 padding: 12,
                 titleFont: { size: 14, weight: 'bold' },
                 bodyFont: { size: 13 },
-                cornerRadius: 8
+                cornerRadius: 8,
+                mode: 'index',
+                intersect: false
             }
         },
         scales: {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    stepSize: 50,
+                    stepSize: 10,
                     font: { size: 11 },
                     color: '#6b7280'
                 },
@@ -680,6 +681,10 @@ const patientChart = new Chart(patientCtx, {
                     display: false
                 }
             }
+        },
+        interaction: {
+            mode: 'index',
+            intersect: false
         }
     }
 });
@@ -689,19 +694,17 @@ const roleCtx = document.getElementById('usersByRoleChart').getContext('2d');
 const roleChart = new Chart(roleCtx, {
     type: 'doughnut',
     data: {
-        labels: ['Patient', 'Doctor', 'Staff', 'Admin'],
+        labels: ['Patient', 'Doctor', 'Staff'],
         datasets: [{
             data: [
                 <?= $users_by_role['Patient'] ?? 0 ?>,
                 <?= $users_by_role['Doctor'] ?? 0 ?>,
-                <?= $users_by_role['Staff'] ?? 0 ?>,
-                <?= $users_by_role['Admin'] ?? 0 ?>
+                <?= $users_by_role['Staff'] ?? 0 ?>
             ],
             backgroundColor: [
                 '#60a5fa',
                 '#f59e0b',
-                '#3b82f6',
-                '#4b5563'
+                '#3b82f6'
             ],
             borderWidth: 0
         }]
@@ -753,74 +756,6 @@ const roleChart = new Chart(roleCtx, {
     }]
 });
 
-// Completion Rate Chart (Line Chart)
-const completionCtx = document.getElementById('completionRateChart').getContext('2d');
-const completionChart = new Chart(completionCtx, {
-    type: 'line',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [{
-            label: 'Completion Rate',
-            data: <?= json_encode($completion_chart_data) ?>,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            tension: 0.4,
-            fill: true,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            pointBackgroundColor: '#10b981',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                padding: 12,
-                titleFont: { size: 14, weight: 'bold' },
-                bodyFont: { size: 13 },
-                cornerRadius: 8,
-                callbacks: {
-                    label: function(context) {
-                        return 'Completion: ' + context.parsed.y + '%';
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                max: 100,
-                ticks: {
-                    stepSize: 25,
-                    font: { size: 11 },
-                    color: '#6b7280',
-                    callback: function(value) {
-                        return value + '%';
-                    }
-                },
-                grid: {
-                    color: '#f3f4f6'
-                }
-            },
-            x: {
-                ticks: {
-                    font: { size: 11 },
-                    color: '#6b7280'
-                },
-                grid: {
-                    display: false
-                }
-            }
-        }
-    }
-});
 </script>
 
 <?php require_once __DIR__ . '/../partials/footer.php'; ?>

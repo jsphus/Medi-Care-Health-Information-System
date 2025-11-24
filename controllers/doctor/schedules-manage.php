@@ -80,7 +80,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $success = 'Schedule created successfully';
                     }
                 }
-            }
             } catch (PDOException $e) {
                 // Check if it's a unique constraint violation
                 if (strpos($e->getMessage(), '23505') !== false || strpos($e->getMessage(), 'duplicate key') !== false) {
@@ -111,48 +110,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($scheduleDateTime < ($currentDateTime - 300)) {
                 $error = 'Cannot update schedules to a past date and time. Please select a future date and time.';
             } else {
-            try {
-                // Check for overlapping schedules (excluding current schedule)
-                $stmt = $db->prepare("
-                    SELECT schedule_id FROM schedules 
-                    WHERE doc_id = :doc_id 
-                    AND schedule_date = :schedule_date 
-                    AND schedule_id != :id
-                    AND (
-                        (start_time <= :start_time AND end_time > :start_time) OR
-                        (start_time < :end_time AND end_time >= :end_time) OR
-                        (start_time >= :start_time AND end_time <= :end_time)
-                    )
-                ");
-                $stmt->execute([
-                    'doc_id' => $doc_id,
-                    'schedule_date' => $schedule_date,
-                    'start_time' => $start_time,
-                    'end_time' => $end_time,
-                    'id' => $id
-                ]);
-                
-                if ($stmt->fetch()) {
-                    $error = 'This schedule overlaps with an existing schedule for this doctor on this date';
-                } else {
+                try {
+                    // Check for overlapping schedules (excluding current schedule)
                     $stmt = $db->prepare("
-                        UPDATE schedules 
-                        SET doc_id = :doc_id, schedule_date = :schedule_date, start_time = :start_time, 
-                            end_time = :end_time, updated_at = NOW()
-                        WHERE schedule_id = :id
+                        SELECT schedule_id FROM schedules 
+                        WHERE doc_id = :doc_id 
+                        AND schedule_date = :schedule_date 
+                        AND schedule_id != :id
+                        AND (
+                            (start_time <= :start_time AND end_time > :start_time) OR
+                            (start_time < :end_time AND end_time >= :end_time) OR
+                            (start_time >= :start_time AND end_time <= :end_time)
+                        )
                     ");
                     $stmt->execute([
-                        'id' => $id,
                         'doc_id' => $doc_id,
                         'schedule_date' => $schedule_date,
                         'start_time' => $start_time,
                         'end_time' => $end_time,
+                        'id' => $id
                     ]);
-                    $success = 'Schedule updated successfully';
+                    
+                    if ($stmt->fetch()) {
+                        $error = 'This schedule overlaps with an existing schedule for this doctor on this date';
+                    } else {
+                        $stmt = $db->prepare("
+                            UPDATE schedules 
+                            SET doc_id = :doc_id, schedule_date = :schedule_date, start_time = :start_time, 
+                                end_time = :end_time, updated_at = NOW()
+                            WHERE schedule_id = :id
+                        ");
+                        $stmt->execute([
+                            'id' => $id,
+                            'doc_id' => $doc_id,
+                            'schedule_date' => $schedule_date,
+                            'start_time' => $start_time,
+                            'end_time' => $end_time,
+                        ]);
+                        $success = 'Schedule updated successfully';
+                    }
+                } catch (PDOException $e) {
+                    $error = 'Database error: ' . $e->getMessage();
                 }
-            }
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
             }
         }
     }
