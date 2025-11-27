@@ -48,6 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $last_name = sanitize($_POST['last_name'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
         
+        // Format phone number if provided
+        if (!empty($phone)) {
+            $phone = formatPhoneNumber($phone);
+        }
+        
         // Basic validation
         if (empty($email) || !isValidEmail($email)) {
             $error = 'Please enter a valid email address';

@@ -392,5 +392,60 @@ if (session_status() === PHP_SESSION_NONE) {
     </div>
 </div>
 
+<script>
+// Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
+function formatPhoneNumber(value) {
+    if (!value) return '';
+    let digits = value.toString().replace(/\D/g, '');
+    if (digits.length > 11) digits = digits.substring(0, 11);
+    if (digits.length >= 7) {
+        return digits.substring(0, 4) + '-' + digits.substring(4, 7) + '-' + digits.substring(7);
+    } else if (digits.length >= 4) {
+        return digits.substring(0, 4) + '-' + digits.substring(4);
+    }
+    return digits;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Format main phone input
+    const phoneInput = document.querySelector('input[name="phone"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            const oldValue = e.target.value;
+            const formatted = formatPhoneNumber(e.target.value);
+            if (oldValue !== formatted) {
+                e.target.value = formatted;
+                const newCursorPosition = cursorPosition + (formatted.length - oldValue.length);
+                setTimeout(() => e.target.setSelectionRange(newCursorPosition, newCursorPosition), 0);
+            }
+        });
+        phoneInput.addEventListener('blur', function(e) {
+            if (e.target.value) e.target.value = formatPhoneNumber(e.target.value);
+        });
+        if (phoneInput.value) phoneInput.value = formatPhoneNumber(phoneInput.value);
+    }
+    
+    // Format emergency phone input (for patient registration)
+    const emergencyPhoneInput = document.querySelector('input[name="emergency_phone"]');
+    if (emergencyPhoneInput) {
+        emergencyPhoneInput.addEventListener('input', function(e) {
+            const cursorPosition = e.target.selectionStart;
+            const oldValue = e.target.value;
+            const formatted = formatPhoneNumber(e.target.value);
+            if (oldValue !== formatted) {
+                e.target.value = formatted;
+                const newCursorPosition = cursorPosition + (formatted.length - oldValue.length);
+                setTimeout(() => e.target.setSelectionRange(newCursorPosition, newCursorPosition), 0);
+            }
+        });
+        emergencyPhoneInput.addEventListener('blur', function(e) {
+            if (e.target.value) e.target.value = formatPhoneNumber(e.target.value);
+        });
+        if (emergencyPhoneInput.value) emergencyPhoneInput.value = formatPhoneNumber(emergencyPhoneInput.value);
+    }
+});
+</script>
+
 </body>
 </html>
