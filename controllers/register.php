@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $last_name = sanitize($_POST['last_name'] ?? '');
         $phone = sanitize($_POST['phone'] ?? '');
         
-        // Format phone number if provided
+        // Format phone number if provided (applies to all user types: patient, doctor, staff)
+        // Converts to Philippine format: XXXX-XXX-XXXX (e.g., 0912-345-6789)
         if (!empty($phone)) {
             $phone = formatPhoneNumber($phone);
         }
@@ -76,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'gender' => !empty($_POST['gender']) ? sanitize($_POST['gender']) : null,
                     'address' => !empty($_POST['address']) ? sanitize($_POST['address']) : null,
                     'emergency_contact' => !empty($_POST['emergency_contact']) ? sanitize($_POST['emergency_contact']) : null,
-                    'emergency_phone' => !empty($_POST['emergency_phone']) ? sanitize($_POST['emergency_phone']) : null
+                    'emergency_phone' => !empty($_POST['emergency_phone']) ? formatPhoneNumber(sanitize($_POST['emergency_phone'])) : null
                 ];
                 
                 $result = $auth->registerPatient($data);

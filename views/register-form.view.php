@@ -310,7 +310,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
                 <!-- Phone -->
                 <div class="form-icon-wrapper">
-                    <input type="tel" name="phone" placeholder="Phone Number" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
+                    <input type="tel" name="phone" placeholder="Phone Number (e.g., 0912-345-6789)" pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter a valid Philippine phone number (XXXX-XXX-XXXX)" value="<?= htmlspecialchars($_POST['phone'] ?? '') ?>">
                     <i class="fas fa-phone form-icon"></i>
                 </div>
 
@@ -354,7 +354,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     </div>
 
                     <div class="form-icon-wrapper">
-                        <input type="tel" name="emergency_phone" placeholder="Emergency Contact Phone" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
+                        <input type="tel" name="emergency_phone" placeholder="Emergency Phone (e.g., 0912-345-6789)" pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter a valid Philippine phone number (XXXX-XXX-XXXX)" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
                         <i class="fas fa-phone form-icon"></i>
                     </div>
                 <?php endif; ?>
