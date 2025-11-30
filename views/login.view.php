@@ -380,7 +380,6 @@ if (session_status() === PHP_SESSION_NONE) {
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: var(--primary-blue);
         border: 2px solid rgba(255, 255, 255, 0.3);
         display: flex;
         align-items: center;
@@ -389,10 +388,20 @@ if (session_status() === PHP_SESSION_NONE) {
         font-size: 0.75rem;
         font-weight: 600;
         margin-left: -8px;
+        background-size: cover;
+        background-position: center;
     }
     
-    .user-avatar-small:first-child {
-        margin-left: 0;
+    .user-avatar-small.profile-1 {
+        background-image: url('https://res.cloudinary.com/dc3cbupaq/image/upload/v1763266716/image_3_johjuh.jpg');
+    }
+    
+    .user-avatar-small.profile-2 {
+        background-image: url('https://res.cloudinary.com/dc3cbupaq/image/upload/v1763266710/image_1_nlmscj.jpg');
+    }
+    
+    .user-avatar-small.profile-3 {
+        background-image: url('https://res.cloudinary.com/dc3cbupaq/image/upload/v1763265883/240_F_621987811_ZU0yEkrhkosvwQ7lQO7EQI8fQYPRSHIw_dwkbat.jpg');
     }
     
     .user-avatar-small.more {
@@ -553,9 +562,9 @@ if (session_status() === PHP_SESSION_NONE) {
                     Be among the first to experience the easiest way to manage your healthcare needs and connect with trusted medical professionals.
                 </p>
                 <div class="cta-users">
-                    <div class="user-avatar-small">A</div>
-                    <div class="user-avatar-small">B</div>
-                    <div class="user-avatar-small">C</div>
+                    <div class="user-avatar-small profile-1"></div>
+                    <div class="user-avatar-small profile-2"></div>
+                    <div class="user-avatar-small profile-3"></div>
                     <div class="user-avatar-small more">+2</div>
                 </div>
             </div>
