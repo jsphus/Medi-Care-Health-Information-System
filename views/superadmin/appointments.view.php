@@ -634,7 +634,6 @@ function viewAppointmentDetails(appointment) {
                     </div>
                     <div>
                         <p style="margin: 0.5rem 0;"><strong>Service:</strong> ${appointment.service_name || 'N/A'}</p>
-                        <p style="margin: 0.5rem 0;"><strong>Specialization:</strong> ${appointment.spec_name || 'N/A'}</p>
                     </div>
                 </div>
                 ${appointment.appointment_notes ? `<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);"><p style="margin: 0;"><strong>Notes:</strong> ${escapeHtml(appointment.appointment_notes)}</p></div>` : ''}
