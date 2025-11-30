@@ -354,16 +354,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             'staff_salary' => isset($_POST['salary']) && $_POST['salary'] !== '' ? floatval($_POST['salary']) : $existingStaff['staff_salary']
                                         ];
                                         
+                                        // Validate salary range
+                                        if (isset($_POST['salary']) && $_POST['salary'] !== '' && (floatval($_POST['salary']) < 0 || floatval($_POST['salary']) > 99999999.99)) {
+                                            $error = 'Salary must be between 0 and 99,999,999.99';
+                                        }
+                                        
                                         // Format phone number if it has a value
                                         if (!empty($updateData['staff_phone'])) {
                                             $updateData['staff_phone'] = formatPhoneNumber($updateData['staff_phone']);
                                         }
                                         
-                                        // Update using Staff class
-                                        $staff = new Staff();
-                                        $result = $staff->update($staff_id, $updateData);
-                                        if (!$result['success']) {
-                                            $error = implode(', ', $result['errors'] ?? ['Failed to update staff']);
+                                        if (empty($error)) {
+                                            // Update using Staff class
+                                            $staff = new Staff();
+                                            $result = $staff->update($staff_id, $updateData);
+                                            if (!$result['success']) {
+                                                $error = implode(', ', $result['errors'] ?? ['Failed to update staff']);
+                                            }
                                         }
                                     }
                                 }
@@ -405,16 +412,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             'doc_status' => isset($_POST['status']) ? sanitize($_POST['status']) : $existingDoctor['doc_status']
                                         ];
                                         
+                                        // Validate consultation fee range
+                                        if (isset($_POST['consultation_fee']) && $_POST['consultation_fee'] !== '' && (floatval($_POST['consultation_fee']) < 0 || floatval($_POST['consultation_fee']) > 99999999.99)) {
+                                            $error = 'Consultation fee must be between 0 and 99,999,999.99';
+                                        }
+                                        
                                         // Format phone number if it has a value
                                         if (!empty($updateData['doc_phone'])) {
                                             $updateData['doc_phone'] = formatPhoneNumber($updateData['doc_phone']);
                                         }
                                         
-                                        // Update using Doctor class
-                                        $doctor = new Doctor();
-                                        $result = $doctor->update($doc_id, $updateData);
-                                        if (!$result['success']) {
-                                            $error = implode(', ', $result['errors'] ?? ['Failed to update doctor']);
+                                        if (empty($error)) {
+                                            // Update using Doctor class
+                                            $doctor = new Doctor();
+                                            $result = $doctor->update($doc_id, $updateData);
+                                            if (!$result['success']) {
+                                                $error = implode(', ', $result['errors'] ?? ['Failed to update doctor']);
+                                            }
                                         }
                                     }
                                 }

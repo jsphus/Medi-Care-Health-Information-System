@@ -82,14 +82,12 @@ if (session_status() === PHP_SESSION_NONE) {
     .login-logo-icon {
         width: 56px;
         height: 56px;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         border-radius: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
         font-size: 1.75rem;
-        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
     
     .login-logo-text {
@@ -462,7 +460,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <div class="login-header">
                 <div class="login-logo">
                     <div class="login-logo-icon">
-                        <i class="fas fa-heartbeat"></i>
+                        <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
                     <div class="login-logo-text">Medi-Care</div>
                 </div>
@@ -534,7 +532,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="welcome-card">
             <div class="welcome-logo">
                 <div class="welcome-logo-icon">
-                    <i class="fas fa-heartbeat"></i>
+                    <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
                 <div class="welcome-logo-text">Medi-Care</div>
             </div>

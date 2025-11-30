@@ -46,6 +46,7 @@ class User extends Entity {
             $errors[] = 'Invalid email format.';
         }
 
+        // Only require password for new users, not updates
         if ($isNew && empty($data['user_password'])) {
             $errors[] = 'Password is required.';
         }
@@ -157,28 +158,94 @@ class User extends Entity {
         return $result;
     }
 
-    // Update user (maintains backward compatibility)
+    // Update user - FIXED VERSION
     public function update($data) {
-        // If data contains user_id, use it; otherwise it's an update of current instance
-        if (isset($data['user_id'])) {
-            $this->fromArray($data);
-            $result = $this->save();
-            // Convert errors array to message string for backward compatibility
-            if (!$result['success'] && isset($result['errors']) && !empty($result['errors'])) {
-                $result['message'] = implode(', ', $result['errors']);
+        try {
+            // Validate that we have a user_id
+            if (!isset($data['user_id']) || empty($data['user_id'])) {
+                return ['success' => false, 'message' => 'User ID is required for update'];
             }
-            return $result;
-        } else {
-            // Merge with existing data
-            $currentData = $this->toArray();
-            $mergedData = array_merge($currentData, $data);
-            $this->fromArray($mergedData);
-            $result = $this->save();
-            // Convert errors array to message string for backward compatibility
-            if (!$result['success'] && isset($result['errors']) && !empty($result['errors'])) {
-                $result['message'] = implode(', ', $result['errors']);
+
+            // Get current user data first
+            $currentUser = $this->getById($data['user_id']);
+            if (!$currentUser) {
+                return ['success' => false, 'message' => 'User not found'];
             }
-            return $result;
+
+            // Build update fields dynamically - only include fields that are provided
+            $updateFields = [];
+            $updateValues = [];
+
+            // Only update email if provided
+            if (isset($data['user_email']) && !empty($data['user_email'])) {
+                // Validate email format
+                if (!filter_var($data['user_email'], FILTER_VALIDATE_EMAIL)) {
+                    return ['success' => false, 'message' => 'Invalid email format'];
+                }
+
+                // Check for duplicate email (excluding current user)
+                $existing = $this->db->fetchOne(
+                    "SELECT user_id FROM users WHERE user_email = :email AND user_id != :id",
+                    ['email' => $data['user_email'], 'id' => $data['user_id']]
+                );
+                if ($existing) {
+                    return ['success' => false, 'message' => 'Email already exists'];
+                }
+
+                $updateFields[] = 'user_email = :user_email';
+                $updateValues['user_email'] = $data['user_email'];
+            }
+
+            // Only update password if provided
+            if (isset($data['user_password']) && !empty($data['user_password'])) {
+                $updateFields[] = 'user_password = :user_password';
+                $updateValues['user_password'] = $data['user_password'];
+            }
+
+            // Handle other fields if needed
+            if (isset($data['user_is_superadmin'])) {
+                $updateFields[] = 'user_is_superadmin = :user_is_superadmin';
+                $updateValues['user_is_superadmin'] = $data['user_is_superadmin'];
+            }
+
+            if (isset($data['pat_id'])) {
+                $updateFields[] = 'pat_id = :pat_id';
+                $updateValues['pat_id'] = $data['pat_id'];
+            }
+
+            if (isset($data['staff_id'])) {
+                $updateFields[] = 'staff_id = :staff_id';
+                $updateValues['staff_id'] = $data['staff_id'];
+            }
+
+            if (isset($data['doc_id'])) {
+                $updateFields[] = 'doc_id = :doc_id';
+                $updateValues['doc_id'] = $data['doc_id'];
+            }
+
+            // Always update the updated_at timestamp
+            $updateFields[] = 'updated_at = CURRENT_TIMESTAMP';
+
+            if (empty($updateFields)) {
+                return ['success' => false, 'message' => 'No fields to update'];
+            }
+
+            // Build and execute the update query
+            $sql = "UPDATE users SET " . implode(', ', $updateFields) . " WHERE user_id = :user_id";
+            $updateValues['user_id'] = $data['user_id'];
+
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($updateValues);
+
+            if (!$result) {
+                return ['success' => false, 'message' => 'Failed to update user'];
+            }
+
+            return ['success' => true, 'message' => 'User updated successfully'];
+
+        } catch (Exception $e) {
+            error_log("User update error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 

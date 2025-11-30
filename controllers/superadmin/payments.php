@@ -20,6 +20,45 @@ $profile_picture_url = User::initializeProfilePicture($auth);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     
+    if ($action === 'update') {
+        $id = (int)$_POST['id'];
+        $appointment_id = sanitize($_POST['appointment_id'] ?? '');
+        $amount = floatval($_POST['amount']);
+        $payment_method_id = (int)$_POST['payment_method_id'];
+        $payment_status_id = (int)$_POST['payment_status_id'];
+        $payment_date = sanitize($_POST['payment_date'] ?? '');
+        $notes = sanitize($_POST['notes'] ?? '');
+        
+        // Validate amount range to prevent database overflow
+        if ($amount < 0 || $amount > 99999999.99) {
+            $error = 'Payment amount must be between 0 and 99,999,999.99';
+        } elseif (empty($id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id) || empty($payment_date)) {
+            $error = 'Payment ID, amount, payment method, status, and date are required';
+        } else {
+            try {
+                $stmt = $db->prepare("
+                    UPDATE payments 
+                    SET appointment_id = :appointment_id, payment_amount = :payment_amount, 
+                        payment_method_id = :payment_method_id, payment_status_id = :payment_status_id, 
+                        payment_date = :payment_date, payment_notes = :payment_notes, updated_at = NOW()
+                    WHERE payment_id = :id
+                ");
+                $stmt->execute([
+                    'appointment_id' => $appointment_id,
+                    'payment_amount' => $amount,
+                    'payment_method_id' => $payment_method_id,
+                    'payment_status_id' => $payment_status_id,
+                    'payment_date' => $payment_date,
+                    'payment_notes' => $notes,
+                    'id' => $id
+                ]);
+                $success = 'Payment record updated successfully';
+            } catch (PDOException $e) {
+                $error = 'Database error: ' . $e->getMessage();
+            }
+        }
+    }
+    
     if ($action === 'create') {
         $appointment_id = sanitize($_POST['appointment_id']);
         $amount = floatval($_POST['amount']);
@@ -28,7 +67,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $payment_date = !empty($_POST['payment_date']) ? $_POST['payment_date'] : date('Y-m-d H:i:s');
         $notes = sanitize($_POST['notes'] ?? '');
         
-        if (empty($appointment_id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id)) {
+        // Validate amount range to prevent database overflow
+        if ($amount < 0 || $amount > 99999999.99) {
+            $error = 'Payment amount must be between 0 and 99,999,999.99';
+        } elseif (empty($appointment_id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id)) {
             $error = 'Appointment ID, amount, payment method, and status are required';
         } else {
             try {
@@ -64,40 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                 }
                 $success = 'Payment record created successfully';
-            } catch (PDOException $e) {
-                $error = 'Database error: ' . $e->getMessage();
-            }
-        }
-    }
-    
-    if ($action === 'update') {
-        $id = (int)$_POST['id'];
-        $amount = floatval($_POST['amount']);
-        $payment_method_id = (int)$_POST['payment_method_id'];
-        $payment_status_id = (int)$_POST['payment_status_id'];
-        $payment_date = sanitize($_POST['payment_date'] ?? '');
-        $notes = sanitize($_POST['notes'] ?? '');
-        
-        if (empty($id) || empty($amount) || empty($payment_method_id) || empty($payment_status_id) || empty($payment_date)) {
-            $error = 'Payment ID, amount, payment method, status, and date are required';
-        } else {
-            try {
-                $stmt = $db->prepare("
-                    UPDATE payments 
-                    SET payment_amount = :payment_amount, payment_method_id = :payment_method_id, 
-                        payment_status_id = :payment_status_id, payment_date = :payment_date,
-                        payment_notes = :payment_notes, updated_at = NOW()
-                    WHERE payment_id = :id
-                ");
-                $stmt->execute([
-                    'payment_amount' => $amount,
-                    'payment_method_id' => $payment_method_id,
-                    'payment_status_id' => $payment_status_id,
-                    'payment_date' => $payment_date,
-                    'payment_notes' => $notes,
-                    'id' => $id
-                ]);
-                $success = 'Payment record updated successfully';
             } catch (PDOException $e) {
                 $error = 'Database error: ' . $e->getMessage();
             }
@@ -453,6 +461,27 @@ try {
     }
 } catch (PDOException $e) {
     error_log("Pending payments error: " . $e->getMessage());
+}
+
+// Fetch appointments for dropdown (for add/edit forms)
+try {
+    $appointments = $db->fetchAll("
+        SELECT a.appointment_id, 
+               a.appointment_date, 
+               a.appointment_time,
+               pat.pat_first_name, 
+               pat.pat_last_name,
+               d.doc_first_name,
+               d.doc_last_name,
+               s.service_name
+        FROM appointments a
+        LEFT JOIN patients pat ON a.pat_id = pat.pat_id
+        LEFT JOIN doctors d ON a.doc_id = d.doc_id
+        LEFT JOIN services s ON a.service_id = s.service_id
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    ");
+} catch (PDOException $e) {
+    $appointments = [];
 }
 
 require_once __DIR__ . '/../../views/superadmin/payments.view.php';

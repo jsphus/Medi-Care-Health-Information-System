@@ -377,7 +377,7 @@
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= htmlspecialchars($user['user_email']) ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $phone_display ?></td>
                             <td style="padding: 1rem; color: var(--text-secondary);"><?= $date_created ?></td>
-                            <td style="padding: 1rem; color: var(--text-secondary);"><?= $date_updated ?></td>
+                            <td style="padding: 1rem; color: var,--text-secondary);"><?= $date_updated ?></td>
                             <td style="padding: 1rem;">
                                 <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 500; background: <?= $roleColor ?>20; color: <?= $roleColor ?>;">
                                     <?= htmlspecialchars($role) ?>
@@ -655,7 +655,8 @@
                     </div>
                     <div class="form-group">
                         <label>Salary:</label>
-                        <input type="number" name="salary" id="edit_staff_salary" step="0.01" min="0" class="form-control">
+                        <input type="number" name="salary" id="edit_staff_salary" step="0.01" min="0" max="99999999.99" class="form-control" placeholder="0.00 - 99,999,999.99">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                     </div>
                 </div>
             </div>
@@ -701,7 +702,8 @@
                     </div>
                     <div class="form-group">
                         <label>Consultation Fee:</label>
-                        <input type="number" name="consultation_fee" id="edit_doc_consultation_fee" step="0.01" min="0" class="form-control">
+                        <input type="number" name="consultation_fee" id="edit_doc_consultation_fee" step="0.01" min="0" max="99999999.99" class="form-control" placeholder="0.00 - 99,999,999.99">
+                        <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                     </div>
                     <div class="form-group">
                         <label>Status:</label>
@@ -1007,7 +1009,7 @@ function viewUserProfile(user) {
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Last Name:</strong>
-                        <span style="color: var(--text-primary);">${user.doc_last_name || 'N/A'}</span>
+                        <span style="color: var,--text-primary);">${user.doc_last_name || 'N/A'}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Email:</strong>
@@ -1019,23 +1021,23 @@ function viewUserProfile(user) {
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Specialization:</strong>
-                        <span style="color: var(--text-primary);">${getSpecializationName(user.doc_specialization_id)}</span>
+                        <span style="color: var,--text-primary);">${getSpecializationName(user.doc_specialization_id)}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">License Number:</strong>
-                        <span style="color: var(--text-primary);">${user.doc_license_number || 'N/A'}</span>
+                        <span style="color: var,--text-primary);">${user.doc_license_number || 'N/A'}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Experience (Years):</strong>
-                        <span style="color: var(--text-primary);">${user.doc_experience_years !== null && user.doc_experience_years !== undefined ? user.doc_experience_years : 'N/A'}</span>
+                        <span style="color: var,--text-primary);">${user.doc_experience_years !== null && user.doc_experience_years !== undefined ? user.doc_experience_years : 'N/A'}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Consultation Fee:</strong>
-                        <span style="color: var(--text-primary);">${formatCurrency(user.doc_consultation_fee)}</span>
+                        <span style="color: var,--text-primary);">${formatCurrency(user.doc_consultation_fee)}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Status:</strong>
-                        <span style="color: var(--text-primary); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: ${user.doc_status === 'active' ? '#2ecc7120' : '#e74c3c20'}; color: ${user.doc_status === 'active' ? '#2ecc71' : '#e74c3c'};">
+                        <span style="color: var,--text-primary); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: ${user.doc_status === 'active' ? '#2ecc7120' : '#e74c3c20'}; color: ${user.doc_status === 'active' ? '#2ecc71' : '#e74c3c'};">
                             ${user.doc_status ? user.doc_status.charAt(0).toUpperCase() + user.doc_status.slice(1) : 'N/A'}
                         </span>
                     </div>
@@ -1049,7 +1051,7 @@ function viewUserProfile(user) {
                 ${user.doc_bio ? `
                 <div style="margin-top: 1rem;">
                     <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Bio:</strong>
-                    <span style="color: var(--text-primary); white-space: pre-wrap;">${user.doc_bio}</span>
+                    <span style="color: var,--text-primary); white-space: pre-wrap;">${user.doc_bio}</span>
                 </div>
                 ` : ''}
             </div>
@@ -1104,11 +1106,11 @@ function viewUserProfile(user) {
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Date Created:</strong>
-                        <span style="color: var(--text-primary);">${formatDate(user.created_at)}</span>
+                        <span style="color: var,--text-primary);">${formatDate(user.created_at)}</span>
                     </div>
                     <div>
                         <strong style="color: var(--text-secondary); font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Date Updated:</strong>
-                        <span style="color: var(--text-primary);">${formatDate(user.updated_at)}</span>
+                        <span style="color: var,--text-primary);">${formatDate(user.updated_at)}</span>
                     </div>
                 </div>
             </div>

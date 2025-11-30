@@ -188,7 +188,7 @@ body {
 .logo-icon-sidebar {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: white;
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -196,6 +196,7 @@ body {
     color: white;
     font-size: 1.125rem;
     flex-shrink: 0;
+    padding: 2px 2px;
 }
 
 .logo-text {

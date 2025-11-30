@@ -267,7 +267,9 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="register-card">
             <div class="register-header">
                 <div class="register-logo">
-                    <div class="register-logo-icon"><i class="fas fa-heartbeat"></i></div>
+                    <div class="register-logo-icon">
+                        <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                    </div>
                     <div class="register-logo-text">Medi-Care</div>
                 </div>
                 <h1 class="register-title">Register as <?= ucfirst($role) ?></h1>

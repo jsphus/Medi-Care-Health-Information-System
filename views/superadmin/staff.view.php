@@ -459,7 +459,8 @@
                 </div>
                 <div class="form-group">
                     <label>Salary:</label>
-                    <input type="number" name="salary" step="0.01" min="0" class="form-control">
+                    <input type="number" name="salary" step="0.01" min="0" max="99999999.99" class="form-control" placeholder="0.00 - 99,999,999.99">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                 </div>
             </div>
             
@@ -550,7 +551,8 @@
                 </div>
                 <div class="form-group">
                     <label>Salary:</label>
-                    <input type="number" name="salary" id="edit_salary" step="0.01" min="0" class="form-control">
+                    <input type="number" name="salary" id="edit_salary" step="0.01" min="0" max="99999999.99" class="form-control" placeholder="0.00 - 99,999,999.99">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                 </div>
             </div>
             <div class="action-buttons" style="margin-top: 1.5rem;">
@@ -576,6 +578,50 @@ function openAddStaffModal() {
 function closeAddStaffModal() {
     document.getElementById('addModal').classList.remove('active');
     document.querySelector('#addModal form').reset();
+}
+
+// Salary validation function
+function validateSalary(inputElement) {
+    const value = parseFloat(inputElement.value);
+    const errorElement = inputElement.nextElementSibling?.classList.contains('salary-error') ? 
+        inputElement.nextElementSibling : null;
+    
+    // Remove existing error message
+    if (errorElement) {
+        errorElement.remove();
+    }
+    
+    if (inputElement.value && (isNaN(value) || value < 0 || value > 99999999.99)) {
+        // Create error message
+        const error = document.createElement('small');
+        error.className = 'salary-error';
+        error.style.color = 'var(--status-error)';
+        error.style.display = 'block';
+        error.style.marginTop = '0.25rem';
+        error.textContent = 'Salary must be between 0 and 99,999,999.99';
+        
+        inputElement.parentNode.insertBefore(error, inputElement.nextSibling);
+        inputElement.style.borderColor = 'var(--status-error)';
+        return false;
+    } else {
+        inputElement.style.borderColor = '';
+        return true;
+    }
+}
+
+// Form submission validation
+function validateFormBeforeSubmit(form) {
+    let isValid = true;
+    
+    // Validate salary fields
+    const salaryInputs = form.querySelectorAll('input[name="salary"]');
+    salaryInputs.forEach(input => {
+        if (!validateSalary(input)) {
+            isValid = false;
+        }
+    });
+    
+    return isValid;
 }
 
 // Phone number formatting function (Philippine format: XXXX-XXX-XXXX)
@@ -630,6 +676,11 @@ function editStaff(staff) {
 
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('active');
+    // Clear validation errors when closing
+    const errors = document.querySelectorAll('.salary-error');
+    errors.forEach(error => error.remove());
+    const salaryInputs = document.querySelectorAll('#editModal input[name="salary"], #addModal input[name="salary"]');
+    salaryInputs.forEach(input => input.style.borderColor = '');
 }
 
 function viewStaffDetails(staff) {
@@ -742,11 +793,72 @@ document.addEventListener('DOMContentLoaded', function() {
     formatPhoneInput('edit_phone');
     formatPhoneInput('add_phone');
     
+    // Add salary validation to input fields
+    const addSalaryInput = document.querySelector('#addModal input[name="salary"]');
+    const editSalaryInput = document.querySelector('#editModal input[name="salary"]');
+    
+    if (addSalaryInput) {
+        addSalaryInput.addEventListener('blur', function() {
+            validateSalary(this);
+        });
+        addSalaryInput.addEventListener('input', function() {
+            // Clear error styling while typing
+            this.style.borderColor = '';
+            const errorElement = this.nextElementSibling?.classList.contains('salary-error') ? 
+                this.nextElementSibling : null;
+            if (errorElement) {
+                errorElement.remove();
+            }
+        });
+    }
+    
+    if (editSalaryInput) {
+        editSalaryInput.addEventListener('blur', function() {
+            validateSalary(this);
+        });
+        editSalaryInput.addEventListener('input', function() {
+            // Clear error styling while typing
+            this.style.borderColor = '';
+            const errorElement = this.nextElementSibling?.classList.contains('salary-error') ? 
+                this.nextElementSibling : null;
+            if (errorElement) {
+                errorElement.remove();
+            }
+        });
+    }
+    
+    // Add form submission validation
+    const addForm = document.querySelector('#addModal form');
+    const editForm = document.querySelector('#editModal form');
+    
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            if (!validateFormBeforeSubmit(this)) {
+                e.preventDefault();
+                alert('Please correct the validation errors before submitting.');
+            }
+        });
+    }
+    
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            if (!validateFormBeforeSubmit(this)) {
+                e.preventDefault();
+                alert('Please correct the validation errors before submitting.');
+            }
+        });
+    }
+    
     // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.remove('active');
+                // Clear validation errors when closing
+                const errors = this.querySelectorAll('.salary-error');
+                errors.forEach(error => error.remove());
+                const salaryInputs = this.querySelectorAll('input[name="salary"]');
+                salaryInputs.forEach(input => input.style.borderColor = '');
             }
         });
     });
@@ -756,6 +868,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
+                // Clear validation errors when closing
+                const errors = modal.querySelectorAll('.salary-error');
+                errors.forEach(error => error.remove());
+                const salaryInputs = modal.querySelectorAll('input[name="salary"]');
+                salaryInputs.forEach(input => input.style.borderColor = '');
             });
         }
     });

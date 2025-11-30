@@ -39,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Password is required';
         } elseif (strlen($password) < 6) {
             $error = 'Password must be at least 6 characters';
+        } elseif ($salary !== null && ($salary < 0 || $salary > 99999999.99)) {
+            $error = 'Salary must be between 0 and 99,999,999.99';
         } else {
             try {
                 // Check if email already exists in users table
@@ -129,6 +131,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute(['staff_id' => $id]);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
         $user_id = $userData['user_id'] ?? null;
+        
+        // Validate salary range
+        if ($salary !== null && ($salary < 0 || $salary > 99999999.99)) {
+            $error = 'Salary must be between 0 and 99,999,999.99';
+        }
         
         // Handle profile picture upload/removal
         $profilePictureUrl = null;

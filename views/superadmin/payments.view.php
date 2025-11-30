@@ -447,6 +447,19 @@
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     <?php endif; ?>
+                                    <button type="button" class="btn btn-sm" title="Edit Payment" 
+                                            onclick="openEditPaymentModal(<?= htmlspecialchars(json_encode([
+                                                'payment_id' => $payment['payment_id'],
+                                                'appointment_id' => $payment['appointment_id'] ?? '',
+                                                'payment_amount' => $payment['payment_amount'] ?? 0,
+                                                'payment_method_id' => $payment['payment_method_id'] ?? '',
+                                                'payment_status_id' => $payment['payment_status_id'] ?? '',
+                                                'payment_date' => $payment['payment_date'] ?? date('Y-m-d'),
+                                                'payment_notes' => $payment['payment_notes'] ?? ''
+                                            ])) ?>)"
+                                            style="padding: 0.5rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                     <form method="POST" style="display: inline;" onsubmit="return handleDelete(event, 'Are you sure you want to delete this payment record?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $payment['payment_id'] ?>">
@@ -545,7 +558,8 @@
                 </div>
                 <div class="form-group">
                     <label>Amount (₱): <span style="color: var(--status-error);">*</span></label>
-                    <input type="number" name="amount" step="0.01" min="0" required class="form-control">
+                    <input type="number" name="amount" step="0.01" min="0" max="99999999.99" required class="form-control" placeholder="0.00 - 99,999,999.99">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                 </div>
                 <div class="form-group">
                     <label>Payment Date: <span style="color: var(--status-error);">*</span></label>
@@ -602,12 +616,24 @@
             <input type="hidden" name="id" id="edit_payment_id">
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Appointment ID:</label>
-                    <input type="text" id="edit_appointment_id" readonly class="form-control" style="background: #f3f4f6; cursor: not-allowed;">
+                    <label>Appointment:</label>
+                    <select name="appointment_id" id="edit_appointment_id" required class="form-control">
+                        <option value="">Select Appointment</option>
+                        <?php foreach ($appointments as $appointment): ?>
+                            <option value="<?= htmlspecialchars($appointment['appointment_id']) ?>">
+                                <?= htmlspecialchars($appointment['appointment_id']) ?> - 
+                                <?= htmlspecialchars(($appointment['pat_first_name'] ?? '') . ' ' . ($appointment['pat_last_name'] ?? '')) ?> - 
+                                Dr. <?= htmlspecialchars(($appointment['doc_first_name'] ?? '') . ' ' . ($appointment['doc_last_name'] ?? '')) ?> - 
+                                <?= $appointment['appointment_date'] ? date('M d, Y', strtotime($appointment['appointment_date'])) : '' ?> 
+                                <?= $appointment['appointment_time'] ? date('h:i A', strtotime($appointment['appointment_time'])) : '' ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Amount (₱): <span style="color: var(--status-error);">*</span></label>
-                    <input type="number" name="amount" id="edit_amount" step="0.01" min="0" required class="form-control">
+                    <input type="number" name="amount" id="edit_amount" step="0.01" min="0" max="99999999.99" required class="form-control" placeholder="0.00 - 99,999,999.99">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Maximum: ₱99,999,999.99</small>
                 </div>
                 <div class="form-group">
                     <label>Payment Date: <span style="color: var(--status-error);">*</span></label>
@@ -651,45 +677,79 @@
 </div>
 
 <script>
-function openAddPaymentModal() {
-    document.getElementById('addModal').classList.add('active');
+// Payment amount validation function
+function validatePaymentAmount(inputElement) {
+    const value = parseFloat(inputElement.value);
+    const errorElement = inputElement.nextElementSibling?.classList.contains('amount-error') ? 
+        inputElement.nextElementSibling : null;
+    
+    // Remove existing error message
+    if (errorElement) {
+        errorElement.remove();
+    }
+    
+    if (inputElement.value && (isNaN(value) || value < 0 || value > 99999999.99)) {
+        // Create error message
+        const error = document.createElement('small');
+        error.className = 'amount-error';
+        error.style.color = 'var(--status-error)';
+        error.style.display = 'block';
+        error.style.marginTop = '0.25rem';
+        error.textContent = 'Payment amount must be between 0 and 99,999,999.99';
+        
+        inputElement.parentNode.insertBefore(error, inputElement.nextSibling);
+        inputElement.style.borderColor = 'var(--status-error)';
+        return false;
+    } else {
+        inputElement.style.borderColor = '';
+        return true;
+    }
 }
 
-function closeAddPaymentModal() {
-    document.getElementById('addModal').classList.remove('active');
-    document.querySelector('#addModal form').reset();
+// Form submission validation
+function validatePaymentFormBeforeSubmit(form) {
+    let isValid = true;
+    
+    // Validate amount fields
+    const amountInputs = form.querySelectorAll('input[name="amount"]');
+    amountInputs.forEach(input => {
+        if (!validatePaymentAmount(input)) {
+            isValid = false;
+        }
+    });
+    
+    return isValid;
 }
 
-function openEditPaymentModal(payment) {
-    document.getElementById('edit_payment_id').value = payment.payment_id || '';
-    document.getElementById('edit_appointment_id').value = payment.appointment_id || '';
-    document.getElementById('edit_amount').value = payment.payment_amount || '';
-    document.getElementById('edit_payment_date').value = payment.payment_date ? payment.payment_date.split(' ')[0] : '';
-    document.getElementById('edit_payment_method_id').value = payment.payment_method_id || '';
-    document.getElementById('edit_payment_status_id').value = payment.payment_status_id || '';
-    document.getElementById('edit_payment_notes').value = payment.payment_notes || '';
+function openEditPaymentModal(paymentData) {
+    // Populate form fields with payment data
+    document.getElementById('edit_payment_id').value = paymentData.payment_id || '';
+    document.getElementById('edit_appointment_id').value = paymentData.appointment_id || '';
+    document.getElementById('edit_amount').value = paymentData.payment_amount || 0;
+    
+    // Format payment_date - extract date part if it's a datetime string
+    let paymentDate = paymentData.payment_date || '';
+    if (paymentDate && paymentDate.includes(' ')) {
+        paymentDate = paymentDate.split(' ')[0];
+    }
+    document.getElementById('edit_payment_date').value = paymentDate;
+    
+    document.getElementById('edit_payment_method_id').value = paymentData.payment_method_id || '';
+    document.getElementById('edit_payment_status_id').value = paymentData.payment_status_id || '';
+    document.getElementById('edit_payment_notes').value = paymentData.payment_notes || '';
+    
+    // Show the modal
     document.getElementById('editModal').classList.add('active');
 }
 
 function closeEditPaymentModal() {
     document.getElementById('editModal').classList.remove('active');
     document.querySelector('#editModal form').reset();
-}
-
-function openEditPaymentModal(payment) {
-    document.getElementById('edit_payment_id').value = payment.payment_id || '';
-    document.getElementById('edit_appointment_id').value = payment.appointment_id || '';
-    document.getElementById('edit_amount').value = payment.payment_amount || '';
-    document.getElementById('edit_payment_date').value = payment.payment_date ? payment.payment_date.split(' ')[0] : '';
-    document.getElementById('edit_payment_method_id').value = payment.payment_method_id || '';
-    document.getElementById('edit_payment_status_id').value = payment.payment_status_id || '';
-    document.getElementById('edit_payment_notes').value = payment.payment_notes || '';
-    document.getElementById('editModal').classList.add('active');
-}
-
-function closeEditPaymentModal() {
-    document.getElementById('editModal').classList.remove('active');
-    document.querySelector('#editModal form').reset();
+    // Clear validation errors when closing
+    const errors = document.querySelectorAll('.amount-error');
+    errors.forEach(error => error.remove());
+    const amountInputs = document.querySelectorAll('#editModal input[name="amount"], #addModal input[name="amount"]');
+    amountInputs.forEach(input => input.style.borderColor = '');
 }
 
 // Category tab functionality
@@ -719,26 +779,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add event listeners for edit payment buttons
-    document.querySelectorAll('.edit-payment-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            try {
-                const encodedData = this.getAttribute('data-payment');
-                const decodedJson = atob(encodedData);
-                const paymentData = JSON.parse(decodedJson);
-                openEditPaymentModal(paymentData);
-            } catch (e) {
-                console.error('Error parsing payment data:', e);
-                alert('Error loading payment data. Please check the console for details.');
+    // Add payment amount validation to input fields
+    const addAmountInput = document.querySelector('#addModal input[name="amount"]');
+    const editAmountInput = document.querySelector('#editModal input[name="amount"]');
+    
+    if (addAmountInput) {
+        addAmountInput.addEventListener('blur', function() {
+            validatePaymentAmount(this);
+        });
+        addAmountInput.addEventListener('input', function() {
+            // Clear error styling while typing
+            this.style.borderColor = '';
+            const errorElement = this.nextElementSibling?.classList.contains('amount-error') ? 
+                this.nextElementSibling : null;
+            if (errorElement) {
+                errorElement.remove();
             }
         });
-    });
+    }
+    
+    if (editAmountInput) {
+        editAmountInput.addEventListener('blur', function() {
+            validatePaymentAmount(this);
+        });
+        editAmountInput.addEventListener('input', function() {
+            // Clear error styling while typing
+            this.style.borderColor = '';
+            const errorElement = this.nextElementSibling?.classList.contains('amount-error') ? 
+                this.nextElementSibling : null;
+            if (errorElement) {
+                errorElement.remove();
+            }
+        });
+    }
+    
+    // Add form submission validation
+    const addForm = document.querySelector('#addModal form');
+    const editForm = document.querySelector('#editModal form');
+    
+    if (addForm) {
+        addForm.addEventListener('submit', function(e) {
+            if (!validatePaymentFormBeforeSubmit(this)) {
+                e.preventDefault();
+                alert('Please correct the validation errors before submitting.');
+            }
+        });
+    }
+    
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            if (!validatePaymentFormBeforeSubmit(this)) {
+                e.preventDefault();
+                alert('Please correct the validation errors before submitting.');
+            }
+        });
+    }
     
     // Close modals on outside click
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.remove('active');
+                // Clear validation errors when closing
+                const errors = this.querySelectorAll('.amount-error');
+                errors.forEach(error => error.remove());
+                const amountInputs = this.querySelectorAll('input[name="amount"]');
+                amountInputs.forEach(input => input.style.borderColor = '');
             }
         });
     });
@@ -748,6 +854,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal.active').forEach(modal => {
                 modal.classList.remove('active');
+                // Clear validation errors when closing
+                const errors = modal.querySelectorAll('.amount-error');
+                errors.forEach(error => error.remove());
+                const amountInputs = modal.querySelectorAll('input[name="amount"]');
+                amountInputs.forEach(input => input.style.borderColor = '');
             });
         }
     });

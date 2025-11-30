@@ -52,3 +52,16 @@
             font-weight: 800;
             line-height: 1.2;
         }
+        
+        .logo {
+        width: 50px; /* Adjust as needed */
+        height: auto;
+        max-width: 100%;
+        }
+
+        /* For responsive design */
+        @media (max-width: 768px) {
+        .logo {
+            width: 150px;
+        }
+        }
