@@ -37,7 +37,7 @@ if (session_status() === PHP_SESSION_NONE) {
         border-radius: 1.5rem;
         box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         padding: 3rem;
-        max-width: 600px;
+        max-width: 500px;
         width: 100%;
     }
     
@@ -78,20 +78,21 @@ if (session_status() === PHP_SESSION_NONE) {
     }
     
     .role-selection {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
+        display: flex;
+        justify-content: center;
         margin-top: 2rem;
     }
     
     .role-card {
         border: 2px solid #e5e7eb;
         border-radius: var(--radius-md);
-        padding: 1.5rem;
+        padding: 2rem;
         text-align: center;
         cursor: pointer;
         transition: var(--transition);
         background: white;
+        width: 100%;
+        max-width: 280px;
     }
     
     .role-card:hover {
@@ -106,46 +107,35 @@ if (session_status() === PHP_SESSION_NONE) {
     }
     
     .role-icon {
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 1rem;
-        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.75rem;
-    }
-    
-    .role-card.patient .role-icon {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-    }
-    
-    .role-card.doctor .role-icon {
-        background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-    }
-    
-    .role-card.staff .role-icon {
-        background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+        font-size: 2rem;
     }
     
     .role-name {
         font-weight: 600;
         color: #1f2937;
-        font-size: 1rem;
-        margin-bottom: 0.25rem;
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
     }
     
     .role-description {
-        font-size: 0.875rem;
+        font-size: 1rem;
         color: #6b7280;
+        line-height: 1.5;
     }
     
     .btn-continue {
         width: 100%;
         padding: 0.875rem;
-        background: #1f2937;
+        background: #10b981;
         color: white;
         border: none;
         border-radius: var(--radius-md);
@@ -154,17 +144,12 @@ if (session_status() === PHP_SESSION_NONE) {
         cursor: pointer;
         transition: var(--transition);
         margin-top: 2rem;
-        display: none;
-    }
-    
-    .btn-continue.active {
-        display: block;
     }
     
     .btn-continue:hover {
-        background: #111827;
+        background: #059669;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(31, 41, 55, 0.3);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
     
     .login-link {
@@ -208,8 +193,14 @@ if (session_status() === PHP_SESSION_NONE) {
             padding: 2rem;
         }
         
-        .role-selection {
-            grid-template-columns: 1fr;
+        .role-card {
+            padding: 1.5rem;
+        }
+        
+        .role-icon {
+            width: 64px;
+            height: 64px;
+            font-size: 1.5rem;
         }
     }
 </style>
@@ -224,8 +215,8 @@ if (session_status() === PHP_SESSION_NONE) {
                     </div>
                     <div class="register-logo-text" style="font-size: 1.875rem; font-weight: 700; color: #1f2937;">Lifesaver-Clinic</div>
                 </div>
-                <h1 class="register-title">Create Account</h1>
-                <p class="register-subtitle">Select your role to get started</p>
+                <h1 class="register-title">Create Patient Account</h1>
+                <p class="register-subtitle">Join our healthcare community today</p>
             </div>
             
             <?php if (!empty($error)): ?>
@@ -243,35 +234,19 @@ if (session_status() === PHP_SESSION_NONE) {
             <?php endif; ?>
             
             <form method="get" action="/register" id="roleForm">
-                <input type="hidden" name="role" id="selectedRole" value="">
+                <input type="hidden" name="role" id="selectedRole" value="patient">
                 <div class="role-selection">
-                    <div class="role-card patient" data-role="patient">
+                    <div class="role-card patient selected" data-role="patient">
                         <div class="role-icon">
-                            <i class="fas fa-user"></i>
+                            <i class="fas fa-user-injured"></i>
                         </div>
-                        <div class="role-name">Patient</div>
-                        <div class="role-description">Book appointments with doctors</div>
-                    </div>
-                    
-                    <div class="role-card doctor" data-role="doctor">
-                        <div class="role-icon">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div class="role-name">Doctor</div>
-                        <div class="role-description">Manage appointments and patients</div>
-                    </div>
-                    
-                    <div class="role-card staff" data-role="staff">
-                        <div class="role-icon">
-                            <i class="fas fa-user-nurse"></i>
-                        </div>
-                        <div class="role-name">Staff</div>
-                        <div class="role-description">Support clinic operations</div>
+                        <div class="role-name">Patient Registration</div>
+                        <div class="role-description">Book appointments, access your health records, and manage your healthcare journey with ease.</div>
                     </div>
                 </div>
                 
                 <button type="submit" class="btn-continue" id="continueBtn">
-                    Continue
+                    Continue to Registration
                 </button>
             </form>
             
@@ -290,16 +265,21 @@ if (session_status() === PHP_SESSION_NONE) {
 </div>
 
 <script>
-    document.querySelectorAll('.role-card').forEach(card => {
-        card.addEventListener('click', function() {
-            // Remove selected class from all cards
-            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-            // Add selected class to clicked card
-            this.classList.add('selected');
-            // Set the hidden input value
-            document.getElementById('selectedRole').value = this.dataset.role;
-            // Show continue button
-            document.getElementById('continueBtn').classList.add('active');
+    // Auto-select patient role and enable continue button on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const patientCard = document.querySelector('.role-card.patient');
+        const continueBtn = document.getElementById('continueBtn');
+        
+        // Patient is already pre-selected via HTML
+        document.getElementById('selectedRole').value = 'patient';
+        
+        // Optional: Still allow clicking for visual feedback
+        patientCard.addEventListener('click', function() {
+            // Already selected, but we can add some feedback
+            this.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
         });
     });
 </script>

@@ -21,7 +21,7 @@
             <div class="flex justify-between items-center h-28">
                 <div class="flex items-center space-x-1">
                     <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" class="logo">
-                    <span class="text-3xl font-bold text-gray-900">Medi-Care</span>
+                    <span class="text-3xl font-bold text-gray-900">Lifesaver-Clinic</span>
                 </div>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -244,7 +244,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <h2 class="text-4xl font-bold text-gray-900 mb-6">Why Choose Medi-Care?</h2>
+                    <h2 class="text-4xl font-bold text-gray-900 mb-6">Why Choose Lifesaver-Clinic?</h2>
                     <p class="text-lg text-gray-600 mb-8 leading-relaxed">
                         We're committed to providing exceptional healthcare services with a patient-first approach. Our platform connects you with the best medical professionals in your area.
                     </p>
@@ -324,7 +324,7 @@
     <section id="book" class="py-20 hero-gradient">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 class="text-4xl md:text-5xl font-bold text-white mb-6">Ready to Book Your Appointment?</h2>
-            <p class="text-xl text-blue-100 mb-10">Join thousands of satisfied patients who trust Medi-Care for their healthcare needs.</p>
+            <p class="text-xl text-blue-100 mb-10">Join thousands of satisfied patients who trust Lifesaver-Clinic for their healthcare needs.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href="/register" class="bg-white text-blue-600 px-10 py-4 rounded-lg hover:bg-gray-50 transition font-bold text-lg shadow-xl">
                     Register Now
@@ -346,7 +346,7 @@
                 <div>
                     <div class="flex items-center mb-4">
                         <img src="/assets/images/Medi-Care.png" alt="Medi-Care Logo" class="w-20 h-20 object-contain">
-                        <span class="ml-2 text-xl font-bold">Medi-Care</span>
+                        <span class="ml-2 text-xl font-bold">Lifesaver-Clinic</span>
                     </div>
                     <p class="text-gray-400 leading-relaxed">Your trusted partner in healthcare, connecting patients with top medical professionals.</p>
                 </div>
@@ -399,7 +399,7 @@
 
             <div class="border-t border-gray-800 pt-8">
                 <div class="flex flex-col md:flex-row justify-between items-center">
-                    <p class="text-gray-400">&copy; <?php echo date('Y'); ?> Medi-Care. All rights reserved.</p>
+                    <p class="text-gray-400">&copy; <?php echo date('Y'); ?> Lifesaver-Clinic. All rights reserved.</p>
                     <div class="flex space-x-6 mt-4 md:mt-0">
                         <a href="#" class="text-gray-400 hover:text-white transition">
                             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">

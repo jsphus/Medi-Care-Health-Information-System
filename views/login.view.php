@@ -471,7 +471,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="login-logo-icon">
                         <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
-                    <div class="login-logo-text">Medi-Care</div>
+                    <div class="login-logo-text">Lifesaver-Clinic</div>
                 </div>
                 <h1 class="login-title">Sign in</h1>
                 <p class="login-welcome">Welcome back! Please login to continue</p>

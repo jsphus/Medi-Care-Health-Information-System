@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lifesaver-Clinic - Register as <?= ucfirst($role) ?></title>
+    <title>Lifesaver-Clinic - Register as Patient</title>
     <link rel="stylesheet" href="/public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -85,7 +85,6 @@ if (session_status() === PHP_SESSION_NONE) {
 .register-logo-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
     border-radius: 1rem;
     display: flex;
     align-items: center;
@@ -270,9 +269,9 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="register-logo-icon">
                         <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
-                    <div class="register-logo-text">Medi-Care</div>
+                    <div class="register-logo-text">Lifesaver-Clinic</div>
                 </div>
-                <h1 class="register-title">Register as <?= ucfirst($role) ?></h1>
+                <h1 class="register-title">Register as Patient</h1>
                 <p class="register-subtitle">Fill in your details to create an account</p>
             </div>
 
@@ -284,7 +283,7 @@ if (session_status() === PHP_SESSION_NONE) {
             <?php endif; ?>
 
             <form method="post" action="" class="register-form">
-                <input type="hidden" name="role" value="<?= htmlspecialchars($role) ?>">
+                <input type="hidden" name="role" value="patient">
 
                 <!-- First Name -->
                 <div class="form-icon-wrapper">
@@ -328,38 +327,36 @@ if (session_status() === PHP_SESSION_NONE) {
                     <i class="fas fa-lock form-icon"></i>
                 </div>
 
-                <!-- Patient Fields -->
-                <?php if ($role === 'patient'): ?>
-                    <div class="form-icon-wrapper">
-                        <input type="date" name="date_of_birth" value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
-                        <i class="fas fa-calendar form-icon"></i>
-                    </div>
+                <!-- Patient-specific fields -->
+                <div class="form-icon-wrapper">
+                    <input type="date" name="date_of_birth" value="<?= htmlspecialchars($_POST['date_of_birth'] ?? '') ?>">
+                    <i class="fas fa-calendar form-icon"></i>
+                </div>
 
-                    <div class="form-icon-wrapper">
-                        <select name="gender">
-                            <option value="">Select Gender</option>
-                            <option value="Male" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Male') ? 'selected' : '' ?>>Male</option>
-                            <option value="Female" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Female') ? 'selected' : '' ?>>Female</option>
-                            <option value="Other" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Other') ? 'selected' : '' ?>>Other</option>
-                        </select>
-                        <i class="fas fa-venus-mars form-icon"></i>
-                    </div>
+                <div class="form-icon-wrapper">
+                    <select name="gender">
+                        <option value="">Select Gender</option>
+                        <option value="Male" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Male') ? 'selected' : '' ?>>Male</option>
+                        <option value="Female" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Female') ? 'selected' : '' ?>>Female</option>
+                        <option value="Other" <?= (isset($_POST['gender']) && $_POST['gender'] === 'Other') ? 'selected' : '' ?>>Other</option>
+                    </select>
+                    <i class="fas fa-venus-mars form-icon"></i>
+                </div>
 
-                    <div class="form-icon-wrapper">
-                        <textarea name="address" placeholder="Enter your address"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
-                        <i class="fas fa-address-card form-icon"></i>
-                    </div>
+                <div class="form-icon-wrapper">
+                    <textarea name="address" placeholder="Enter your address"><?= htmlspecialchars($_POST['address'] ?? '') ?></textarea>
+                    <i class="fas fa-address-card form-icon"></i>
+                </div>
 
-                    <div class="form-icon-wrapper">
-                        <input type="text" name="emergency_contact" placeholder="Emergency Contact Name" value="<?= htmlspecialchars($_POST['emergency_contact'] ?? '') ?>">
-                        <i class="fas fa-user form-icon"></i>
-                    </div>
+                <div class="form-icon-wrapper">
+                    <input type="text" name="emergency_contact" placeholder="Emergency Contact Name" value="<?= htmlspecialchars($_POST['emergency_contact'] ?? '') ?>">
+                    <i class="fas fa-user form-icon"></i>
+                </div>
 
-                    <div class="form-icon-wrapper">
-                        <input type="tel" name="emergency_phone" placeholder="Emergency Phone (e.g., 0912-345-6789)" pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter a valid Philippine phone number (XXXX-XXX-XXXX)" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
-                        <i class="fas fa-phone form-icon"></i>
-                    </div>
-                <?php endif; ?>
+                <div class="form-icon-wrapper">
+                    <input type="tel" name="emergency_phone" placeholder="Emergency Phone (e.g., 0912-345-6789)" pattern="[0-9]{4}-[0-9]{3}-[0-9]{4}" title="Please enter a valid Philippine phone number (XXXX-XXX-XXXX)" value="<?= htmlspecialchars($_POST['emergency_phone'] ?? '') ?>">
+                    <i class="fas fa-phone form-icon"></i>
+                </div>
 
                 <!-- Submit -->
                 <button type="submit" class="btn-register">Create Account</button>
@@ -382,13 +379,7 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="welcome-card">
             <h2 class="welcome-title">Welcome to Lifesaver-Clinic</h2>
             <p class="welcome-text">
-                <?php if ($role === 'patient'): ?>
-                    Join thousands of patients who trust Lifesaver-Clinic. Book appointments and manage health records.
-                <?php elseif ($role === 'doctor'): ?>
-                    Connect with patients and manage your practice efficiently.
-                <?php else: ?>
-                    Support our clinic operations and help provide excellent patient care.
-                <?php endif; ?>
+                Join thousands of patients who trust Lifesaver-Clinic for their healthcare needs. Book appointments, manage your health records, and stay connected with your healthcare providers.
             </p>
         </div>
     </div>
@@ -428,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (phoneInput.value) phoneInput.value = formatPhoneNumber(phoneInput.value);
     }
     
-    // Format emergency phone input (for patient registration)
+    // Format emergency phone input
     const emergencyPhoneInput = document.querySelector('input[name="emergency_phone"]');
     if (emergencyPhoneInput) {
         emergencyPhoneInput.addEventListener('input', function(e) {

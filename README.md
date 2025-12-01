@@ -1,4 +1,4 @@
-# Medi-Care Health Information System
+# Lifesaver-Clinic Health Information System
 
 A comprehensive healthcare management system built with PHP, PostgreSQL, and modern web technologies. This system manages patients, doctors, staff, appointments, medical records, payments, and schedules for healthcare facilities.
 
@@ -19,7 +19,7 @@ A comprehensive healthcare management system built with PHP, PostgreSQL, and mod
 
 ## Overview
 
-Medi-Care is a full-featured Health Information System (HIS) designed to manage all aspects of a healthcare facility's operations. The system supports multiple user roles with role-based access control, ensuring secure and efficient management of healthcare data.
+Lifesaver-Clinic is a full-featured Health Information System (HIS) designed to manage all aspects of a healthcare facility's operations. The system supports multiple user roles with role-based access control, ensuring secure and efficient management of healthcare data.
 
 ### Core Capabilities
 
@@ -499,7 +499,7 @@ Medi-Care is a full-featured Health Information System (HIS) designed to manage 
 ## Project Structure
 
 ```
-Medi-Care-Health-Information-System/
+Lifesaver-Clinic-Health-Information-System/
 │
 ├── index.php                    # Main entry point, routes requests
 ├── schema.sql                   # Database schema (PostgreSQL)
@@ -822,7 +822,7 @@ Medi-Care-Health-Information-System/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd Medi-Care-Health-Information-System
+   cd Lifesaver-Clinic-Health-Information-System
    ```
 
 2. **Configure environment**
