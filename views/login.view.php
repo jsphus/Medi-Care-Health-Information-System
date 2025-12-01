@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medi-Care - Sign In</title>
+    <title>Lifesaver-Clinic - Sign In</title>
     <link rel="stylesheet" href="/public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -543,13 +543,13 @@ if (session_status() === PHP_SESSION_NONE) {
                 <div class="welcome-logo-icon">
                     <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                 </div>
-                <div class="welcome-logo-text">Medi-Care</div>
+                <div class="welcome-logo-text">Lifesaver-Clinic</div>
             </div>
             
-            <h2 class="welcome-title">Welcome to Medi-Care</h2>
+            <h2 class="welcome-title">Welcome to Lifesaver-Clinic</h2>
             
             <p class="welcome-text">
-                Medi-Care helps healthcare providers and patients manage appointments, medical records, and health information efficiently. Join us and experience seamless healthcare management today.
+                Lifesaver-Clinic helps healthcare providers and patients manage appointments, medical records, and health information efficiently. Join us and experience seamless healthcare management today.
             </p>
             
             <p class="welcome-stats">

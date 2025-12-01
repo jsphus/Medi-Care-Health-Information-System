@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medi-Care - Register as <?= ucfirst($role) ?></title>
+    <title>Lifesaver-Clinic - Register as <?= ucfirst($role) ?></title>
     <link rel="stylesheet" href="/public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -380,10 +380,10 @@ if (session_status() === PHP_SESSION_NONE) {
     <!-- Right Panel -->
     <div class="register-right">
         <div class="welcome-card">
-            <h2 class="welcome-title">Welcome to Medi-Care</h2>
+            <h2 class="welcome-title">Welcome to Lifesaver-Clinic</h2>
             <p class="welcome-text">
                 <?php if ($role === 'patient'): ?>
-                    Join thousands of patients who trust Medi-Care. Book appointments and manage health records.
+                    Join thousands of patients who trust Lifesaver-Clinic. Book appointments and manage health records.
                 <?php elseif ($role === 'doctor'): ?>
                     Connect with patients and manage your practice efficiently.
                 <?php else: ?>

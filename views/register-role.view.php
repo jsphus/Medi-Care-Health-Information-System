@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medi-Care - Register</title>
+    <title>Lifesaver-Clinic - Register</title>
     <link rel="stylesheet" href="/public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -222,7 +222,7 @@ if (session_status() === PHP_SESSION_NONE) {
                     <div class="register-logo-icon">
                     <img src="/assets/images/Medi-Care.svg" alt="Medi-Care Logo" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
-                    <div class="register-logo-text" style="font-size: 1.875rem; font-weight: 700; color: #1f2937;">Medi-Care</div>
+                    <div class="register-logo-text" style="font-size: 1.875rem; font-weight: 700; color: #1f2937;">Lifesaver-Clinic</div>
                 </div>
                 <h1 class="register-title">Create Account</h1>
                 <p class="register-subtitle">Select your role to get started</p>

@@ -198,7 +198,7 @@ $currentPath = $_SERVER['REQUEST_URI'];
             <div class="logo-icon-sidebar">
                 <img src="/assets/images/Medi-Care.svg" alt="Medicare Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
-            <span class="logo-text">Medi-Care</span>
+            <span class="logo-text">Lifesaver-Clinic</span>
         </div>
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
             <i class="fas fa-bars"></i>
